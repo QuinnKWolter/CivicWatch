@@ -189,40 +189,13 @@ function InteractionNetwork() {
   }, [filters])
 
   return (
-    <div className="space-y-6 max-w-full">
-      {/* Header Section */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-100">
-            Legislative Interaction Network
-          </h1>
-          <p className="text-gray-400">
-            Visualizing social media interactions between legislators
-          </p>
-        </div>
-        <div className="space-x-2">
-          <button 
-            onClick={() => setFilters({
-              interactionType: 'all',
-              party: ['D', 'R'],
-              state: 'all'
-            })}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-          >
-            Reset Filters
-          </button>
-          <button 
-            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
-          >
-            Download SVG
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-12 gap-4">
+    <div className="h-full">
+      <h1 className="text-xl font-bold text-gray-100 mb-2">
+        Legislative Interaction Network
+      </h1>
+      <div className="grid grid-cols-12 gap-4 h-[calc(100%-2rem)]">
         {/* Left Sidebar - Controls */}
-        <div className="col-span-3 space-y-4">
+        <div className="col-span-3 space-y-2 overflow-y-auto">
           {/* Basic Filters Section */}
           <div className="bg-gray-700/50 backdrop-blur-sm rounded-lg">
             <button 
@@ -382,8 +355,8 @@ function InteractionNetwork() {
 
         {/* Main Visualization Area */}
         <div className="col-span-9">
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-8 h-full">
-            <div ref={chartRef} className="flex justify-center overflow-visible" />
+          <div className="bg-gray-800 rounded-lg p-4 h-full">
+            <div ref={chartRef} className="h-full flex justify-center overflow-visible" />
             
             {/* Enhanced Hover Tooltip */}
             {hoveredChord && (

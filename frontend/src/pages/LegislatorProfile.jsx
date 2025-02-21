@@ -83,12 +83,12 @@ function LegislatorProfile() {
   }, [])
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-100">
+    <div className="h-full">
+      <h1 className="text-xl font-bold text-gray-100 mb-2">
         Legislator Profile
       </h1>
-      <div className="bg-gray-800 rounded-lg p-8">
-        <div ref={chartRef} className="flex justify-center overflow-visible" />
+      <div className="bg-gray-800 rounded-lg p-4 h-[calc(100%-2rem)]">
+        <div ref={chartRef} className="h-full flex justify-center overflow-visible" />
       </div>
     </div>
   )
