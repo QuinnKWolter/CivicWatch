@@ -1,21 +1,28 @@
 import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import { legislatorData } from '../utils/mockData'
+import { Box, Typography } from '@mui/material'
 
 function LegislatorProfile() {
   const chartRef = useRef()
 
   useEffect(() => {
-    const data = legislatorData.radar
-    const width = 600
-    const height = 600
+    const container = chartRef.current
+    const width = container.offsetWidth
+    const height = container.offsetHeight
     const radius = Math.min(width, height) / 2 - 60
 
+    // Ensure radius is not negative
+    if (radius < 0) {
+      console.error("Invalid radius: ", radius)
+      return
+    }
+
     // Clear any existing SVG
-    d3.select(chartRef.current).selectAll("*").remove()
+    d3.select(container).selectAll("*").remove()
 
     // Create SVG
-    const svg = d3.select(chartRef.current)
+    const svg = d3.select(container)
       .append("svg")
       .attr("width", width)
       .attr("height", height)
@@ -30,7 +37,7 @@ function LegislatorProfile() {
 
     // Angle scale
     const aScale = d3.scaleLinear()
-      .domain([0, data.labels.length])
+      .domain([0, legislatorData.radar.labels.length])
       .range([0, 2 * Math.PI])
 
     // Draw the circles
@@ -46,13 +53,13 @@ function LegislatorProfile() {
     })
 
     // Create the points
-    const points = data.labels.map((label, i) => {
+    const points = legislatorData.radar.labels.map((label, i) => {
       const angle = aScale(i)
       return {
-        x: rScale(data.values[i]) * Math.cos(angle - Math.PI/2),
-        y: rScale(data.values[i]) * Math.sin(angle - Math.PI/2),
+        x: rScale(legislatorData.radar.values[i]) * Math.cos(angle - Math.PI/2),
+        y: rScale(legislatorData.radar.values[i]) * Math.sin(angle - Math.PI/2),
         label: label,
-        value: data.values[i]
+        value: legislatorData.radar.values[i]
       }
     })
 
@@ -63,7 +70,7 @@ function LegislatorProfile() {
       .curve(d3.curveLinearClosed)
 
     svg.append("path")
-      .datum(data.values)
+      .datum(legislatorData.radar.values)
       .attr("d", line)
       .attr("fill", "rgba(59, 130, 246, 0.2)")
       .attr("stroke", "#60A5FA")
@@ -76,21 +83,18 @@ function LegislatorProfile() {
         .attr("y", point.y * 1.3)
         .attr("text-anchor", "middle")
         .attr("dy", "0.35em")
-        .text(data.labels[i])
+        .text(legislatorData.radar.labels[i])
         .style("font-size", "14px")
         .style("fill", "#E5E7EB")
     })
   }, [])
 
   return (
-    <div className="h-full">
-      <h1 className="text-xl font-bold text-gray-100 mb-2">
-        Legislator Profile
-      </h1>
-      <div className="bg-gray-800 rounded-lg p-4 h-[calc(100%-2rem)]">
-        <div ref={chartRef} className="h-full flex justify-center overflow-visible" />
-      </div>
-    </div>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ bgcolor: 'grey.800', p: 2, borderRadius: 1, flexGrow: 1 }}>
+        <div ref={chartRef} style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'visible' }} />
+      </Box>
+    </Box>
   )
 }
 
