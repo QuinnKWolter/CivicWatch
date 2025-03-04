@@ -7,8 +7,8 @@ import Box from '@mui/material/Box';
 import theme from './theme'; // Import your custom theme
 import BipartiteFlow from './components/BipartiteFlow';
 import InteractionNetwork from './components/InteractionNetwork';
-import LegislatorProfile from './components/LegislatorProfile';
 import Sidebar from './components/Sidebar';
+import TabbedCharts from './components/TabbedCharts';
 import './App.css'
 
 function App() {
@@ -70,10 +70,10 @@ function App() {
                     </Box>
                   </Grid>
                   
-                  {/* Bottom Left - LegislatorProfile */}
+                  {/* Bottom Left - TabbedCharts */}
                   <Grid item xs={6}>
                     <Box sx={{ bgcolor: 'grey.700', height: '100%' }}>
-                      <LegislatorProfile />
+                      <TabbedCharts />
                     </Box>
                   </Grid>
                 </Grid>

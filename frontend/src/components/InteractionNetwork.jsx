@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { networkData } from '../utils/mockData'
-import { Box, Typography, Grid, Button, Checkbox, FormControlLabel, Select, MenuItem, Slider } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 
 function InteractionNetwork() {
   const chartRef = useRef()
@@ -43,7 +43,7 @@ function InteractionNetwork() {
   useEffect(() => {
     const container = chartRef.current;
     const width = container.offsetWidth;
-    const height = container.offsetHeight;
+    const height = container.offsetHeight - 10;
     const margin = 100;
     const radius = Math.min(width, height) / 2 - margin;
 

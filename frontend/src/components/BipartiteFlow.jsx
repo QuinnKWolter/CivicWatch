@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
+import { Box, Typography } from '@mui/material';
 
 const data = [
   { name: 'Q4 \'19', topic1: 0, topic2: 0, topic3: 0, topic4: 0, topic5: 0, topic6: 0 },
@@ -24,14 +25,16 @@ const colorMap = {
 
 function BipartiteFlow({ activeTopics }) {
   const chartRef = useRef();
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [hoveredData, setHoveredData] = useState(null);
 
   useEffect(() => {
     const container = chartRef.current;
     const containerWidth = container.offsetWidth || 800; 
     const containerHeight = container.offsetHeight || 800; 
     const margin = { top: 20, right: 30, bottom: 30, left: 50 }; 
-    const width = containerWidth - margin.left - margin.right;
-    const height = containerHeight / 2 - margin.top - margin.bottom;
+    const width = containerWidth - margin.left - margin.right; // 100% of container width
+    const height = (containerHeight * 0.4) - margin.top - margin.bottom; // 40% of container height
 
     const svg = d3.select(container);
     svg.selectAll("*").remove(); // Clear previous content
@@ -44,10 +47,9 @@ function BipartiteFlow({ activeTopics }) {
     const x = d3.scalePoint()
       .domain(data.map(d => d.name))
       .range([0, width])
-      // .align(1)   // you can tweak align if you want Q4 '21 pinned on the far right
-      .padding(0.3); // controls how far in from each edge
+      .padding(0); // Set padding to 0 to align with the axes
 
-    // figure out how wide we'd like “hover highlight” rects
+    // figure out how wide we'd like "hover highlight" rects
     const step = x.step();  
 
     // y scale for the upper chart
@@ -135,28 +137,29 @@ function BipartiteFlow({ activeTopics }) {
       .selectAll("line")
       .style("stroke-opacity", 0.2);
 
-    // Highlight rectangle for hover
-    const highlightRect = g.append("rect")
+    // Highlight rectangles for hover
+    const highlightRectUpper = g.append("rect")
       .attr("class", "highlight-rect")
-      // Use 'step' as a proxy for 'bandwidth'
-      .attr("width", step * 0.8)   // a little narrower than the full step
+      .attr("width", step * 0.8)
       .attr("fill", "none")
       .attr("stroke", "black")
       .attr("stroke-width", 1.5)
       .attr("pointer-events", "none")
       .style("opacity", 0);
 
-    // Tooltip
-    const tooltip = d3.select("body").append("div")
-      .attr("class", "tooltip")
+    const highlightRectLower = gLower.append("rect")
+      .attr("class", "highlight-rect")
+      .attr("width", step * 0.8)
+      .attr("fill", "none")
+      .attr("stroke", "black")
+      .attr("stroke-width", 1.5)
+      .attr("pointer-events", "none")
       .style("opacity", 0);
 
-    // Mouse event handlers
-    const handleMouseOver = function(event, d) {
+    const handleMouseOver = function(event, layer, isUpperChart) {
       const [xPos, yPos] = d3.pointer(event);
 
-      // Figure out which quarter is nearest:
-      // scalePoint doesn't have an 'invert', so do a manual nearest lookup:
+      // Find the closest quarter for hovering
       let closest = data[0];
       let minDist = Math.abs(x(closest.name) - xPos);
       for (let i = 1; i < data.length; i++) {
@@ -167,39 +170,107 @@ function BipartiteFlow({ activeTopics }) {
         }
       }
 
-      // Show tooltip
-      tooltip.transition().duration(200).style("opacity", 0.9);
-      tooltip.html(`Topic: ${d.key}<br>Quarter: ${closest.name}`)
-        .style("left", (xPos + 5) + "px")
-        .style("top", (yPos - 28) + "px");
+      // Find the data point for the closest quarter
+      const dataPoint = layer.find(d => d.data.name === closest.name);
 
-      // Position the highlight rectangle around the chosen quarter
-      const rectX = x(closest.name) - (step * 0.4); // half of highlightRect width
-      highlightRect
-        .attr("x", rectX)
-        .attr("y", y(d[1]))             // top edge
-        .attr("height", y(d[0]) - y(d[1]))
-        .style("opacity", 1);
+      if (!dataPoint) {
+        console.warn("No data point found for quarter:", closest.name, "in layer:", layer);
+        return;
+      }
+
+      // DEBUG: Log hovered topic and temporal bin (quarter)
+      console.log(`Hovered Topic: ${layer.key}, Quarter: ${closest.name}`);
+
+      // Set hovered data for React tooltip
+      setHoveredData({ topic: layer.key, quarter: closest.name });
+
+      const rectX = x(closest.name) - (step * 0.4);
+
+      const highlightRect = isUpperChart ? highlightRectUpper : highlightRectLower;
+      if (isUpperChart) {
+        highlightRect
+          .attr("x", rectX)
+          .attr("y", Math.min(y(dataPoint[0]), y(dataPoint[1])))
+          .attr("height", Math.abs(y(dataPoint[0]) - y(dataPoint[1])))
+          .style("opacity", 1);
+      } else {
+        highlightRect
+          .attr("x", rectX)
+          .attr("y", yLower(dataPoint[0]))
+          .attr("height", Math.abs(yLower(dataPoint[1]) - yLower(dataPoint[0])))
+          .style("opacity", 1);
+      }
     };
 
     const handleMouseOut = function() {
-      tooltip.transition().duration(500).style("opacity", 0);
-      highlightRect.style("opacity", 0);
+      console.log("Mouse out - Hiding tooltip");
+      setHoveredData(null);
+      highlightRectUpper.style("opacity", 0);
+      highlightRectLower.style("opacity", 0);
     };
+
+    // Add mouseleave event to hide tooltip when leaving the chart area
+    svg.on("mouseleave", handleMouseOut);
 
     // Attach events to both upper and lower layers
     g.selectAll(".layer")
-      .on("mouseover", handleMouseOver)
+      .on("mouseover", function(event, d) { handleMouseOver(event, d, true); })
       .on("mouseout", handleMouseOut);
 
     gLower.selectAll(".layer")
-      .on("mouseover", handleMouseOver)
+      .on("mouseover", function(event, d) { handleMouseOver(event, d, false); })
       .on("mouseout", handleMouseOut);
 
-  }, [activeTopics]);
+    // Add event listener for mouse movement
+    window.addEventListener('mousemove', (event) => {
+      setMousePosition({ x: event.pageX, y: event.pageY });
+    });
+
+    return () => window.removeEventListener('mousemove', (event) => {
+      setMousePosition({ x: event.pageX, y: event.pageY });
+    });
+
+  }, [activeTopics, mousePosition]);
+
+  useEffect(() => {
+    console.log("Hovered Data Changed:", hoveredData);
+  }, [hoveredData]);
 
   return (
-    <svg ref={chartRef} width="100%" height="800"></svg>
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <svg ref={chartRef} width="100%" height="100%"></svg>
+      {hoveredData && hoveredData.topic && hoveredData.quarter && (
+        <Box
+          sx={{
+            position: 'absolute',
+            left: mousePosition.x - chartRef.current.getBoundingClientRect().left - 100,  // Adjusted offset for x
+            top: mousePosition.y - chartRef.current.getBoundingClientRect().top + 50,   // Adjusted offset for y
+            pointerEvents: 'none',
+            bgcolor: '#1a1a1a',
+            border: '1px solid',
+            borderColor: '#333333',
+            borderRadius: 2,
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+            p: 2,
+            width: 200,
+            zIndex: 50,
+            color: '#ffffff'
+          }}
+        >
+          {console.log("Rendering Tooltip:", hoveredData)}
+
+          <Typography variant="subtitle2" sx={{ color: '#f0f0f0' }} gutterBottom>
+            Topic Details
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#ffffff', mb: 1 }}>
+            Topic: {hoveredData.topic || "No topic found"}
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#cccccc' }}>
+            Quarter: {hoveredData.quarter || "No quarter found"}
+          </Typography>
+        </Box>
+      )}
+    </div>
   );
 }
 
