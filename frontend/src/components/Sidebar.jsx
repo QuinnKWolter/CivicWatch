@@ -46,7 +46,8 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                     }}
                   />
                 }
-                label={party === 'D' ? 'Democrat' : 'Republican'}
+                // label={party === 'D' ? 'Democrat' : 'Republican'}
+                label={party === 'D' ? 'Separated' : 'Aggregated'}
               />
             ))}
 

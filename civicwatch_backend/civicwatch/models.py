@@ -1,14 +1,30 @@
 from django.db import models
 
-from django.db import models
-
 # Legislators Table (Metadata for legislators)
 class Legislator(models.Model):
-    legislator_id = models.CharField(max_length=50, primary_key=True)
+    legislator_id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=255)
     state = models.CharField(max_length=50)
     chamber = models.CharField(max_length=50, choices=[('House', 'House'), ('Senate', 'Senate')])
     party = models.CharField(max_length=50, choices=[('Democrat', 'Democrat'), ('Republican', 'Republican'), ('Independent', 'Independent')])
+    total_posts_tw = models.IntegerField(default=0)
+    total_likes_tw = models.IntegerField(default=0)
+    total_retweets_tw = models.IntegerField(default=0)
+    total_misinfo_count_tw = models.IntegerField(default=0)
+    total_interactions_tw = models.IntegerField(default=0)
+    interaction_score_tw = models.FloatField(default=0)
+    overperforming_score_tw = models.FloatField(default=0)
+    civility_score_tw = models.FloatField(default=0)
+    platform_tw = models.CharField(max_length=20, null=True, blank=True)
+    total_posts_fb = models.IntegerField(default=0)
+    total_likes_fb = models.IntegerField(default=0)
+    total_retweets_fb = models.IntegerField(default=0)
+    total_misinfo_count_fb = models.IntegerField(default=0)
+    total_interactions_fb = models.IntegerField(default=0)
+    interaction_score_fb = models.FloatField(default=0)
+    overperforming_score_fb = models.FloatField(default=0)
+    civility_score_fb = models.FloatField(default=0)
+    platform_fb = models.CharField(max_length=20, null=True, blank=True)
     
     def __str__(self):
         return f"{self.name} ({self.party}, {self.state})"

@@ -65,14 +65,14 @@ function App() {
                 <Grid item xs={6} container direction="column" spacing={2}>
                   {/* Top Left - InteractionNetwork */}
                   <Grid item xs={6}>
-                    <Box sx={{ bgcolor: 'black', height: '100%' }}>
+                    <Box sx={{ height: '100%' }}>
                       <InteractionNetwork />
                     </Box>
                   </Grid>
                   
                   {/* Bottom Left - TabbedCharts */}
                   <Grid item xs={6}>
-                    <Box sx={{ bgcolor: 'grey.700', height: '100%' }}>
+                    <Box sx={{ height: '100%' }}>
                       <TabbedCharts />
                     </Box>
                   </Grid>
@@ -80,7 +80,7 @@ function App() {
 
                 {/* Right Column - BipartiteFlow */}
                 <Grid item xs={6}>
-                  <Box sx={{ bgcolor: 'grey.500', height: '100%' }}>
+                  <Box sx={{ height: '100%' }}>
                     <BipartiteFlow activeTopics={activeTopics} />
                   </Box>
                 </Grid>
