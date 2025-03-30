@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Count, Sum, Avg, Q
 from .models import Legislator, Post, LegislatorInteraction, Topic
 from datetime import datetime
+from django.utils.dateparse import parse_date
 
 # 🔹 Helper function: Filter posts by date range and optional criteria
 def filter_posts(request):
