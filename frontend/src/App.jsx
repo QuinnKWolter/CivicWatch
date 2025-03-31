@@ -9,6 +9,7 @@ import BipartiteFlow from './components/BipartiteFlow';
 import InteractionNetwork from './components/InteractionNetwork';
 import Sidebar from './components/Sidebar';
 import TabbedCharts from './components/TabbedCharts';
+import { SummaryLegislatorScatter } from './components/SummaryLegislatorScatter';
 import './App.css'
 
 function App() {
@@ -38,6 +39,12 @@ function App() {
     }));
   };
 
+  const[legislatorClicked, setLegislatorClicked] = useState([]);
+  const[postData, setPostData] = useState([]);
+
+  console.log('setLegislatorClicked from props:', setLegislatorClicked);
+
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -60,20 +67,20 @@ function App() {
 
             {/* Main Content */}
             <Grid item xs>
-              <Grid container spacing={2} sx={{ p: 4, height: '100%' }}>
+              <Grid container spacing={1} sx={{ p: 4, height: '100%' }}>
                 {/* Left Column */}
                 <Grid item xs={6} container direction="column" spacing={2}>
                   {/* Top Left - InteractionNetwork */}
                   <Grid item xs={6}>
                     <Box sx={{ height: '100%' }}>
-                      <InteractionNetwork />
+                      {/* <InteractionNetwork /> */}
                     </Box>
                   </Grid>
                   
                   {/* Bottom Left - TabbedCharts */}
                   <Grid item xs={6}>
                     <Box sx={{ height: '100%' }}>
-                      <TabbedCharts />
+                      <TabbedCharts legislatorClicked={legislatorClicked} postData={postData}/>
                     </Box>
                   </Grid>
                 </Grid>
@@ -81,7 +88,8 @@ function App() {
                 {/* Right Column - BipartiteFlow */}
                 <Grid item xs={6}>
                   <Box sx={{ height: '100%' }}>
-                    <BipartiteFlow activeTopics={activeTopics} />
+                    {/* <BipartiteFlow activeTopics={activeTopics} /> */}
+                    <SummaryLegislatorScatter width={400} height = {400} legislatorClicked={legislatorClicked} setLegislatorClicked={setLegislatorClicked} postData={postData} setPostData={setPostData}/>
                   </Box>
                 </Grid>
               </Grid>
