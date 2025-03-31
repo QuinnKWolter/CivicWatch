@@ -25,7 +25,6 @@ urlpatterns = [
     path("api/legislators/", views.all_legislators, name="all_legislators"),
     path("api/legislator/<str:legislator_id>/", views.legislator_detail, name="legislator_detail"),
     path("api/topics/", views.all_topics, name="all_topics"),
-    path("api/keywords/", views.all_keywords, name="all_keywords"),
 
     # Bipartite Temporal Flow Diagram APIs
     path("api/flow/posts/", views.flow_posts, name="flow_posts"),
@@ -44,4 +43,6 @@ urlpatterns = [
     # Post Exploration APIs
     path("api/posts/", views.all_posts, name="all_posts"),
     path("api/posts/top/", views.top_posts, name="top_posts"),
+
+    path("api/legislators/scatter/", views.legislators_scatter_data, name="legislators_scatter"),
 ]
