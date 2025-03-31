@@ -15,16 +15,6 @@ class Legislator(models.Model):
     interaction_score_tw = models.FloatField(default=0)
     overperforming_score_tw = models.FloatField(default=0)
     civility_score_tw = models.FloatField(default=0)
-    platform_tw = models.CharField(max_length=20, null=True, blank=True)
-    total_posts_fb = models.IntegerField(default=0)
-    total_likes_fb = models.IntegerField(default=0)
-    total_retweets_fb = models.IntegerField(default=0)
-    total_misinfo_count_fb = models.IntegerField(default=0)
-    total_interactions_fb = models.IntegerField(default=0)
-    interaction_score_fb = models.FloatField(default=0)
-    overperforming_score_fb = models.FloatField(default=0)
-    civility_score_fb = models.FloatField(default=0)
-    platform_fb = models.CharField(max_length=20, null=True, blank=True)
     
     def __str__(self):
         return f"{self.name} ({self.party}, {self.state})"
@@ -32,8 +22,8 @@ class Legislator(models.Model):
 # Twitter Posts Table
 class Post(models.Model):
     post_id = models.CharField(max_length=50, primary_key=True)
-    url = models.URLField(null=True, blank=True)
     legislator = models.ForeignKey(Legislator, on_delete=models.CASCADE, related_name="tweets")
+    name = models.CharField(max_length=255)
     created_at = models.DateTimeField()
     text = models.TextField()
     attachment = models.URLField(null=True, blank=True)
@@ -63,15 +53,10 @@ class LegislatorInteraction(models.Model):
 
 # Topic and Keyword Metadata (Optional)
 class Topic(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(null=True, blank=True)
+    ID = models.AutoField(primary_key=True)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="topics", null=True, blank=True) 
+    name = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name
 
-class Keyword(models.Model):
-    text = models.CharField(max_length=255, unique=True)
-    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name="keywords")
-
-    def __str__(self):
-        return f"{self.text} ({self.topic.name})"
