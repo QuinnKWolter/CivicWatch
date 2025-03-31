@@ -28,6 +28,56 @@ def legislator_detail(request, legislator_id):
     legislator = get_object_or_404(Legislator, pk=legislator_id)
     return JsonResponse({"id": legislator.legislator_id, "name": legislator.name, "party": legislator.party, "state": legislator.state})
 
+def legislator_posts_line_chart(request):
+    name = request.GET.get("name") 
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    if not name:
+        return JsonResponse({"error": "Missing required parameter 'name'"}, status=400)
+
+    legislator = Legislator.objects.filter(name__iexact=name).first()
+
+    if not legislator:
+        return JsonResponse({"error": "Legislator not found"}, status=404)
+
+    post_filter = Q(legislator=legislator)
+    if start_date:
+        post_filter &= Q(created_at__gte=parse_date(start_date))
+    if end_date:
+        post_filter &= Q(created_at__lte=parse_date(end_date))
+
+    posts = Post.objects.filter(post_filter).values(
+        "post_id", "legislator_id", "name", "created_at", "text",
+        "attachment", "state", "chamber", "party",
+        "retweet_count", "like_count", "count_misinfo",
+        "interaction_score", "overperforming_score", "civility_score"
+    ).order_by("created_at")
+
+    response_data = [
+        {
+            "id": post["post_id"],
+            "lid": post["legislator_id"],
+            "name": post["name"],
+            "handle": legislator.name.replace(" ", ""),
+            "created_at": post["created_at"],
+            "text": post["text"],
+            "attachment": post["attachment"],
+            "state": post["state"],
+            "chamber": post["chamber"],
+            "party": post["party"],
+            "retweet_count": post["retweet_count"],
+            "like_count": post["like_count"],
+            "count_misinfo": post["count_misinfo"],
+            "interaction_score": post["interaction_score"],
+            "overperforming_score": post["overperforming_score"],
+            "civility_score": post["civility_score"],
+        }
+        for post in posts
+    ]
+
+    return JsonResponse(response_data, safe=False)
+
 # 🔹 Topic & Keyword APIs
 def all_topics(request):
     topics = Topic.objects.values("id", "name", "description")
