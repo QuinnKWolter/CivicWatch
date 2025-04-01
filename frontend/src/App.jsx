@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar';
 import TabbedCharts from './components/TabbedCharts';
 import Navbar from './components/Navbar';
 import './App.css'
+import dayjs from 'dayjs'
 
 function App() {
   const [filters, setFilters] = useState({
@@ -22,6 +23,8 @@ function App() {
     topics: true
   });
   const [activeTopics, setActiveTopics] = useState(['topic1', 'topic2', 'topic3', 'topic4', 'topic5', 'topic6']);
+  const [startDate, setStartDate] = useState(dayjs('2020-01-01'));
+  const [endDate, setEndDate] = useState(dayjs('2022-01-01'));
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleFilterChange = (type, value) => {
@@ -66,6 +69,10 @@ function App() {
                   setMinCivility={setMinCivility}
                   activeTopics={activeTopics}
                   setActiveTopics={setActiveTopics}
+                  startDate={startDate}
+                  setStartDate={setStartDate}
+                  endDate={endDate}
+                  setEndDate={setEndDate}
                 />
               </div>
             )}

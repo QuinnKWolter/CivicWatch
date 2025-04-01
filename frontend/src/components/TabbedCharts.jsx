@@ -4,8 +4,8 @@ import { LineChart } from "./PostLinechart";
 import LegislatorCharts from "./LegislatorCharts";
 import OverviewCharts from "./OverviewCharts";
 
-function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData }) {
-  const [value, setValue] = useState(0); // Default to "Overview" tab
+function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate }) {
+  const [value, setValue] = useState(0);
 
   const handleChange = (newValue) => {
     setValue(newValue);

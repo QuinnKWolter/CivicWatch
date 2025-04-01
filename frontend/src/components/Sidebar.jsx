@@ -1,8 +1,9 @@
 import React from 'react';
+import dayjs from 'dayjs'
 
-function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, minCivility, setMinCivility, activeTopics, setActiveTopics }) {
+function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, minCivility, setMinCivility, activeTopics, setActiveTopics, startDate, setStartDate, endDate, setEndDate}) {
   return (
-    <div className="fixed top-16 left-0 h-full overflow-y-auto bg-base-200 text-base-content z-20">
+    <div className="fixed top-16 left-0 h-full overflow-y-auto bg-base-200 text-base-content z-20 w-64">
       <div className="p-4">
         <div className="mb-4">
           <button
@@ -43,17 +44,21 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                 </div>
               ))}
 
-              <label className="block text-base-content mt-4">State</label>
-              <select
-                className="w-full bg-base-300 text-base-content p-2 rounded"
-                value={filters.state}
-                onChange={(e) => handleFilterChange('state', e.target.value)}
-              >
-                <option value="all">All States</option>
-                {['CA', 'TX', 'NY', 'FL'].map(state => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
+              <label className="block text-base-content mt-4">Date Range (From, To)</label>
+              <div className="flex space-x-2">
+                <input
+                  type="date"
+                  className="w-full bg-base-300 text-base-content p-2 rounded"
+                  value={dayjs(startDate).format('YYYY-MM-DD')}
+                  onChange={(e) => setStartDate(dayjs(e.target.value))}
+                />
+                <input
+                  type="date"
+                  className="w-full bg-base-300 text-base-content p-2 rounded"
+                  value={dayjs(endDate).format('YYYY-MM-DD')}
+                  onChange={(e) => setEndDate(dayjs(e.target.value))}
+                />
+              </div>
             </div>
           )}
         </div>
