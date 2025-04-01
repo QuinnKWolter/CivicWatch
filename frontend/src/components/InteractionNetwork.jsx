@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { networkData } from '../utils/mockData'
-import { Box, Typography } from '@mui/material'
 
 function InteractionNetwork() {
   const chartRef = useRef()
@@ -192,51 +191,33 @@ function InteractionNetwork() {
   }, [filters])
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ flexGrow: 1 }}>
-        <div ref={chartRef} style={{ height: '100%', display: 'flex', justifyContent: 'center', overflow: 'visible' }} />
+    <div className="h-full flex flex-col">
+      <div className="flex-grow">
+        <div ref={chartRef} className="h-full flex justify-center overflow-visible" />
         
         {hoveredChord && (
-          <Box
-            sx={{
-              position: 'absolute',
+          <div
+            className="absolute bg-gray-900 border border-gray-600 rounded shadow-lg p-4 text-white"
+            style={{
               left: mousePosition.x + 20,
               top: mousePosition.y,
               pointerEvents: 'auto',
-              bgcolor: 'grey.900',
-              border: 1,
-              borderColor: 'grey.600',
-              borderRadius: 1,
-              boxShadow: 3,
-              p: 2,
               width: 300,
-              zIndex: 50
+              zIndex: 50,
             }}
             onMouseEnter={() => setHoveredChord(hoveredChord)}
             onMouseLeave={() => setHoveredChord(null)}
           >
-            <Typography variant="h6" color="textPrimary" gutterBottom>
-              Interaction Details
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              {hoveredChord.sourceNode.name} → {hoveredChord.targetNode.name}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Mentions: {hoveredChord.interactions.forward.mentions}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Replies: {hoveredChord.interactions.forward.replies}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Retweets: {hoveredChord.interactions.forward.retweets}
-            </Typography>
-            <Typography variant="body2" color="textSecondary" fontWeight="fontWeightBold">
-              Total: {hoveredChord.interactions.forward.total}
-            </Typography>
-          </Box>
+            <h6 className="text-lg mb-2">Interaction Details</h6>
+            <p>{hoveredChord.sourceNode.name} → {hoveredChord.targetNode.name}</p>
+            <p>Mentions: {hoveredChord.interactions.forward.mentions}</p>
+            <p>Replies: {hoveredChord.interactions.forward.replies}</p>
+            <p>Retweets: {hoveredChord.interactions.forward.retweets}</p>
+            <p className="font-bold">Total: {hoveredChord.interactions.forward.total}</p>
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 

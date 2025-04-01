@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
-import { Box, Typography } from '@mui/material';
 
 const data = [
   { name: 'Q4 \'19', topic1: 0, topic2: 0, topic3: 0, topic4: 0, topic5: 0, topic6: 0 },
@@ -29,6 +28,18 @@ function BipartiteFlow({ activeTopics }) {
   const [hoveredData, setHoveredData] = useState(null);
 
   useEffect(() => {
+    const container = chartRef.current;
+    const resizeObserver = new ResizeObserver(() => {
+      drawChart();
+    });
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [activeTopics]);
+
+  const drawChart = () => {
     const container = chartRef.current;
     const containerWidth = container.offsetWidth || 800; 
     const containerHeight = container.offsetHeight || 800; 
@@ -141,38 +152,26 @@ function BipartiteFlow({ activeTopics }) {
     const highlightRectUpper = g.append("rect")
       .attr("class", "highlight-rect")
       .attr("width", step * 0.8)
-      .attr("fill", "none")
-      .attr("stroke", "black")
-      .attr("stroke-width", 1.5)
-      .attr("pointer-events", "none")
+      .attr("height", height)
+      .attr("fill", "rgba(255, 255, 255, 0.3)")
+      .style("pointer-events", "none")
       .style("opacity", 0);
 
     const highlightRectLower = gLower.append("rect")
       .attr("class", "highlight-rect")
       .attr("width", step * 0.8)
-      .attr("fill", "none")
-      .attr("stroke", "black")
-      .attr("stroke-width", 1.5)
-      .attr("pointer-events", "none")
+      .attr("height", height)
+      .attr("fill", "rgba(255, 255, 255, 0.3)")
+      .style("pointer-events", "none")
       .style("opacity", 0);
 
     const handleMouseOver = function(event, layer, isUpperChart) {
-      const [xPos, yPos] = d3.pointer(event);
+      const [xPos] = d3.pointer(event);
+      const closest = data.reduce((prev, curr) => {
+        return (Math.abs(x(curr.name) - xPos) < Math.abs(x(prev.name) - xPos) ? curr : prev);
+      });
 
-      // Find the closest quarter for hovering
-      let closest = data[0];
-      let minDist = Math.abs(x(closest.name) - xPos);
-      for (let i = 1; i < data.length; i++) {
-        const dist = Math.abs(x(data[i].name) - xPos);
-        if (dist < minDist) {
-          minDist = dist;
-          closest = data[i];
-        }
-      }
-
-      // Find the data point for the closest quarter
       const dataPoint = layer.find(d => d.data.name === closest.name);
-
       if (!dataPoint) {
         console.warn("No data point found for quarter:", closest.name, "in layer:", layer);
         return;
@@ -229,46 +228,36 @@ function BipartiteFlow({ activeTopics }) {
     return () => window.removeEventListener('mousemove', (event) => {
       setMousePosition({ x: event.pageX, y: event.pageY });
     });
+  };
 
-  }, [activeTopics, mousePosition]);
+  useEffect(() => {
+    drawChart();
+  }, [activeTopics]);
 
   useEffect(() => {
     console.log("Hovered Data Changed:", hoveredData);
   }, [hoveredData]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div className="relative w-full h-full">
       <svg ref={chartRef} width="100%" height="100%"></svg>
       {hoveredData && hoveredData.topic && hoveredData.quarter && (
-        <Box
-          sx={{
-            position: 'absolute',
-            left: mousePosition.x - chartRef.current.getBoundingClientRect().left - 100,  // Adjusted offset for x
-            top: mousePosition.y - chartRef.current.getBoundingClientRect().top + 50,   // Adjusted offset for y
+        <div
+          className="absolute bg-gray-800 border border-gray-700 rounded shadow-lg p-4 text-white"
+          style={{
+            left: mousePosition.x - chartRef.current.getBoundingClientRect().left - 100,
+            top: mousePosition.y - chartRef.current.getBoundingClientRect().top + 50,
             pointerEvents: 'none',
-            bgcolor: '#1a1a1a',
-            border: '1px solid',
-            borderColor: '#333333',
-            borderRadius: 2,
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
-            p: 2,
             width: 200,
             zIndex: 50,
-            color: '#ffffff'
           }}
         >
           {console.log("Rendering Tooltip:", hoveredData)}
 
-          <Typography variant="subtitle2" sx={{ color: '#f0f0f0' }} gutterBottom>
-            Topic Details
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#ffffff', mb: 1 }}>
-            Topic: {hoveredData.topic || "No topic found"}
-          </Typography>
-          <Typography variant="body2" sx={{ color: '#cccccc' }}>
-            Quarter: {hoveredData.quarter || "No quarter found"}
-          </Typography>
-        </Box>
+          <h6 className="text-lg mb-2">Topic Details</h6>
+          <p className="mb-1">Topic: {hoveredData.topic || "No topic found"}</p>
+          <p>Quarter: {hoveredData.quarter || "No quarter found"}</p>
+        </div>
       )}
     </div>
   );

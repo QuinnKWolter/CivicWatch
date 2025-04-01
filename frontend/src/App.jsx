@@ -1,15 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom'
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import theme from './theme'; // Import your custom theme
 import BipartiteFlow from './components/BipartiteFlow';
 import InteractionNetwork from './components/InteractionNetwork';
 import Sidebar from './components/Sidebar';
 import TabbedCharts from './components/TabbedCharts';
-import { SummaryLegislatorScatter } from './components/SummaryLegislatorScatter';
+import Navbar from './components/Navbar';
 import './App.css'
 
 function App() {
@@ -27,6 +22,7 @@ function App() {
     topics: true
   });
   const [activeTopics, setActiveTopics] = useState(['topic1', 'topic2', 'topic3', 'topic4', 'topic5', 'topic6']);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleFilterChange = (type, value) => {
     setFilters(prev => ({ ...prev, [type]: value }));
@@ -39,65 +35,61 @@ function App() {
     }));
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   const[legislatorClicked, setLegislatorClicked] = useState([]);
   const[postData, setPostData] = useState([]);
 
+  useEffect(() => {
+    const theme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+  }, []);
+
   console.log('setLegislatorClicked from props:', setLegislatorClicked);
 
-
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <BrowserRouter>
-        <Box sx={{ width: '100vw', height: '100vh', bgcolor: 'background.default', overflow: 'hidden' }}>
-          <Grid container sx={{ height: '100%' }}>
-            {/* Sidebar */}
-            <Grid item>
-              <Sidebar
-                filters={filters}
-                handleFilterChange={handleFilterChange}
-                expandedSections={expandedSections}
-                toggleSection={toggleSection}
-                minCivility={minCivility}
-                setMinCivility={setMinCivility}
-                activeTopics={activeTopics}
-                setActiveTopics={setActiveTopics}
-              />
-            </Grid>
-
-            {/* Main Content */}
-            <Grid item xs>
-              <Grid container spacing={1} sx={{ p: 4, height: '100%' }}>
-                {/* Left Column */}
-                <Grid item xs={6} container direction="column" spacing={2}>
-                  {/* Top Left - InteractionNetwork */}
-                  <Grid item xs={6}>
-                    <Box sx={{ height: '100%' }}>
-                      {/* <InteractionNetwork /> */}
-                    </Box>
-                  </Grid>
-                  
-                  {/* Bottom Left - TabbedCharts */}
-                  <Grid item xs={6}>
-                    <Box sx={{ height: '100%' }}>
-                      <TabbedCharts legislatorClicked={legislatorClicked} postData={postData}/>
-                    </Box>
-                  </Grid>
-                </Grid>
-
-                {/* Right Column - BipartiteFlow */}
-                <Grid item xs={6}>
-                  <Box sx={{ height: '100%' }}>
-                    {/* <BipartiteFlow activeTopics={activeTopics} /> */}
-                    <SummaryLegislatorScatter width={400} height = {400} legislatorClicked={legislatorClicked} setLegislatorClicked={setLegislatorClicked} postData={postData} setPostData={setPostData}/>
-                  </Box>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Box>
-      </BrowserRouter>
-    </ThemeProvider>
+    <div className="flex flex-col h-screen">
+      <Navbar toggleSidebar={toggleSidebar} />
+      <div className="flex flex-grow mt-16">
+        <BrowserRouter>
+          <div className="flex flex-grow">
+            {sidebarOpen && (
+              <div className="w-64 bg-base-300 overflow-hidden">
+                <Sidebar
+                  filters={filters}
+                  handleFilterChange={handleFilterChange}
+                  expandedSections={expandedSections}
+                  toggleSection={toggleSection}
+                  minCivility={minCivility}
+                  setMinCivility={setMinCivility}
+                  activeTopics={activeTopics}
+                  setActiveTopics={setActiveTopics}
+                />
+              </div>
+            )}
+            <div className="flex-grow flex flex-col">
+              <div className="flex-grow grid grid-cols-2 gap-4 p-4 w-full">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex-1">
+                    <TabbedCharts
+                      legislatorClicked={legislatorClicked}
+                      setLegislatorClicked={setLegislatorClicked}
+                      postData={postData}
+                      setPostData={setPostData}
+                    />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <BipartiteFlow activeTopics={activeTopics} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </BrowserRouter>
+      </div>
+    </div>
   )
 }
 

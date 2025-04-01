@@ -1,28 +1,15 @@
 import React, { useState } from "react";
-import { Box, Tabs, Tab, Typography } from "@mui/material";
-import TabA from "./TabA"; // Placeholder for actual chart components
-import TabB from "./TabB";
-import TabC from "./TabC";
 import { Radar } from "./Radar";
 import { LineChart } from "./PostLinechart";
+import LegislatorCharts from "./LegislatorCharts";
+import OverviewCharts from "./OverviewCharts";
 
-function TabbedCharts({ legislatorClicked, postData }) {
-  const [value, setValue] = useState(0);
+function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData }) {
+  const [value, setValue] = useState(0); // Default to "Overview" tab
 
-  const handleChange = (event, newValue) => {
+  const handleChange = (newValue) => {
     setValue(newValue);
   };
-
-  const legislators = [
-    {
-      name: "John Smith",
-      overperforming_score: 20,
-      civility_score: 85,
-      count_misinfo: 40,
-    },
-
-    // Add more legislators as needed
-  ];
 
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
@@ -37,6 +24,17 @@ function TabbedCharts({ legislatorClicked, postData }) {
     { name: "gun", max: 427 },
     { name: "immigra", max: 384 },
     { name: "rights", max: 327 },
+  ];
+
+  const legislators = [
+    {
+      name: "John Smith",
+      overperforming_score: 20,
+      civility_score: 85,
+      count_misinfo: 40,
+    },
+
+    // Add more legislators as needed
   ];
 
   // created_at	topic	party	like_count	retweet_count	total_posts	total_interactions
@@ -79,53 +77,69 @@ function TabbedCharts({ legislatorClicked, postData }) {
   const metrics = ["overperforming_score", "civility_score", "count_misinfo"];
 
   return (
-    <Box sx={{ width: "100%", height: "100%" }}>
-      <Tabs value={value} onChange={handleChange} aria-label="chart tabs">
-        <Tab label="Tab 1" />
-        <Tab label="Tab 2" />
-        <Tab label="Tab 3" />
-      </Tabs>
-      <Box sx={{ p: 3 }}>
-        {value === 0 && (
-          <>
-            <Typography variant="h6">
-              {legislatorClicked?.length === 0
-                ? "No data"
-                : legislatorClicked?.name}
-            </Typography>
-            <Radar
-              axisConfig={axisConfig}
-              width={300}
-              height={300}
-              data={legislatorClicked}
-            />
-          </>
-        )}
+    <div>
+      <div className="flex space-x-2 border-b border-base-300">
+        <button
+          className={`py-1 px-3 rounded-t ${value === 0 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`}
+          onClick={() => handleChange(0)}
+        >
+          Overview
+        </button>
+        <button
+          className={`py-1 px-3 rounded-t ${value === 1 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`}
+          onClick={() => handleChange(1)}
+        >
+          Engagement
+        </button>
+        <button
+          className={`py-1 px-3 rounded-t ${value === 2 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`}
+          onClick={() => handleChange(2)}
+        >
+          Accountability
+        </button>
+        <button
+          className={`py-1 px-3 rounded-t ${value === 3 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`}
+          onClick={() => handleChange(3)}
+        >
+          Legislators
+        </button>
+        <button
+          className={`py-1 px-3 rounded-t ${value === 4 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`}
+          onClick={() => handleChange(4)}
+        >
+          Geography
+        </button>
+      </div>
+      <div className="mt-4">
+        {value === 0 && <OverviewCharts />}
         {value === 1 && (
-          <>
-            <Typography variant="h6">
-              {legislatorClicked?.length === 0
-                ? "No data"
-                : legislatorClicked?.name}
-            </Typography>
-            {/* <TabB posts={posts}/> */}
-            <Radar
-              axisConfig={axisConfigTopics}
-              width={300}
-              height={300}
-              data={legislatorClicked}
-            />
-          </>
+          <div>
+            <h6 className="text-lg">Engagement Content</h6>
+            {/* Add Engagement content here */}
+          </div>
         )}
         {value === 2 && (
-          <>
-            <Typography variant="h6">Tab 3 Content</Typography>
+          <div>
+            <h6 className="text-lg">Accountability Content</h6>
             <LineChart data={postData} width={300} height={300} />
-            {/* <TabC /> */}
-          </>
+          </div>
         )}
-      </Box>
-    </Box>
+        {value === 3 && (
+          <LegislatorCharts
+            legislatorClicked={legislatorClicked}
+            setLegislatorClicked={setLegislatorClicked}
+            postData={postData}
+            setPostData={setPostData}
+          />
+        )}
+        {value === 4 && (
+          <div>
+            <h6 className="text-lg">Geography Content</h6>
+            {/* Add Geography content here */}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
