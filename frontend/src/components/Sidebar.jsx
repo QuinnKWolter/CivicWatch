@@ -1,7 +1,9 @@
 import React from 'react';
-import { Box, Typography, Button, Checkbox, FormControlLabel, Select, MenuItem, Slider } from '@mui/material';
+import { Box, Typography, Button, Checkbox, FormControlLabel, Select, MenuItem, Slider, TextField } from '@mui/material';
+import {DatePicker} from '@mui/x-date-pickers'
+import dayjs from 'dayjs'
 
-function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, minCivility, setMinCivility, activeTopics, setActiveTopics }) {
+function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, minCivility, setMinCivility, activeTopics, setActiveTopics, startDate, setStartDate, endDate, setEndDate}) {
   return (
     <Box sx={{ width: 250, bgcolor: 'grey.800', p: 2, height: '100vh', overflowY: 'auto' }}>
       <Box sx={{ mb: 2 }}>
@@ -64,6 +66,11 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                 <MenuItem key={state} value={state}>{state}</MenuItem>
               ))}
             </Select>
+            <Typography sx={{ mt: 2 }} >
+              Date Range (From, To)
+            </Typography>
+            <DatePicker defaultValue={startDate} value={startDate} onChange={(newValue) => setStartDate(newValue)}  />
+            <DatePicker sx={{ mt: 1 }} value={endDate} onChange={(newValue ) => setEndDate(newValue)} />
           </Box>
         )}
       </Box>

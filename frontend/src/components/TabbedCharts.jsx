@@ -6,7 +6,7 @@ import TabC from "./TabC";
 import { Radar } from "./Radar";
 import { LineChart } from "./PostLinechart";
 
-function TabbedCharts({ legislatorClicked, postData }) {
+function TabbedCharts({ legislatorClicked, postData, startDate, endDate}) {
   const [value, setValue] = useState(0);
 
   const handleChange = (event, newValue) => {

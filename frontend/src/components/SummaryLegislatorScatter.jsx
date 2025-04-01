@@ -4,6 +4,7 @@ import { AxisBasic } from "./AxisBasic";
 import { AxisLeft } from "./AxisLeft";
 import { AxisBottom } from "./AxisBottom";
 import { Tooltip } from "./Tooltip";
+import dayjs from "dayjs";
 
 const MARGIN = { top: 60, right: 60, bottom: 60, left: 60 };
 
@@ -14,11 +15,12 @@ export const SummaryLegislatorScatter = ({
   setLegislatorClicked,
   setPostData,
   postData,
+  startDate,
+  endDate,
 }) => {
   const [data, setData] = useState([]);
   const [hovered, setHovered] = useState(null);
   const [hoveredGroup, setHoveredGroup] = useState(null);
-  const [postJsonData, setPostJsonData] = useState([null]);
 
   const handleLegislatorClick = ({
     name,
@@ -48,20 +50,6 @@ export const SummaryLegislatorScatter = ({
         party: party,
       },
     ]);
-
-    console.log("POST JSON DATA: ", postJsonData);
-
-    console.log(postJsonData[0].name);
-
-    console.log("NAME: ", name);
-
-    const filtered_data = postJsonData
-      .filter((obj) => obj && obj.name)
-      .filter((obj, i) => obj.name === name);
-
-    console.log("filtered data", Array.isArray(filtered_data));
-
-    setPostData([...filtered_data]);
   };
 
   useEffect(() => {
@@ -80,12 +68,25 @@ export const SummaryLegislatorScatter = ({
       });
     d3.json("/matches.json")
       .then((jsonData) => {
-        setPostJsonData(jsonData);
+        console.log(jsonData[0].created_at)
+        console.log("name", legislatorClicked[0].name)
+        const filtered_data = jsonData
+          .filter((obj) => obj && obj.name)
+          .filter((obj, i) => obj.name === legislatorClicked[0].name)
+          .filter(
+            (obj) =>
+              dayjs(obj.created_at) >= startDate &&
+              dayjs(obj.created_at) <= endDate
+          );
+
+        console.log("filtered data", filtered_data);
+
+        setPostData([...filtered_data]);
       })
       .catch((err) => {
         console.error("Error fetching JSON data:", err);
       });
-  }, []);
+  }, [endDate, setPostData, startDate, legislatorClicked]);
 
   if (data.length === 0) {
     return <div>Loading...</div>;

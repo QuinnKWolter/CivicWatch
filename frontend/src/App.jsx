@@ -11,6 +11,9 @@ import Sidebar from './components/Sidebar';
 import TabbedCharts from './components/TabbedCharts';
 import { SummaryLegislatorScatter } from './components/SummaryLegislatorScatter';
 import './App.css'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import dayjs from 'dayjs'
 
 function App() {
   const [filters, setFilters] = useState({
@@ -27,6 +30,9 @@ function App() {
     topics: true
   });
   const [activeTopics, setActiveTopics] = useState(['topic1', 'topic2', 'topic3', 'topic4', 'topic5', 'topic6']);
+  const [startDate, setStartDate] = useState(dayjs('2020-01-01'));
+  const [endDate, setEndDate] = useState(dayjs('2022-01-01'));
+
 
   const handleFilterChange = (type, value) => {
     setFilters(prev => ({ ...prev, [type]: value }));
@@ -46,6 +52,7 @@ function App() {
 
 
   return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
@@ -62,6 +69,11 @@ function App() {
                 setMinCivility={setMinCivility}
                 activeTopics={activeTopics}
                 setActiveTopics={setActiveTopics}
+                  startDate={startDate}
+                  setStartDate={setStartDate}
+                  endDate={endDate}
+                  setEndDate={setEndDate}
+                  
               />
             </Grid>
 
@@ -80,7 +92,7 @@ function App() {
                   {/* Bottom Left - TabbedCharts */}
                   <Grid item xs={6}>
                     <Box sx={{ height: '100%' }}>
-                      <TabbedCharts legislatorClicked={legislatorClicked} postData={postData}/>
+                        <TabbedCharts legislatorClicked={legislatorClicked} postData={postData} startDate={startDate} endDate={endDate} />
                     </Box>
                   </Grid>
                 </Grid>
@@ -89,7 +101,7 @@ function App() {
                 <Grid item xs={6}>
                   <Box sx={{ height: '100%' }}>
                     {/* <BipartiteFlow activeTopics={activeTopics} /> */}
-                    <SummaryLegislatorScatter width={400} height = {400} legislatorClicked={legislatorClicked} setLegislatorClicked={setLegislatorClicked} postData={postData} setPostData={setPostData}/>
+                      <SummaryLegislatorScatter width={400} height={400} legislatorClicked={legislatorClicked} setLegislatorClicked={setLegislatorClicked} postData={postData} setPostData={setPostData} startDate={startDate} endDate={endDate} />
                   </Box>
                 </Grid>
               </Grid>
@@ -97,7 +109,8 @@ function App() {
           </Grid>
         </Box>
       </BrowserRouter>
-    </ThemeProvider>
+      </ThemeProvider>
+      </LocalizationProvider>
   )
 }
 
