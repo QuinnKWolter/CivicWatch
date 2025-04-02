@@ -85,6 +85,8 @@ function App() {
                       setLegislatorClicked={setLegislatorClicked}
                       postData={postData}
                       setPostData={setPostData}
+                      startDate={startDate}
+                      endDate={endDate}
                     />
                   </div>
                 </div>

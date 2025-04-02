@@ -130,6 +130,8 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
             setLegislatorClicked={setLegislatorClicked}
             postData={postData}
             setPostData={setPostData}
+            startDate={startDate}
+            endDate={endDate}
           />
         )}
         {value === 4 && (
