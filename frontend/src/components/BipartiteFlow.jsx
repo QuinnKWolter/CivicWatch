@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import StackedAreaChart from './StackedAreaChart';
 import AccountabilityLineChart from './AccountabilityLineChart';
+import TimelineSlider from './TimelineSlider';
 import defaultData from '../data/defaultBipartite.json'; // Import the default JSON file
 import PropTypes from 'prop-types';
 
@@ -36,6 +37,11 @@ function BipartiteFlow({ activeTopics, startDate, endDate }) {
     }
   }, [startDate, endDate]);
 
+  const handleDateChange = (newStart, newEnd) => {
+    console.log('Date range changed:', newStart, newEnd);
+    // You might want to fetch new data here or update the parent component
+  };
+
   return (
     <div ref={containerRef} className="relative w-full h-full flex flex-col">
       <div className="h-[25%] min-h-[100px]">
@@ -47,6 +53,13 @@ function BipartiteFlow({ activeTopics, startDate, endDate }) {
           activeTopics={activeTopics} 
           colorMap={colorMap} 
           inverted={false}
+        />
+      </div>
+      <div className="h-[40px] flex items-center justify-center">
+        <TimelineSlider 
+          startDate={startDate}
+          endDate={endDate}
+          onDateChange={handleDateChange}
         />
       </div>
       <div className="h-[37.5%] min-h-[150px]">

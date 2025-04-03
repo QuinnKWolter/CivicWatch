@@ -26,7 +26,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                   type="date"
                   className="w-full bg-base-300 text-base-content p-2 rounded"
                   value={dayjs(endDate).format('YYYY-MM-DD')}
-                  onChange={(e) => setEndDate(dayjs(e.target.value))}
+                  onChange={(e) => { console.log('DATE', dayjs(e.target.value)); setEndDate(dayjs(e.target.value)) }}
                 />
               </div>
             </div>

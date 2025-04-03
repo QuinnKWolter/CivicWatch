@@ -70,6 +70,8 @@ export const SummaryLegislatorScatter = ({
       .then((jsonData) => {
         console.log(jsonData[0].created_at)
         console.log("name", legislatorClicked[0].name)
+        console.log("START DATE", startDate);
+        console.log("END DATE", endDate);
         const filtered_data = jsonData
           .filter((obj) => obj && obj.name)
           .filter((obj, i) => obj.name === legislatorClicked[0].name)
