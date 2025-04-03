@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom'
 import BipartiteFlow from './components/BipartiteFlow';
-import InteractionNetwork from './components/InteractionNetwork';
 import Sidebar from './components/Sidebar';
 import TabbedCharts from './components/TabbedCharts';
 import Navbar from './components/Navbar';
@@ -22,7 +21,7 @@ function App() {
     statistics: true,
     topics: true
   });
-  const [activeTopics, setActiveTopics] = useState(['topic1', 'topic2', 'topic3', 'topic4', 'topic5', 'topic6']);
+  const [activeTopics, setActiveTopics] = useState(['abortion', 'blacklivesmatter', 'climate', 'gun', 'immigra', 'rights']);
   const [startDate, setStartDate] = useState(dayjs('2020-01-01'));
   const [endDate, setEndDate] = useState(dayjs('2022-01-01'));
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -57,38 +56,42 @@ function App() {
       <Navbar toggleSidebar={toggleSidebar} />
       <div className="flex flex-grow mt-16">
         <BrowserRouter>
-          <div className="flex flex-grow">
-            {sidebarOpen && (
-              <div className="w-64 bg-base-300 overflow-hidden">
-                <Sidebar
-                  filters={filters}
-                  handleFilterChange={handleFilterChange}
-                  expandedSections={expandedSections}
-                  toggleSection={toggleSection}
-                  minCivility={minCivility}
-                  setMinCivility={setMinCivility}
-                  activeTopics={activeTopics}
-                  setActiveTopics={setActiveTopics}
-                  startDate={startDate}
-                  setStartDate={setStartDate}
-                  endDate={endDate}
-                  setEndDate={setEndDate}
-                />
-              </div>
-            )}
-            <div className="flex-grow flex flex-col">
-              <div className="flex-grow grid grid-cols-2 gap-4 p-4 w-full">
-                <div className="flex flex-col space-y-4">
-                  <div className="flex-1">
-                    <TabbedCharts
-                      legislatorClicked={legislatorClicked}
-                      setLegislatorClicked={setLegislatorClicked}
-                      postData={postData}
-                      setPostData={setPostData}
-                    />
-                  </div>
+          <div className="flex flex-grow relative">
+            <div 
+              className={`fixed top-16 h-[calc(100vh-4rem)] transition-all duration-300 ease-in-out z-30
+                ${sidebarOpen ? 'left-0' : '-left-64'}`}
+            >
+              <Sidebar
+                filters={filters}
+                handleFilterChange={handleFilterChange}
+                expandedSections={expandedSections}
+                toggleSection={toggleSection}
+                minCivility={minCivility}
+                setMinCivility={setMinCivility}
+                activeTopics={activeTopics}
+                setActiveTopics={setActiveTopics}
+                startDate={startDate}
+                setStartDate={setStartDate}
+                endDate={endDate}
+                setEndDate={setEndDate}
+                sidebarOpen={sidebarOpen}
+              />
+            </div>
+
+            <div 
+              className={`flex-grow transition-all duration-300 ease-in-out
+                ${sidebarOpen ? 'ml-64' : 'ml-0'}`}
+            >
+              <div className="grid grid-cols-5 gap-4 p-4 h-[calc(100vh-4rem)]">
+                <div className="col-span-2 bg-base-200 rounded-lg shadow-lg overflow-hidden">
+                  <TabbedCharts
+                    legislatorClicked={legislatorClicked}
+                    setLegislatorClicked={setLegislatorClicked}
+                    postData={postData}
+                    setPostData={setPostData}
+                  />
                 </div>
-                <div className="flex-1">
+                <div className="col-span-3 bg-base-200 rounded-lg shadow-lg overflow-hidden">
                   <BipartiteFlow activeTopics={activeTopics} />
                 </div>
               </div>

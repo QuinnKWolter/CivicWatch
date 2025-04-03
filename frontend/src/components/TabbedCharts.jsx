@@ -3,6 +3,11 @@ import { Radar } from "./Radar";
 import { LineChart } from "./PostLinechart";
 import LegislatorCharts from "./LegislatorCharts";
 import OverviewCharts from "./OverviewCharts";
+import { RiDashboardLine } from "react-icons/ri";
+import { BiTrendingUp } from "react-icons/bi";
+import { MdOutlineAccountBox } from "react-icons/md";
+import { FaUsers } from "react-icons/fa";
+import { IoEarthOutline } from "react-icons/io5";
 
 function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate }) {
   const [value, setValue] = useState(0);
@@ -76,41 +81,38 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
 
   const metrics = ["overperforming_score", "civility_score", "count_misinfo"];
 
+  const tabs = [
+    { icon: <RiDashboardLine />, label: "Overview", value: 0 },
+    { icon: <BiTrendingUp />, label: "Engagement", value: 1 },
+    { icon: <MdOutlineAccountBox />, label: "Accountability", value: 2 },
+    { icon: <FaUsers />, label: "Legislators", value: 3 },
+    { icon: <IoEarthOutline />, label: "Geography", value: 4 },
+  ];
+
   return (
     <div>
-      <div className="flex space-x-2 border-b border-base-300">
-        <button
-          className={`py-1 px-3 rounded-t ${value === 0 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`}
-          onClick={() => handleChange(0)}
-        >
-          Overview
-        </button>
-        <button
-          className={`py-1 px-3 rounded-t ${value === 1 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`}
-          onClick={() => handleChange(1)}
-        >
-          Engagement
-        </button>
-        <button
-          className={`py-1 px-3 rounded-t ${value === 2 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`}
-          onClick={() => handleChange(2)}
-        >
-          Accountability
-        </button>
-        <button
-          className={`py-1 px-3 rounded-t ${value === 3 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`}
-          onClick={() => handleChange(3)}
-        >
-          Legislators
-        </button>
-        <button
-          className={`py-1 px-3 rounded-t ${value === 4 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`}
-          onClick={() => handleChange(4)}
-        >
-          Geography
-        </button>
+      <div className="flex justify-center space-x-2 border-b border-base-300">
+        {tabs.map((tab) => (
+          <button
+            key={tab.value}
+            className={`tab-btn group py-2 px-4 rounded-t transition-all duration-300 ease-in-out
+              ${value === tab.value ? 'bg-primary text-primary-content tab-active' : 'bg-base-300 text-base-content hover:bg-primary/20'}`}
+            onClick={() => handleChange(tab.value)}
+          >
+            <div className="flex items-center space-x-2">
+              <span className="text-xl">{tab.icon}</span>
+              <span className={`whitespace-nowrap transition-all duration-300 ${
+                value === tab.value 
+                  ? 'opacity-100 max-w-[100px]' 
+                  : 'opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[100px]'
+              }`}>
+                {tab.label}
+              </span>
+            </div>
+          </button>
+        ))}
       </div>
-      <div className="mt-4">
+      <div className="mt-4 transition-opacity duration-500 ease-in-out">
         {value === 0 && <OverviewCharts />}
         {value === 1 && (
           <div>

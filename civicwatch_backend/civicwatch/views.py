@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Sum, Avg, Q
 from .models import Legislator, Post, LegislatorInteraction, Topic
-from datetime import datetime
+from datetime import datetime, timedelta, date
 from django.utils.dateparse import parse_date
 
 # 🔹 Helper function: Filter posts by date range and optional criteria
@@ -178,3 +178,83 @@ def legislators_scatter_data(request):
         })
 
     return JsonResponse(data, safe=False)
+
+def bipartite_flow_data(request):
+    print("Starting bipartite_flow_data function")
+    
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # Build the filter condition
+    posts_filter = Q()
+    if start_date and end_date:
+        start_date = parse_date(start_date)
+        end_date = parse_date(end_date)
+        posts_filter = Q(created_at__range=(start_date, end_date))
+        print(f"Received date range: {start_date} to {end_date}")
+    else:
+        print("No date range provided, querying all posts")
+
+    print(f"Built posts filter: {posts_filter}")
+
+    # Query posts and group by date, topic, and party
+    print("Querying posts data...")
+    posts = Post.objects.filter(posts_filter).values('created_at__date', 'topics__name', 'legislator__party').annotate(
+        post_count=Count('post_id'),
+        total_likes=Sum('like_count'),
+        total_shares=Sum('retweet_count')
+    )
+    print(f"Found {len(posts)} post records")
+
+    # Prepare the response data
+    print("Building response data structure...")
+    response_data = {}
+    # Insert empty data for January 1st, 2020
+    empty_date = "2020-01-01"
+    response_data[empty_date] = {}
+    for topic in ['abortion', 'blacklivesmatter', 'climate', 'gun', 'immigra', 'rights']:
+        response_data[empty_date][topic] = {
+            'D': {'posts': 0, 'legislators': set(), 'likes': 0, 'shares': 0},
+            'R': {'posts': 0, 'legislators': set(), 'likes': 0, 'shares': 0}
+        }
+    for post in posts:
+        date = post['created_at__date']
+        topic = post['topics__name']
+        party = post['legislator__party']
+        if date not in response_data:
+            response_data[date] = {}
+        if topic not in response_data[date]:
+            response_data[date][topic] = {}
+        if party not in response_data[date][topic]:
+            response_data[date][topic][party] = {
+                'posts': 0,
+                'legislators': set(),
+                'likes': 0,
+                'shares': 0
+            }
+        response_data[date][topic][party]['posts'] += post['post_count']
+        response_data[date][topic][party]['likes'] += post['total_likes']
+        response_data[date][topic][party]['shares'] += post['total_shares']
+
+    # Query legislators and add to the response data
+    print("Querying legislator data...")
+    for post in Post.objects.filter(posts_filter).select_related('legislator').values('created_at__date', 'topics__name', 'legislator_id', 'legislator__party'):
+        date = post['created_at__date']
+        topic = post['topics__name']
+        party = post['legislator__party']
+        if date in response_data and topic in response_data[date] and party in response_data[date][topic]:
+            response_data[date][topic][party]['legislators'].add(post['legislator_id'])
+
+    # Convert sets to counts
+    for date in response_data:
+        for topic in response_data[date]:
+            for party in response_data[date][topic]:
+                response_data[date][topic][party]['legislators'] = len(response_data[date][topic][party]['legislators'])
+
+    # Convert response_data to a list of dictionaries
+    print("Converting response data to list format...")
+    response_list = [{'date': date, **topics} for date, topics in response_data.items()]
+    print(f"Final response contains {len(response_list)} records")
+
+    print("Returning bipartite flow data")
+    return JsonResponse(response_list, safe=False)

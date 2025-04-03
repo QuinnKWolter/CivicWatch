@@ -31,6 +31,7 @@ urlpatterns = [
     path("api/flow/posts/stats/", views.flow_civility_misinformation, name="flow_civility_misinformation"),
     path("api/flow/engagement/", views.flow_engagement, name="flow_engagement"),
     path("api/flow/legislators/", views.flow_posts, name="flow_legislators"),
+    path("api/flow/bipartite/", views.bipartite_flow_data, name="bipartite_flow_data"),
 
     # Chord Diagram APIs (Legislator Interactions)
     path("api/chord/interactions/", views.chord_interactions, name="chord_interactions"),

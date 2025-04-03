@@ -1,10 +1,10 @@
 import React from 'react';
 import dayjs from 'dayjs'
 
-function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, minCivility, setMinCivility, activeTopics, setActiveTopics, startDate, setStartDate, endDate, setEndDate}) {
+function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, minCivility, setMinCivility, activeTopics, setActiveTopics, startDate, setStartDate, endDate, setEndDate, sidebarOpen }) {
   return (
-    <div className="fixed top-16 left-0 h-full overflow-y-auto bg-base-200 text-base-content z-20 w-64">
-      <div className="p-4">
+    <div className="w-64 h-full bg-base-200 shadow-xl overflow-y-auto">
+      <div className="p-4 space-y-4">
         <div className="mb-4">
           <button
             className="w-full bg-primary text-primary-content py-2 rounded"
@@ -14,36 +14,6 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
           </button>
           {expandedSections.filters && (
             <div className="mt-4">
-              <label className="block text-base-content">Interaction Type</label>
-              <select
-                className="w-full bg-base-300 text-base-content p-2 rounded"
-                value={filters.interactionType}
-                onChange={(e) => handleFilterChange('interactionType', e.target.value)}
-              >
-                <option value="all">All Interactions</option>
-                <option value="mentions">Mentions</option>
-                <option value="replies">Replies</option>
-                <option value="retweets">Retweets</option>
-              </select>
-
-              <label className="block text-base-content mt-4">Party</label>
-              {['D', 'R'].map(party => (
-                <div key={party} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={filters.party.includes(party)}
-                    onChange={(e) => {
-                      const newParties = e.target.checked
-                        ? [...filters.party, party]
-                        : filters.party.filter(p => p !== party);
-                      handleFilterChange('party', newParties);
-                    }}
-                    className="mr-2"
-                  />
-                  <span className="text-base-content">{party === 'D' ? 'Democrat' : 'Republican'}</span>
-                </div>
-              ))}
-
               <label className="block text-base-content mt-4">Date Range (From, To)</label>
               <div className="flex space-x-2">
                 <input
@@ -117,7 +87,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
           {expandedSections.topics && (
             <div className="mt-4">
               <label className="block text-base-content">Topics</label>
-              {['topic1', 'topic2', 'topic3', 'topic4', 'topic5', 'topic6'].map(topic => (
+              {['abortion', 'blacklivesmatter', 'climate', 'gun', 'immigra', 'rights'].map(topic => (
                 <div key={topic} className="flex items-center">
                   <input
                     type="checkbox"
@@ -130,7 +100,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                     }}
                     className="mr-2"
                   />
-                  <span className="text-base-content">Topic {topic.slice(-1)}</span>
+                  <span className="text-base-content">{topic.charAt(0).toUpperCase() + topic.slice(1)}</span>
                 </div>
               ))}
             </div>

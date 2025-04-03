@@ -63,15 +63,33 @@ function Navbar({ toggleSidebar }) {
       {/* About Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-1/3">
-            <h2 className="text-2xl font-bold mb-4">About CivicWatch</h2>
-            <p className="mb-4">CivicWatch is a platform dedicated to monitoring and analyzing civic engagement and political discourse.</p>
-            <button
-              onClick={toggleModal}
-              className="bg-blue-500 text-white py-2 px-4 rounded"
-            >
-              Close
-            </button>
+          <div className="bg-base-100 text-base-content p-8 rounded-lg shadow-2xl w-11/12 max-w-lg mx-auto">
+            <h2 className="text-3xl font-bold mb-6 text-center">About CivicWatch</h2>
+            <p className="mb-6 text-center">CivicWatch is a platform dedicated to monitoring and analyzing civic engagement and political discourse.</p>
+            <div className="mb-6">
+              <h3 className="text-2xl font-semibold mb-2">Developers</h3>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Lead Developer: Quinn K Wolter</li>
+                <li>Lead Backend Developer: Radhita Purohit</li>
+                <li>Lead Frontend Developer: Chase Lahner</li>
+              </ul>
+            </div>
+            <div className="mb-6">
+              <h3 className="text-2xl font-semibold mb-2">Advisors</h3>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Dr. Yu-ru Lin</li>
+                <li>Ahana Biswas</li>
+                <li>Dr. Yongsu Ahn</li>
+              </ul>
+            </div>
+            <div className="flex justify-center">
+              <button
+                onClick={toggleModal}
+                className="bg-primary text-primary-content py-2 px-6 rounded-full hover:bg-primary-focus transition-colors duration-300"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
