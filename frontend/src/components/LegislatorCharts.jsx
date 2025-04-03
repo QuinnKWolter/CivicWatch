@@ -3,6 +3,7 @@ import { Radar } from "./Radar";
 import { SummaryLegislatorScatter } from "./SummaryLegislatorScatter";
 import { useState } from "react";
 import { LineChart } from "./PostLinechart";
+import { LegislatorHex } from "./LegislatorHexBin";
 function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, setPostData, startDate, endDate }) {
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
@@ -27,7 +28,7 @@ function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, s
 
   return (
     <div>
-      <SummaryLegislatorScatter
+      {/* <SummaryLegislatorScatter
         width={400}
         height={400}
         legislatorClicked={legislatorClicked}
@@ -36,6 +37,10 @@ function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, s
         setPostData={setPostData}
         startDate={startDate}
         endDate={endDate}
+      /> */}
+      <LegislatorHex
+        width={400}
+        height={400}
       />
       
       <div className="flex space-x-2 border-b border-base-300">
