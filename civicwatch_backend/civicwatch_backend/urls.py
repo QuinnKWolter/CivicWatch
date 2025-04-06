@@ -47,4 +47,6 @@ urlpatterns = [
 
     path("api/legislators/scatter/", views.legislators_scatter_data, name="legislators_scatter"),
     path("api/legislator_posts/", views.legislator_posts_line_chart, name="legislator_posts"),
+    path('api/test/topic-counts/', views.topic_post_counts, name='topic_post_counts'),
+    path("api/posts/statistics/", views.post_statistics, name="post_statistics"),
 ]

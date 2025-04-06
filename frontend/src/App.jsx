@@ -21,7 +21,16 @@ function App() {
     statistics: true,
     topics: true
   });
-  const [activeTopics, setActiveTopics] = useState(['abortion', 'blacklivesmatter', 'climate', 'gun', 'immigra', 'rights']);
+  const [activeTopics, setActiveTopics] = useState([
+    'abortion', 
+    'blacklivesmatter', 
+    'capitol',
+    'climate', 
+    'covid', 
+    'gun', 
+    'immigra', 
+    'rights'
+  ]);
   const [startDate, setStartDate] = useState(dayjs('2020-01-01'));
   const [endDate, setEndDate] = useState(dayjs('2022-01-01'));
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -50,6 +59,11 @@ function App() {
   }, []);
 
   console.log('setLegislatorClicked from props:', setLegislatorClicked);
+
+  const handleDateChange = (newStart, newEnd) => {
+    setStartDate(newStart);
+    setEndDate(newEnd);
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -94,7 +108,12 @@ function App() {
                   />
                 </div>
                 <div className="col-span-3 bg-base-200 rounded-lg shadow-lg overflow-hidden">
-                  <BipartiteFlow activeTopics={activeTopics} />
+                  <BipartiteFlow 
+                    activeTopics={activeTopics} 
+                    startDate={startDate} 
+                    endDate={endDate} 
+                    onDateChange={handleDateChange}
+                  />
                 </div>
               </div>
             </div>

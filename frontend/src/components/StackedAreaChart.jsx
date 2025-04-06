@@ -27,7 +27,12 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted }) {
   useEffect(() => {
     if (!dimensions.width || !dimensions.height) return;
 
-    const margin = { top: 20, right: 30, bottom: 30, left: 50 };
+    const margin = { 
+      top: inverted ? 40 : 20,     // More space for inverted top labels
+      right: 30, 
+      bottom: inverted ? 20 : 40,  // More space for normal bottom labels
+      left: 50 
+    };
     const chartWidth = dimensions.width - margin.left - margin.right;
     const chartHeight = dimensions.height - margin.top - margin.bottom;
 
@@ -50,7 +55,7 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted }) {
     const x = d3.scalePoint()
       .domain(parsedData.map(d => d.date))
       .range([0, chartWidth])
-      .padding(0.5);
+      .padding(0);
 
     const y = d3.scaleLinear()
       .domain([0, d3.max(parsedData, d =>
@@ -96,7 +101,7 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted }) {
       .attr("transform", `translate(0,${inverted ? 0 : chartHeight})`)
       .call(xAxis)
       .selectAll("text")
-      .attr("transform", inverted ? "translate(0,-10) rotate(-45)" : "rotate(-45)")
+      .attr("transform", inverted ? "translate(30,-20) rotate(-45)" : "rotate(-45)")
       .style("text-anchor", "end");
 
     g.selectAll(".axis--x line")

@@ -1,2 +1,28 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* Custom theme for Tippy tooltips */
+.tippy-box[data-theme~='custom'] {
+  background-color: hsl(var(--b1) / 1); /* base-100 background */
+  border: 1px solid hsl(var(--p) / 1); /* primary color */
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  color: hsl(var(--bc) / 1); /* base content color */
+}
+
+.tippy-box[data-theme~='custom'] .tippy-arrow::before {
+  background-color: hsl(var(--b1) / 1);
+  border: 1px solid hsl(var(--p) / 1);
+}
+
+.tippy-box[data-theme~='custom'] .tippy-content {
+  padding: 0;
+}
+
+/* Optional: Style the prose content inside tooltips */
+.tippy-box[data-theme~='custom'] .prose {
+  color: hsl(var(--bc) / 0.8); /* slightly muted text */
+}
+
+.tippy-box[data-theme~='custom'] .prose strong {
+  color: hsl(var(--bc) / 1); /* full opacity for headings */
+}

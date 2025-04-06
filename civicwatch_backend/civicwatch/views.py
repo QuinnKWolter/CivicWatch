@@ -2,10 +2,14 @@ from django.shortcuts import render
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, Sum, Avg, Q
+from django.db.models import Count, Sum, Avg, Q, F
 from .models import Legislator, Post, LegislatorInteraction, Topic
 from datetime import datetime, timedelta, date
 from django.utils.dateparse import parse_date
+from django.db.models import Avg, DateField, Count
+from django.db.models.functions import TruncDate
+from django.http import JsonResponse
+from .models import Post
 
 # 🔹 Helper function: Filter posts by date range and optional criteria
 def filter_posts(request):
@@ -210,13 +214,13 @@ def bipartite_flow_data(request):
     print("Building response data structure...")
     response_data = {}
     # Insert empty data for January 1st, 2020
-    empty_date = "2020-01-01"
-    response_data[empty_date] = {}
-    for topic in ['abortion', 'blacklivesmatter', 'climate', 'gun', 'immigra', 'rights']:
-        response_data[empty_date][topic] = {
-            'D': {'posts': 0, 'legislators': set(), 'likes': 0, 'shares': 0},
-            'R': {'posts': 0, 'legislators': set(), 'likes': 0, 'shares': 0}
-        }
+    # empty_date = "2020-01-01"
+    # response_data[empty_date] = {}
+    # for topic in ['abortion', 'blacklivesmatter', 'climate', 'gun', 'immigra', 'rights']:
+    #     response_data[empty_date][topic] = {
+    #         'D': {'posts': 0, 'legislators': set(), 'likes': 0, 'shares': 0},
+    #         'R': {'posts': 0, 'legislators': set(), 'likes': 0, 'shares': 0}
+    #     }
     for post in posts:
         date = post['created_at__date']
         topic = post['topics__name']
@@ -258,3 +262,80 @@ def bipartite_flow_data(request):
 
     print("Returning bipartite flow data")
     return JsonResponse(response_list, safe=False)
+
+# 🔹 Testing/Debug APIs
+def topic_post_counts(request):
+    # Get all topics and count their associated posts
+    topic_counts = Topic.objects.values('name').annotate(
+        post_count=Count('post')
+    ).order_by('-post_count')  # Orders by count descending
+    
+    # Format the results
+    results = {
+        'total_topics': Topic.objects.count(),
+        'total_posts': Post.objects.count(),
+        'topic_counts': list(topic_counts)
+    }
+    
+    return JsonResponse(results, safe=False)
+
+def post_statistics(request):
+    # Step 1: Get all relevant topics and parties from existing posts
+    topic_names = Topic.objects.exclude(name__isnull=True).values_list('name', flat=True).distinct()
+    party_values = Post.objects.exclude(party__isnull=True).values_list('party', flat=True).distinct()
+
+    # Step 2: Build the full date range
+    start_date = date(2020, 1, 1)
+    end_date = date(2021, 12, 31)
+    all_dates = []
+    current = start_date
+    while current <= end_date:
+        all_dates.append(current.strftime('%Y-%m-%d'))
+        current += timedelta(days=1)
+
+    # Step 3: Fetch post stats (only actual data)
+    posts = (
+        Post.objects
+        .filter(topics__isnull=False)
+        .annotate(date=TruncDate('created_at'))
+        .values('date', 'party', 'topics__name')
+        .annotate(
+            avg_misinfo=Avg('count_misinfo'),
+            avg_civility=Avg('civility_score'),
+            post_count=Count('post_id')
+        )
+    )
+
+    # Step 4: Restructure aggregated data
+    data_map = {}
+    for entry in posts:
+        key = (
+            entry['date'].strftime('%Y-%m-%d'),
+            entry['party'],
+            entry['topics__name']
+        )
+        avg_misinfo = -entry['avg_misinfo'] if entry['party'] in ['R', 'Republican'] else entry['avg_misinfo']
+        data_map[key] = {
+            'avg_misinfo': avg_misinfo,
+            'avg_civility': entry['avg_civility'],
+            'post_count': entry['post_count'],
+        }
+
+    # Step 5: Build full response with empty defaults where needed
+    response_data = {}
+    for day in all_dates:
+        response_data[day] = {}
+        for party in party_values:
+            response_data[day][party] = {}
+            for topic in topic_names:
+                key = (day, party, topic)
+                if key in data_map:
+                    response_data[day][party][topic] = data_map[key]
+                else:
+                    response_data[day][party][topic] = {
+                        'avg_misinfo': 0,
+                        'avg_civility': 0,
+                        'post_count': 0
+                    }
+
+    return JsonResponse(response_data, safe=False)
