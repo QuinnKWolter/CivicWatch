@@ -4,6 +4,7 @@ import { SummaryLegislatorScatter } from "./SummaryLegislatorScatter";
 import { useState } from "react";
 import { LineChart } from "./PostLinechart";
 import { LegislatorHex } from "./LegislatorHexBin";
+import { RidgeLinePlot } from "./RidgeLine";
 function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, setPostData, startDate, endDate, legScatterData}) {
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
@@ -38,6 +39,7 @@ function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, s
         setLegislatorClicked={setLegislatorClicked}
         legScatterData={legScatterData}
       />
+      
       
       <div className="flex space-x-2 border-b border-base-300">
         <button
@@ -76,11 +78,12 @@ function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, s
           />
         )}
         {cVal === 2 && (
-          <LineChart
-            data={postData}
-            width={300}
-            height={300}
-          />
+          // <LineChart
+          //   data={postData}
+          //   width={300}
+          //   height={300}
+          // />
+          <RidgeLinePlot height={400} width={400} legislatorClicked={legislatorClicked} />
         )}
       </div>
     </div>
