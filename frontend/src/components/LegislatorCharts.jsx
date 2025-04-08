@@ -41,6 +41,9 @@ function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, s
       <LegislatorHex
         width={400}
         height={400}
+        startDate={startDate}
+        endDate={endDate}
+        setLegislatorClicked={setLegislatorClicked}
       />
       
       <div className="flex space-x-2 border-b border-base-300">

@@ -68,8 +68,8 @@ export const SummaryLegislatorScatter = ({
       });
     d3.json("/matches.json")
       .then((jsonData) => {
-        console.log(jsonData[0].created_at)
-        console.log("name", legislatorClicked[0].name)
+        console.log(jsonData[0].created_at);
+        console.log("name", legislatorClicked[0].name);
         console.log("START DATE", startDate);
         console.log("END DATE", endDate);
         const filtered_data = jsonData
