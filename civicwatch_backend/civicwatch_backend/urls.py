@@ -26,6 +26,9 @@ urlpatterns = [
     path("api/legislator/<str:legislator_id>/", views.legislator_detail, name="legislator_detail"),
     path("api/topics/", views.all_topics, name="all_topics"),
 
+    # New Overview Metrics Endpoint
+    path("api/overview_metrics/", views.overview_metrics, name="overview_metrics"),
+
     # Bipartite Temporal Flow Diagram APIs
     path("api/flow/posts/", views.flow_posts, name="flow_posts"),
     path("api/flow/posts/stats/", views.flow_civility_misinformation, name="flow_civility_misinformation"),

@@ -339,3 +339,115 @@ def post_statistics(request):
                     }
 
     return JsonResponse(response_data, safe=False)
+
+def overview_metrics(request):
+    """
+    Endpoint providing overview metrics and visualization data for dashboard
+    
+    Parameters:
+    - start_date: ISO format date string (e.g., "2020-01-01")
+    - end_date: ISO format date string (e.g., "2021-12-31")
+    - topics: Comma-separated list of topic names
+    
+    Returns structured JSON with summary metrics and visualization data
+    """
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    topics_param = request.GET.get('topics', '')
+    
+    # Parse topics from comma-separated string to list if provided
+    topics = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
+    
+    # Build filter conditions
+    filters = Q()
+    if start_date and end_date:
+        start_date_obj = parse_date(start_date)
+        end_date_obj = parse_date(end_date)
+        filters &= Q(created_at__range=[start_date_obj, end_date_obj])
+    
+    # Add topic filtering if topics are provided
+    if topics:
+        filters &= Q(topics__name__in=topics)
+    
+    # Get filtered posts
+    filtered_posts = Post.objects.filter(filters).select_related('legislator').distinct()
+    
+    # Calculate summary metrics by party
+    summary_metrics = filtered_posts.values('party').annotate(
+        total_posts=Count('post_id'),
+        avg_interaction_score=Avg('interaction_score'),
+        total_likes=Sum('like_count'),
+        total_retweets=Sum('retweet_count')
+    ).order_by('party')
+    
+    # Structure as dictionary keyed by party
+    summary_metrics_dict = {}
+    for item in summary_metrics:
+        if item['party'] in ['Democratic', 'Republican']:
+            summary_metrics_dict[item['party']] = {
+                "totalPosts": item['total_posts'],
+                "avgInteractionScore": item['avg_interaction_score'],
+                "totalLikes": item['total_likes'],
+                "totalRetweets": item['total_retweets']
+            }
+    
+    # Bar chart data (posts, likes, retweets by party)
+    bar_chart_party_summary = [
+        {
+            "party": item['party'],
+            "totalPosts": item['total_posts'],
+            "likes": item['total_likes'],
+            "retweets": item['total_retweets']
+        }
+        for item in summary_metrics if item['party'] in ['Democratic', 'Republican']
+    ]
+    
+    # Line chart data (daily posts & engagement per party)
+    line_chart_data = filtered_posts.annotate(
+        day=TruncDate('created_at')
+    ).values('day').annotate(
+        democratic_posts=Count('post_id', filter=Q(party='Democratic')),
+        democratic_engagement=Sum('like_count', filter=Q(party='Democratic')) + 
+                           Sum('retweet_count', filter=Q(party='Democratic')),
+        republican_posts=Count('post_id', filter=Q(party='Republican')),
+        republican_engagement=Sum('like_count', filter=Q(party='Republican')) + 
+                             Sum('retweet_count', filter=Q(party='Republican'))
+    ).order_by('day')
+    
+    line_chart_engagement_over_time = [
+        {
+            "date": entry["day"].isoformat() if entry["day"] else None,
+            "democraticPosts": entry["democratic_posts"] or 0,
+            "democraticEngagement": entry["democratic_engagement"] or 0,
+            "republicanPosts": entry["republican_posts"] or 0,
+            "republicanEngagement": entry["republican_engagement"] or 0
+        } for entry in line_chart_data
+    ]
+    
+    # Radar chart metrics (avg. civility, misinfo, interaction per party)
+    radar_chart_metrics = filtered_posts.values('party').annotate(
+        avg_civility_score=Avg('civility_score'),
+        avg_misinfo_score=Avg('count_misinfo'),
+        avg_interaction_score=Avg('interaction_score')
+    ).filter(party__in=['Democratic', 'Republican'])
+    
+    radar_chart_metrics_list = [
+        {
+            "party": item['party'],
+            "avgCivilityScore": item['avg_civility_score'],
+            "avgMisinfoScore": item['avg_misinfo_score'],
+            "avgInteractionScore": item['avg_interaction_score']
+        } for item in radar_chart_metrics
+    ]
+    
+    # Compile the final response
+    response_data = {
+        "summaryMetrics": summary_metrics_dict,
+        "visualizations": {
+            "barChartPartySummary": bar_chart_party_summary,
+            "lineChartEngagementOverTime": line_chart_engagement_over_time,
+            "radarChartMetrics": radar_chart_metrics_list
+        }
+    }
+    
+    return JsonResponse(response_data)

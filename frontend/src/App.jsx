@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom'
 import BipartiteFlow from './components/BipartiteFlow';
 import Sidebar from './components/Sidebar';
+import SidebarAbout from './components/SidebarAbout';
+import SidebarInfo from './components/SidebarInfo';
 import TabbedCharts from './components/TabbedCharts';
 import Navbar from './components/Navbar';
 import './App.css'
@@ -33,7 +35,12 @@ function App() {
   ]);
   const [startDate, setStartDate] = useState(dayjs('2020-01-01'));
   const [endDate, setEndDate] = useState(dayjs('2022-01-01'));
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+
+  const [legislatorClicked, setLegislatorClicked] = useState([]);
+  const [postData, setPostData] = useState([]);
 
   const handleFilterChange = (type, value) => {
     setFilters(prev => ({ ...prev, [type]: value }));
@@ -47,11 +54,34 @@ function App() {
   };
 
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+    if (sidebarOpen) {
+      setSidebarOpen(false);
+    } else {
+      setAboutOpen(false);
+      setInfoOpen(false);
+      setSidebarOpen(true);
+    }
   };
 
-  const[legislatorClicked, setLegislatorClicked] = useState([]);
-  const[postData, setPostData] = useState([]);
+  const toggleAbout = () => {
+    if (aboutOpen) {
+      setAboutOpen(false);
+    } else {
+      setSidebarOpen(false);
+      setInfoOpen(false);
+      setAboutOpen(true);
+    }
+  };
+
+  const toggleInfo = () => {
+    if (infoOpen) {
+      setInfoOpen(false);
+    } else {
+      setSidebarOpen(false);
+      setAboutOpen(false);
+      setInfoOpen(true);
+    }
+  };
 
   useEffect(() => {
     const theme = localStorage.getItem('theme') || 'dark';
@@ -67,7 +97,11 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen">
-      <Navbar toggleSidebar={toggleSidebar} />
+      <Navbar 
+        toggleSidebar={toggleSidebar} 
+        toggleAbout={toggleAbout} 
+        toggleInfo={toggleInfo} 
+      />
       <div className="flex flex-grow mt-16">
         <BrowserRouter>
           <div className="flex flex-grow relative">
@@ -92,9 +126,12 @@ function App() {
               />
             </div>
 
+            <SidebarAbout aboutOpen={aboutOpen} toggleAbout={toggleAbout} />
+            <SidebarInfo infoOpen={infoOpen} toggleInfo={toggleInfo} />
+
             <div 
               className={`flex-grow transition-all duration-300 ease-in-out
-                ${sidebarOpen ? 'ml-64' : 'ml-0'}`}
+                ${sidebarOpen || aboutOpen || infoOpen ? 'ml-64' : 'ml-0'}`}
             >
               <div className="grid grid-cols-5 gap-4 p-4 h-[calc(100vh-4rem)]">
                 <div className="col-span-2 bg-base-200 rounded-lg shadow-lg overflow-hidden">
@@ -105,6 +142,7 @@ function App() {
                     setPostData={setPostData}
                     startDate={startDate}
                     endDate={endDate}
+                    selectedTopics={activeTopics}
                   />
                 </div>
                 <div className="col-span-3 bg-base-200 rounded-lg shadow-lg overflow-hidden">

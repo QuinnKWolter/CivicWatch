@@ -16,20 +16,19 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
           {expandedSections.filters && (
             <div className="mt-4">
               <label className="block text-base-content mt-4">Date Range (From, To)</label>
-              <div className="flex space-x-2">
                 <input
                   type="date"
                   className="w-full bg-base-300 text-base-content p-2 rounded"
                   value={dayjs(startDate).format('YYYY-MM-DD')}
                   onChange={(e) => setStartDate(dayjs(e.target.value))}
                 />
+                <br/>
                 <input
                   type="date"
                   className="w-full bg-base-300 text-base-content p-2 rounded"
                   value={dayjs(endDate).format('YYYY-MM-DD')}
-                  onChange={(e) => { console.log('DATE', dayjs(e.target.value)); setEndDate(dayjs(e.target.value)) }}
+                  onChange={(e) => setEndDate(dayjs(e.target.value)) }
                 />
-              </div>
             </div>
           )}
         </div>
@@ -56,7 +55,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                           : activeTopics.filter(t => t !== topic);
                         setActiveTopics(newTopics);
                       }}
-                      className="checkbox checkbox-primary mr-2"
+                      className="checkbox checkbox-primary mr-2 mb-1"
                     />
                     <span className="text-base-content">{topic.charAt(0).toUpperCase() + topic.slice(1)}</span>
                   </div>
