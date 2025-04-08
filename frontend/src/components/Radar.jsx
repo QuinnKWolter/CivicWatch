@@ -44,6 +44,7 @@ export const Radar = ({ width, height, data, axisConfig }) => {
   const linePath = lineGenerator(allCoordinates);
 
   return (
+    <div className="relative">
     <svg width={width} height={height}>
       <g transform={`translate(${width / 2}, ${height / 2})`}>
         <RadarGrid
@@ -71,6 +72,7 @@ export const Radar = ({ width, height, data, axisConfig }) => {
           fillOpacity={0.1}
         />
       </g>
-    </svg>
+      </svg>
+      </div>
   );
 };

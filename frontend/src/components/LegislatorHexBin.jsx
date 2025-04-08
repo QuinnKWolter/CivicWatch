@@ -4,7 +4,7 @@ import { hexbin } from "d3-hexbin";
 import { Tooltip, TooltipGroup } from "./Tooltip";
 import dayjs from "dayjs";
 
-export const LegislatorHex = ({ height, width, startDate, endDate, setLegislatorClicked }) => {
+export const LegislatorHex = ({ height, width, startDate, endDate, setLegislatorClicked, legScatterData}) => {
   const marginTop = 30;
   const marginRight = 30;
   const marginBottom = 30;
@@ -27,52 +27,52 @@ export const LegislatorHex = ({ height, width, startDate, endDate, setLegislator
   //     });
   // }, []); // This effect runs once when the component mounts
 
-  useEffect(() => {
-    // Determine whether to use default data or fetch from the server
-    console.log("Fetching data from server");
-    fetch("http://localhost:8000/api/legislators/scatter/")
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Legislator Data: ", data);
-        console.log(data[0].name);
-        setData(data);
-      })
-      .catch((error) =>
-        console.error("Error fetching legislator data:", error)
-      );
-  }, []);
+  // useEffect(() => {
+  //   // Determine whether to use default data or fetch from the server
+  //   console.log("Fetching data from server");
+  //   fetch("http://localhost:8000/api/legislators/scatter/")
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       console.log("Legislator Data: ", data);
+  //       console.log(data[0].name);
+  //       setData(data);
+  //     })
+  //     .catch((error) =>
+  //       console.error("Error fetching legislator data:", error)
+  //     );
+  // }, []);
 
-  useEffect(() => {
-    console.log("filtering data");
-    if (startDate && endDate) {
-      const url = "http://localhost:8000/api/legislators/scatter/?";
-      const params = {
-        startDate: startDate.format("DD-MM-YYYY"),
-        endDate: endDate.format("DD-MM-YYYY"),
-      };
-      const queryParams = new URLSearchParams(params).toString();
+  // useEffect(() => {
+  //   console.log("filtering data");
+  //   if (startDate && endDate) {
+  //     const url = "http://localhost:8000/api/legislators/scatter/?";
+  //     const params = {
+  //       startDate: startDate.format("DD-MM-YYYY"),
+  //       endDate: endDate.format("DD-MM-YYYY"),
+  //     };
+  //     const queryParams = new URLSearchParams(params).toString();
 
-      const query = `${url}${queryParams}`;
-      console.log("query", query);
-      fetch(query)
-        .then((response) => response.json())
-        .then((data) => {
-          setData(data);
-        })
-        .catch((error) =>
-          console.error("Error filtering legislator data: ", error)
-        );
-      const filteredData = data.filter((item) => {
-        const itemDate = dayjs(item.date);
-        return (
-          itemDate.isSameOrAfter(startDate) && itemDate.isSameOrBefore(endDate)
-        );
-      });
-      setData(filteredData);
-      console.log("done filtering");
-      console.log("filtered data", filteredData);
-    }
-  }, [startDate, endDate]);
+  //     const query = `${url}${queryParams}`;
+  //     console.log("query", query);
+  //     fetch(query)
+  //       .then((response) => response.json())
+  //       .then((data) => {
+  //         setData(data);
+  //       })
+  //       .catch((error) =>
+  //         console.error("Error filtering legislator data: ", error)
+  //       );
+  //     const filteredData = data.filter((item) => {
+  //       const itemDate = dayjs(item.date);
+  //       return (
+  //         itemDate.isSameOrAfter(startDate) && itemDate.isSameOrBefore(endDate)
+  //       );
+  //     });
+  //     setData(filteredData);
+  //     console.log("done filtering");
+  //     console.log("filtered data", filteredData);
+  //   }
+  // }, [startDate, endDate]);
 
   // Once data is available, run the D3 code to render the hexbin
   useEffect(() => {
@@ -80,7 +80,7 @@ export const LegislatorHex = ({ height, width, startDate, endDate, setLegislator
 
     console.log("rerendering");
 
-    const cleaned = data
+    const cleaned = legScatterData
       .filter(
         (d) => d.total_interactions_tw > 0 && d.overperforming_score_tw > 0
       )
@@ -216,7 +216,7 @@ export const LegislatorHex = ({ height, width, startDate, endDate, setLegislator
         setGroupHoverData({ xPos, yPos, bin });
       });
       
-  }, [data, height, width]); // Re-run the effect when data, height, or width changes
+  }, [legScatterData, height, width]); // Re-run the effect when data, height, or width changes
 
   return (
     <div style={{ position: "relative" }}>
