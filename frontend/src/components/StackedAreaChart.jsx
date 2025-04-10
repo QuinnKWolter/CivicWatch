@@ -2,9 +2,20 @@ import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import PropTypes from 'prop-types';
 
-function StackedAreaChart({ data, activeTopics, colorMap, inverted }) {
+function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetric }) {
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  // Function to format large numbers with one decimal place
+  const formatNumber = (num) => {
+    if (num >= 1000000) {
+      return new Intl.NumberFormat('en-US', { style: 'decimal', maximumFractionDigits: 1 }).format(num / 1000000) + 'M';
+    }
+    if (num >= 1000) {
+      return new Intl.NumberFormat('en-US', { style: 'decimal', maximumFractionDigits: 1 }).format(num / 1000) + 'K';
+    }
+    return num.toString();
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -59,14 +70,26 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted }) {
 
     const y = d3.scaleLinear()
       .domain([0, d3.max(parsedData, d =>
-        d3.sum(activeTopics.map(topic => d[topic]?.[inverted ? 'R' : 'D']?.posts || 0))
+        d3.sum(activeTopics.map(topic => {
+          const value = d[topic]?.[inverted ? 'R' : 'D'];
+          if (selectedMetric === 'engagement') {
+            return (value?.likes || 0) + (value?.shares || 0);
+          }
+          return value?.[selectedMetric] || 0;
+        }))
       )])
       .nice()
       .range(inverted ? [0, chartHeight] : [chartHeight, 0]);
 
     const stack = d3.stack()
       .keys(activeTopics)
-      .value((d, key) => d[key]?.[inverted ? 'R' : 'D']?.posts || 0)
+      .value((d, key) => {
+        const value = d[key]?.[inverted ? 'R' : 'D'];
+        if (selectedMetric === 'engagement') {
+          return (value?.likes || 0) + (value?.shares || 0);
+        }
+        return value?.[selectedMetric] || 0;
+      })
       .order(d3.stackOrderNone)
       .offset(d3.stackOffsetNone);
 
@@ -109,11 +132,11 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted }) {
 
     g.append("g")
       .attr("class", "axis axis--y")
-      .call(d3.axisLeft(y).tickSize(-chartWidth).tickPadding(10))
+      .call(d3.axisLeft(y).tickSize(-chartWidth).tickPadding(10).tickFormat(formatNumber))
       .selectAll("line")
       .style("stroke-opacity", 0.2);
 
-  }, [data, activeTopics, colorMap, inverted, dimensions.width, dimensions.height]);
+  }, [data, activeTopics, colorMap, inverted, dimensions.width, dimensions.height, selectedMetric]);
 
   return (
     <div ref={containerRef} className="w-full h-full">
@@ -126,7 +149,8 @@ StackedAreaChart.propTypes = {
   data: PropTypes.array.isRequired,
   activeTopics: PropTypes.arrayOf(PropTypes.string).isRequired,
   colorMap: PropTypes.object.isRequired,
-  inverted: PropTypes.bool.isRequired
+  inverted: PropTypes.bool.isRequired,
+  selectedMetric: PropTypes.string.isRequired
 };
 
 export default StackedAreaChart;

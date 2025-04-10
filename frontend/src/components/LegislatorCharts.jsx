@@ -1,6 +1,6 @@
 import React from "react";
 import { Radar } from "./Radar";
-import { SummaryLegislatorScatter } from "./SummaryLegislatorScatter";
+// import { SummaryLegislatorScatter } from "./SummaryLegislatorScatter";
 import { useState } from "react";
 import { LineChart } from "./PostLinechart";
 import { LegislatorHex } from "./LegislatorHexBin";
@@ -27,8 +27,6 @@ function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, s
     setCVal(newValue);
   }
 
-  
-
   return (
     <div className="overflow-y-auto h-full p-2">
       <LegislatorHex 
@@ -39,8 +37,6 @@ function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, s
         setLegislatorClicked={setLegislatorClicked}
         legScatterData={legScatterData}
       />
-      
-      
       <div className="flex space-x-2 border-b border-base-300">
         <button
           className={`py-1 px-3 rounded-t ${cVal === 0 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`} 
