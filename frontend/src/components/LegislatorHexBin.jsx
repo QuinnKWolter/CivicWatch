@@ -180,7 +180,7 @@ export const LegislatorHex = ({ height, width, startDate, endDate, setLegislator
         if (total === 0) return "#ccc"; // fallback if no party data
 
         // Compute balance: -1 (all Dem), 1 (all Rep), 0 = split
-        const balance = (counts.Republican - counts.Democrat) / total;
+        const balance = (counts.Democrat - counts.Republican) / total;
         return color(balance);
       })
 
