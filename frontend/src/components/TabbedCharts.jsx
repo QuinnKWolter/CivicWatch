@@ -9,8 +9,9 @@ import { MdOutlineAccountBox } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
 import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs"
+import ChoroplethMap from './ChoroplethMap';
 
-function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate }) {
+function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, activeTopics }) {
   const [value, setValue] = useState(0);
 
   const handleChange = (newValue) => {

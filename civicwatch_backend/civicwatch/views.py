@@ -130,7 +130,7 @@ def geo_activity(request):
     return JsonResponse(list(geo_stats), safe=False)
 
 
-def geo_activity_by_topics(request):
+def geo_activity_posts(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     metric = request.GET.get('metric', 'posts')
