@@ -181,7 +181,6 @@ function TimelineSlider({
       container.style.left = `${timeScale(new Date(date)) + margin.left}px`;
       container.style.top = position === 'above' ? '6px' : '34px'; // Adjusted to sit just above or below timeline
       container.style.transform = 'translate(-50%, -50%)';
-      container.style.zIndex = '1';
       containerRef.current.appendChild(container);
 
       // Create the tooltip content with HTML
@@ -199,7 +198,7 @@ function TimelineSlider({
             ))}
           </ul>
         </div>
-      );      
+      );
 
       // Render Tippy and glyph using React
       const root = ReactDOM.createRoot(container);
@@ -382,7 +381,6 @@ function TimelineSlider({
         width={dimensions.width}
         height={dimensions.height}
         className="cursor-pointer"
-        style={{ zIndex: '20' }}
       />
       
       {/* Callout for selected glyph */}

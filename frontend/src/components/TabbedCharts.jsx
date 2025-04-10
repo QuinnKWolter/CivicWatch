@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Radar } from "./Radar";
 import { LineChart } from "./PostLinechart";
 import LegislatorCharts from "./LegislatorCharts";
@@ -11,8 +11,20 @@ import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs"
 import ChoroplethMap from './ChoroplethMap';
 
-function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, activeTopics }) {
+function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics }) {
+  console.log("TabbedCharts re-rendered with props:", { 
+    startDate, 
+    endDate, 
+    selectedTopics, 
+    startDateType: typeof startDate, 
+    endDateType: typeof endDate, 
+    selectedTopicsType: typeof selectedTopics 
+  });
+
   const [value, setValue] = useState(0);
+
+  // Memoize selectedTopics to prevent unnecessary re-renders
+  const memoizedSelectedTopics = useMemo(() => selectedTopics, [selectedTopics]);
 
   const handleChange = (newValue) => {
     setValue(newValue);
@@ -140,8 +152,8 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
   ];
 
   return (
-    <div>
-      <div className="flex justify-center space-x-2 border-b border-base-300">
+    <div className="h-full overflow-y-auto overflow-x-hidden">
+      <div className="flex justify-center space-x-2 border-b border-base-300 bg-base-100">
         {tabs.map((tab) => (
           <button
             key={tab.value}
@@ -163,7 +175,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
         ))}
       </div>
       <div className="mt-4 transition-opacity duration-500 ease-in-out">
-        {value === 0 && <OverviewCharts />}
+        {value === 0 && <OverviewCharts startDate={startDate} endDate={endDate} selectedTopics={memoizedSelectedTopics} />}
         {value === 1 && (
           <div>
             <h6 className="text-lg">Engagement Content</h6>
