@@ -35,7 +35,7 @@ export const Radar = ({ width, height, data, axisConfig }) => {
   const allCoordinates = axisConfig.map((axis) => {
     const yScale = yScales[axis.name];
     const angle = xScale(axis.name) ?? 0;
-    const radius = yScale(data[0][axis.name]);
+    const radius = yScale(data[axis.name]);
     const coordinate = [angle, radius];
     return coordinate;
   });
@@ -44,6 +44,7 @@ export const Radar = ({ width, height, data, axisConfig }) => {
   const linePath = lineGenerator(allCoordinates);
 
   return (
+    <div className="relative">
     <svg width={width} height={height}>
       <g transform={`translate(${width / 2}, ${height / 2})`}>
         <RadarGrid
@@ -56,21 +57,22 @@ export const Radar = ({ width, height, data, axisConfig }) => {
           stroke={
             data.party === "R"
               ? "#FF0000"
-              : data[0].party === "D"
+              : data.party === "D"
               ? "#0000FF"
               : "#cb1dd1"
           }
           strokeWidth={3}
           fill={
-            data[0].party === "R"
+            data.party === "R"
               ? "#FF0000"
-              : data[0].party === "D"
+              : data.party === "D"
               ? "#0000FF"
               : "#cb1dd1"
           }
           fillOpacity={0.1}
         />
       </g>
-    </svg>
+      </svg>
+      </div>
   );
 };
