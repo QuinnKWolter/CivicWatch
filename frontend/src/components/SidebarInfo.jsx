@@ -7,11 +7,11 @@ const SidebarInfo = ({ infoOpen, toggleInfo }) => {
   const terms = [
     {
       term: "Civility Score",
-      definition: "A metric from 0-1 measuring the respectful tone of discourse, with higher values indicating more civil communication."
+      definition: "A binary indicator, representing the degree of civility in online discourse, with 0 denoting and 1 indicating toxicity below and above the threshold of 0.86 for a given tweet's text through Python's Detoxifier library."
     },
     {
       term: "Misinformation Index",
-      definition: "A measure of detected false or misleading content within political communications."
+      definition: "A binary indicator, derived from the presence or absence of links to documented manipulative domains within tweets, used to assess the inclusion of false or misleading content in political communications."
     },
     {
       term: "Bipartite Flow",

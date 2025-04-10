@@ -29,6 +29,10 @@ urlpatterns = [
     # New Overview Metrics Endpoint
     path("api/overview_metrics/", views.overview_metrics, name="overview_metrics"),
 
+    # New endpoints for bipartite flow and accountability data
+    path("api/flow/bipartite_data/", views.bipartite_data, name="bipartite_data"),
+    path("api/flow/accountability_data/", views.accountability_data, name="accountability_data"),
+
     # Bipartite Temporal Flow Diagram APIs
     path("api/flow/posts/", views.flow_posts, name="flow_posts"),
     path("api/flow/posts/stats/", views.flow_civility_misinformation, name="flow_civility_misinformation"),
@@ -52,4 +56,5 @@ urlpatterns = [
     path("api/legislator_posts/", views.legislator_posts_line_chart, name="legislator_posts"),
     path('api/test/topic-counts/', views.topic_post_counts, name='topic_post_counts'),
     path("api/posts/statistics/", views.post_statistics, name="post_statistics"),
+    path('api/trend_data/', views.trend_data, name='trend_data'),
 ]

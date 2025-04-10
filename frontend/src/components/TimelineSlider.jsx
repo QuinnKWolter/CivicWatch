@@ -181,12 +181,11 @@ function TimelineSlider({
       container.style.left = `${timeScale(new Date(date)) + margin.left}px`;
       container.style.top = position === 'above' ? '6px' : '34px'; // Adjusted to sit just above or below timeline
       container.style.transform = 'translate(-50%, -50%)';
-      container.style.zIndex = '1'; // Ensure glyphs have a lower z-index
       containerRef.current.appendChild(container);
 
       // Create the tooltip content with HTML
       const tooltipContent = (
-        <div className="bg-base-100 text-base-content border border-primary shadow-lg rounded-box p-4 w-[450px] space-y-2" style={{ zIndex: 1001 }}>
+        <div className="bg-base-100 text-base-content border border-primary shadow-lg rounded-box p-4 w-[450px] space-y-2">
           <div className="flex items-center gap-2">
             <Icon className="w-5 h-5" style={{ color }} />
             <h3 className="font-bold text-lg">{label}</h3>
@@ -382,7 +381,6 @@ function TimelineSlider({
         width={dimensions.width}
         height={dimensions.height}
         className="cursor-pointer"
-        // style={{ zIndex: '20' }}
       />
       
       {/* Callout for selected glyph */}

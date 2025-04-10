@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tool
 import PropTypes from 'prop-types';
 import { colorMap } from './BipartiteFlow'; // Import colorMap from BipartiteFlow
 import { IoIosArrowUp, IoIosArrowDown } from 'react-icons/io'; // Use different icons from react-icons
-import { FaToggleOn, FaToggleOff, FaQuestionCircle } from 'react-icons/fa';
+import { FaToggleOn, FaToggleOff, FaQuestionCircle, FaSpinner, FaGlobe } from 'react-icons/fa'; // Use FaGlobe for "all"
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import dayjs from 'dayjs';
@@ -21,80 +21,49 @@ function AccountabilityLineChart({ startDate, endDate }) {
   const [filteredData, setFilteredData] = useState({});
   const [currentTopicIndex, setCurrentTopicIndex] = useState(0);
   const [showMisinformation, setShowMisinformation] = useState(true);
-  const topics = Object.keys(colorMap);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const topics = ['all', ...Object.keys(colorMap)]; // Add "all" to the topics list
 
   const topicIcons = {
-    Abortion: <FaHospitalUser />,
-    Blacklivesmatter: <FaFistRaised />,
-    Capitol: <FaLandmark />,
-    Climate: <FaLeaf />,
-    Covid: <FaVirus />,
-    Gun: <FaShieldAlt />,
-    Immigra: <FaPlane />,
-    Rights: <FaBalanceScale />
+    all: <FaGlobe />, // Use FaGlobe for the "all" topic
+    abortion: <FaHospitalUser />,
+    blacklivesmatter: <FaFistRaised />,
+    capitol: <FaLandmark />,
+    climate: <FaLeaf />,
+    covid: <FaVirus />,
+    gun: <FaShieldAlt />,
+    immigra: <FaPlane />,
+    rights: <FaBalanceScale />
   };
 
   useEffect(() => {
-    fetch('/data/defaultAccountability.json')
-      .then((res) => {
-        if (!res.ok) {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`http://localhost:8000/api/flow/accountability_data/?start_date=${startDate?.format('YYYY-MM-DD')}&end_date=${endDate?.format('YYYY-MM-DD')}&show_misinformation=${showMisinformation}`);
+        
+        if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-        return res.json();
-      })
-      .then((data) => {
-        const transformedData = transformData(data);
-        setChartData(transformedData);
-      })
-      .catch(console.error);
-  }, [showMisinformation]);
 
-  useEffect(() => {
-    if (startDate && endDate) {
-      const newFilteredData = {};
-      for (const topic in chartData) {
-        newFilteredData[topic] = chartData[topic].filter(entry => {
-          const entryDate = dayjs(entry.date);
-          return entryDate.isSameOrAfter(startDate) && entryDate.isSameOrBefore(endDate);
-        });
+        const data = await response.json();
+        setChartData(data);
+        setFilteredData(data); // Since filtering will now happen on the server
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching accountability data:", err);
+        setError("Failed to load accountability data. Please try again.");
+      } finally {
+        setLoading(false);
       }
-      setFilteredData(newFilteredData);
-    }
-  }, [startDate, endDate, chartData]);
+    };
 
-  const transformData = (rawData) => {
-    const topicSeries = {};
-  
-    for (const [date, parties] of Object.entries(rawData)) {
-      for (const party of ['Democratic', 'Republican']) {
-        const topics = parties[party] || {};
-        for (const [topic, values] of Object.entries(topics)) {
-          if (!topicSeries[topic]) topicSeries[topic] = {};
-          if (!topicSeries[topic][date]) topicSeries[topic][date] = { date };
-  
-          if (showMisinformation) {
-            topicSeries[topic][date][party] = values.avg_misinfo;
-          } else {
-            // Apply transformations to civility values
-            if (party === 'Democratic') {
-              topicSeries[topic][date][party] = 1 - values.avg_civility; // Flip civility values
-            } else if (party === 'Republican') {
-              topicSeries[topic][date][party] = values.avg_civility - 1; // Subtract 1 from civility values
-            }
-          }
-        }
-      }
-    }
-  
-    const transformed = {};
-    for (const [topic, dateMap] of Object.entries(topicSeries)) {
-      transformed[topic] = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date));
-    }
-  
-    return transformed;
-  };  
+    fetchData();
+  }, [startDate, endDate, showMisinformation]);
 
   const applyOffset = (data, offset) => {
+    if (!data) return [];
     return data.map(entry => ({
       ...entry,
       Democratic: entry.Democratic + offset,
@@ -111,6 +80,24 @@ function AccountabilityLineChart({ startDate, endDate }) {
   };
 
   const currentTopic = topics[currentTopicIndex];
+  const currentData = filteredData[currentTopic] || [];
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full">
+        <FaSpinner className="animate-spin text-3xl text-primary mb-2" />
+        <p className="text-sm">Loading accountability data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-error shadow-sm text-sm p-2">
+        <span>{error}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full flex items-center px-1">
@@ -124,7 +111,7 @@ function AccountabilityLineChart({ startDate, endDate }) {
           placement="right"
           arrow={true}
         >
-          <span className="my-2 text-center">{topicIcons[currentTopic.charAt(0).toUpperCase() + currentTopic.slice(1)]}</span>
+          <span className="my-2 text-center">{topicIcons[currentTopic]}</span>
         </Tippy>
         <button onClick={handleNext}>
           <IoIosArrowDown size={20} />
@@ -154,10 +141,10 @@ function AccountabilityLineChart({ startDate, endDate }) {
             </span>
           </Tippy>
         </div>
-        {filteredData[currentTopic] && (
+        {currentData.length > 0 && (
           <div style={{ marginRight: 20, marginLeft: -70, marginTop: 30}}>
             <ResponsiveContainer width="100%" height={150}>
-              <LineChart data={applyOffset(filteredData[currentTopic], 0.1)}>
+              <LineChart data={applyOffset(currentData, 0.1)}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={false} />
                 <YAxis axisLine={false} tickLine={false} tick={false} domain={[-1, 1]} />
@@ -188,8 +175,8 @@ function AccountabilityLineChart({ startDate, endDate }) {
 AccountabilityLineChart.propTypes = {
   width: PropTypes.number,
   height: PropTypes.number,
-  startDate: PropTypes.object.isRequired,
-  endDate: PropTypes.object.isRequired
+  startDate: PropTypes.object,
+  endDate: PropTypes.object
 };
 
 export default AccountabilityLineChart; 

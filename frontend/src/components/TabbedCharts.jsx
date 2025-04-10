@@ -102,8 +102,8 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
   ];
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="flex justify-center space-x-2 border-b border-base-300">
+    <div className="h-full overflow-y-auto overflow-x-hidden">
+      <div className="flex justify-center space-x-2 border-b border-base-300 bg-base-100">
         {tabs.map((tab) => (
           <button
             key={tab.value}

@@ -2,7 +2,7 @@ import React from 'react';
 import dayjs from 'dayjs'
 import { colorMap } from './BipartiteFlow';
 
-function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, activeTopics, setActiveTopics, startDate, setStartDate, endDate, setEndDate, sidebarOpen }) {
+function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, activeTopics, setActiveTopics, startDate, setStartDate, endDate, setEndDate, sidebarOpen, selectedMetric, setSelectedMetric }) {
   return (
     <div className="w-64 h-full bg-base-200 shadow-xl overflow-y-auto">
       <div className="p-4 space-y-4">
@@ -65,6 +65,55 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <button
+            className="w-full bg-primary text-primary-content py-2 rounded"
+            onClick={() => toggleSection('metrics')}
+          >
+            Metric Settings
+          </button>
+          {expandedSections.metrics && (
+            <div className="mt-4">
+              <label className="block text-base-content">Select Metric</label>
+              <div className="flex flex-col space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="metric"
+                    value="posts"
+                    checked={selectedMetric === 'posts'}
+                    onChange={() => setSelectedMetric('posts')}
+                    className="radio radio-primary mr-2"
+                  />
+                  Amount of Posts
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="metric"
+                    value="legislators"
+                    checked={selectedMetric === 'legislators'}
+                    onChange={() => setSelectedMetric('legislators')}
+                    className="radio radio-primary mr-2"
+                  />
+                  Amount of Legislators
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="metric"
+                    value="engagement"
+                    checked={selectedMetric === 'engagement'}
+                    onChange={() => setSelectedMetric('engagement')}
+                    className="radio radio-primary mr-2"
+                  />
+                  Amount of Engagement
+                </label>
+              </div>
             </div>
           )}
         </div>

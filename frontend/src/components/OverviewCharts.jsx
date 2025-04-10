@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { 
-  BarChart, Bar, LineChart, Line, RadarChart, PolarGrid, PolarAngleAxis, 
+  BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, 
   PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
 import axios from "axios";
@@ -11,6 +11,7 @@ import {
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
+import TrendLineChart from './TrendLineChart'; // Import the new component
 
 function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
   const [data, setData] = useState(null);
@@ -125,15 +126,6 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
     { metric: "Misinformation Score", value: republicanData.avgMisinfoScore * 100 },
     { metric: "Interaction Score", value: republicanData.avgInteractionScore }
   ];
-
-  // Format data for line chart
-  const lineData = visualizations.lineChartEngagementOverTime.map(item => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    "Democratic Posts": item.democraticPosts,
-    "Republican Posts": item.republicanPosts,
-    "Democratic Engagement": item.democraticEngagement,
-    "Republican Engagement": item.republicanEngagement,
-  }));
 
   return (
     <div className="flex flex-col space-y-4 p-2">
@@ -287,65 +279,7 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
             Engagement Trends Over Time
           </h2>
           <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart 
-                data={lineData}
-                margin={{ top: 10, right: 20, left: 10, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="date" 
-                  label={{ value: 'Date', position: 'insideBottomRight', offset: -10 }}
-                  tickFormatter={(value) => value}
-                />
-                <YAxis 
-                  yAxisId="left" 
-                  orientation="left" 
-                  label={{ value: 'Posts', angle: -90, position: 'insideLeft' }}
-                  tickFormatter={formatNumber}
-                />
-                <YAxis 
-                  yAxisId="right" 
-                  orientation="right"
-                  label={{ value: 'Engagement', angle: 90, position: 'insideRight' }}
-                  tickFormatter={formatNumber}
-                />
-                <Tooltip />
-                <Legend />
-                <Line 
-                  yAxisId="left"
-                  type="monotone" 
-                  dataKey="Democratic Posts" 
-                  stroke={colors.democratic} 
-                  activeDot={{ r: 6 }}
-                  strokeWidth={2}
-                />
-                <Line 
-                  yAxisId="left"
-                  type="monotone" 
-                  dataKey="Republican Posts" 
-                  stroke={colors.republican}
-                  activeDot={{ r: 6 }}
-                  strokeWidth={2}
-                />
-                <Line 
-                  yAxisId="right"
-                  type="monotone" 
-                  dataKey="Democratic Engagement" 
-                  stroke={colors.democratic}
-                  strokeDasharray="5 5"
-                  dot={{ r: 3 }}
-                />
-                <Line 
-                  yAxisId="right"
-                  type="monotone" 
-                  dataKey="Republican Engagement" 
-                  stroke={colors.republican}
-                  strokeDasharray="5 5"
-                  dot={{ r: 3 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <TrendLineChart startDate={startDate} endDate={endDate} selectedTopics={selectedTopics} />
           </div>
         </div>
       </div>

@@ -21,7 +21,8 @@ function App() {
     civility: true,
     misinformation: true,
     statistics: true,
-    topics: true
+    topics: true,
+    metrics: true
   });
   const [activeTopics, setActiveTopics] = useState([
     'abortion', 
@@ -34,10 +35,11 @@ function App() {
     'rights'
   ]);
   const [startDate, setStartDate] = useState(dayjs('2020-01-01'));
-  const [endDate, setEndDate] = useState(dayjs('2022-01-01'));
+  const [endDate, setEndDate] = useState(dayjs('2021-12-31'));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState('posts');
 
   const [legislatorClicked, setLegislatorClicked] = useState([]);
   const [postData, setPostData] = useState([]);
@@ -123,6 +125,8 @@ function App() {
                 endDate={endDate}
                 setEndDate={setEndDate}
                 sidebarOpen={sidebarOpen}
+                selectedMetric={selectedMetric}
+                setSelectedMetric={setSelectedMetric}
               />
             </div>
 
@@ -151,6 +155,7 @@ function App() {
                     startDate={startDate} 
                     endDate={endDate} 
                     onDateChange={handleDateChange}
+                    selectedMetric={selectedMetric}
                   />
                 </div>
               </div>
