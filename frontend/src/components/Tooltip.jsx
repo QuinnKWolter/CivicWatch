@@ -51,7 +51,6 @@ export const TooltipGroup = ({ xPos, yPos, data, setLegislatorClicked }) => {
         pointerEvents: "auto", // make sure the tooltip is interactive
         backgroundColor: "rgba(0, 0, 0, 0.8)",
         borderRadius: "4px",
-        color: "white",
         fontSize: "12px",
         padding: "5px",
         maxHeight: "150px",
@@ -61,9 +60,9 @@ export const TooltipGroup = ({ xPos, yPos, data, setLegislatorClicked }) => {
     >
       <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
         {data.map((data, index) => (
-          <li key={index} style={{ marginBottom: "4px" }} >
+          <li className={data.party === "D" ? "text-blue-400 " : "text-red-400" } key={index} style={{ marginBottom: "4px" }} >
             <button onClick={()=> handleClick(data)} >
-                    {data.name}
+                    {data.name + " " + "(" + data.party + ")"}
                     </button>
           </li>
         ))}
