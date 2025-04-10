@@ -129,6 +129,34 @@ def geo_activity(request):
     
     return JsonResponse(list(geo_stats), safe=False)
 
+
+def geo_activity_by_topics(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    metric = request.GET.get('metric', 'posts')
+    topic_list = request.GET.getlist('topic')
+
+    posts = Post.objects.all()
+
+    if start_date:
+        posts = posts.filter(created_at__gte=start_date)
+    if end_date:
+        posts = posts.filter(created_at__lte=end_date)
+
+    if topic_list:
+        topic_filter = Q()
+        for t in topic_list:
+            topic_filter |= Q(text__icontains=t) 
+        posts = posts.filter(topic_filter)
+
+    if metric == 'posts':
+        geo_stats = posts.values('state').annotate(total=Count('post_id'))
+    # else:
+    #     geo_stats = posts.values('state').annotate(total=Sum('like_count'))
+
+    return JsonResponse(list(geo_stats), safe=False)
+
+
 # 🔹 Post Exploration APIs
 def all_posts(request):
     posts = filter_posts(request)

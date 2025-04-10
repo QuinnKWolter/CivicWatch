@@ -105,6 +105,7 @@ function App() {
                     setPostData={setPostData}
                     startDate={startDate}
                     endDate={endDate}
+                    activeTopics={activeTopics} 
                   />
                 </div>
                 <div className="col-span-3 bg-base-200 rounded-lg shadow-lg overflow-hidden">

@@ -190,6 +190,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
           <div>
             <h6 className="text-lg">Geography Content</h6>
             {/* Add Geography content here */}
+            <ChoroplethMap startDate={startDate} endDate={endDate} activeTopics={activeTopics}/>
           </div>
         )}
       </div>
