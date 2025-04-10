@@ -2,7 +2,7 @@ from django.shortcuts import render
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, Sum, Avg, Q, F
+from django.db.models import Count, Sum, Avg, Q, Case, When, IntegerField
 from .models import Legislator, Post, LegislatorInteraction, Topic
 from datetime import datetime, timedelta, date
 from django.utils.dateparse import parse_date
@@ -13,6 +13,7 @@ from .models import Post
 import json
 import os
 from django.conf import settings
+from collections import defaultdict
 
 # 🔹 Helper function: Filter posts by date range and optional criteria
 def filter_posts(request):
@@ -35,6 +36,10 @@ def legislator_detail(request, legislator_id):
     legislator = get_object_or_404(Legislator, pk=legislator_id)
     return JsonResponse({"id": legislator.legislator_id, "name": legislator.name, "party": legislator.party, "state": legislator.state})
 
+
+from django.db.models.functions import TruncDate
+from django.db.models import Count
+
 def legislator_posts_line_chart(request):
     name = request.GET.get("name") 
     start_date = request.GET.get("start_date")
@@ -44,7 +49,6 @@ def legislator_posts_line_chart(request):
         return JsonResponse({"error": "Missing required parameter 'name'"}, status=400)
 
     legislator = Legislator.objects.filter(name__iexact=name).first()
-
     if not legislator:
         return JsonResponse({"error": "Legislator not found"}, status=404)
 
@@ -54,36 +58,30 @@ def legislator_posts_line_chart(request):
     if end_date:
         post_filter &= Q(created_at__lte=parse_date(end_date))
 
-    posts = Post.objects.filter(post_filter).values(
-        "post_id", "legislator_id", "name", "created_at", "text",
-        "attachment", "state", "chamber", "party",
-        "retweet_count", "like_count", "count_misinfo",
-        "interaction_score", "overperforming_score", "civility_score"
-    ).order_by("created_at")
+   
+    grouped_data = (
+        Post.objects
+        .filter(post_filter)
+        .exclude(topics__name=None)
+        .annotate(date=TruncDate("created_at"))
+        .values("topics__name", "date")
+        .annotate(count=Count("post_id"))
+        .order_by("topics__name", "date")
+    )
 
-    response_data = [
-        {
-            "id": post["post_id"],
-            "lid": post["legislator_id"],
-            "name": post["name"],
-            "handle": legislator.name.replace(" ", ""),
-            "created_at": post["created_at"],
-            "text": post["text"],
-            "attachment": post["attachment"],
-            "state": post["state"],
-            "chamber": post["chamber"],
-            "party": post["party"],
-            "retweet_count": post["retweet_count"],
-            "like_count": post["like_count"],
-            "count_misinfo": post["count_misinfo"],
-            "interaction_score": post["interaction_score"],
-            "overperforming_score": post["overperforming_score"],
-            "civility_score": post["civility_score"],
-        }
-        for post in posts
-    ]
+   
+    response = {}
+    for entry in grouped_data:
+        topic = entry["topics__name"]
+        date = entry["date"].isoformat()
+        count = entry["count"]
 
-    return JsonResponse(response_data, safe=False)
+        if topic not in response:
+            response[topic] = []
+        response[topic].append({"date": date, "count": count})
+
+    return JsonResponse(response, safe=False)
+
 
 # 🔹 Topic & Keyword APIs
 def all_topics(request):
@@ -145,46 +143,102 @@ def top_posts(request):
     post_list = posts.values("post_id", "text", "like_count", "retweet_count")
     return JsonResponse(list(post_list), safe=False)
 
+# def legislators_scatter_data(request):
+#     start_date = request.GET.get('start_date')
+#     end_date = request.GET.get('end_date')
+
+#     legislators = Legislator.objects.all()
+
+#     topic_keywords = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"]
+
+#     posts_filter = Q()
+#     if start_date:
+#         start_date = parse_date(start_date)
+#         posts_filter &= Q(created_at__gte=start_date)
+#     if end_date:
+#         end_date = parse_date(end_date)
+#         posts_filter &= Q(created_at__lte=end_date)
+
+#     data = []
+#     for legislator in legislators:
+#         posts = legislator.tweets.filter(posts_filter)
+
+#         topic_counts = {topic: posts.filter(text__icontains=topic).count() for topic in topic_keywords}
+
+#         data.append({
+#             "name": legislator.name,
+#             "state": legislator.state,
+#             "chamber": legislator.chamber,
+#             "party": legislator.party,
+#             "lid": legislator.legislator_id,
+#             "total_posts_tw": posts.count(),
+#             "total_likes_tw": posts.aggregate(total_likes=Sum("like_count"))["total_likes"] or 0,
+#             "total_retweets_tw": posts.aggregate(total_retweets=Sum("retweet_count"))["total_retweets"] or 0,
+#             "total_misinfo_count_tw": posts.aggregate(total_misinfo=Sum("count_misinfo"))["total_misinfo"] or 0,
+#             "total_interactions_tw": posts.aggregate(total_interactions=Sum("like_count") + Sum("retweet_count"))["total_interactions"] or 0,
+#             "interaction_score_tw": legislator.interaction_score_tw,
+#             "overperforming_score_tw": legislator.overperforming_score_tw,
+#             "civility_score_tw": legislator.civility_score_tw,
+#             **topic_counts  # Add topic data dynamically
+#         })
+
+#     return JsonResponse(data, safe=False)
+
+
 def legislators_scatter_data(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    legislators = Legislator.objects.all()
-
-    topic_keywords = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"]
-
     posts_filter = Q()
     if start_date:
         start_date = parse_date(start_date)
-        posts_filter &= Q(created_at__gte=start_date)
+        posts_filter &= Q(tweets__created_at__gte=start_date)
     if end_date:
         end_date = parse_date(end_date)
-        posts_filter &= Q(created_at__lte=end_date)
+        posts_filter &= Q(tweets__created_at__lte=end_date)
+
+    topic_keywords = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"]
+
+    # Build dynamic Case/When expressions for topic counts
+    topic_annotations = {
+        f"{topic}_count": Count(
+            Case(
+                When(tweets__text__icontains=topic, then=1),
+                output_field=IntegerField()
+            )
+        )
+        for topic in topic_keywords
+    }
+
+    legislators = Legislator.objects.annotate(
+        total_posts_tw_count=Count("tweets", filter=posts_filter, distinct=True),
+        total_likes_tw_count=Sum("tweets__like_count", filter=posts_filter),
+        total_retweets_tw_count=Sum("tweets__retweet_count", filter=posts_filter),
+        total_misinfo_count_tw_count=Sum("tweets__count_misinfo", filter=posts_filter),
+        **topic_annotations
+    ).filter(posts_filter).distinct()
 
     data = []
-    for legislator in legislators:
-        posts = legislator.tweets.filter(posts_filter)
-
-        topic_counts = {topic: posts.filter(text__icontains=topic).count() for topic in topic_keywords}
-
+    for leg in legislators:
         data.append({
-            "name": legislator.name,
-            "state": legislator.state,
-            "chamber": legislator.chamber,
-            "party": legislator.party,
-            "lid": legislator.legislator_id,
-            "total_posts_tw": posts.count(),
-            "total_likes_tw": posts.aggregate(total_likes=Sum("like_count"))["total_likes"] or 0,
-            "total_retweets_tw": posts.aggregate(total_retweets=Sum("retweet_count"))["total_retweets"] or 0,
-            "total_misinfo_count_tw": posts.aggregate(total_misinfo=Sum("count_misinfo"))["total_misinfo"] or 0,
-            "total_interactions_tw": posts.aggregate(total_interactions=Sum("like_count") + Sum("retweet_count"))["total_interactions"] or 0,
-            "interaction_score_tw": legislator.interaction_score_tw,
-            "overperforming_score_tw": legislator.overperforming_score_tw,
-            "civility_score_tw": legislator.civility_score_tw,
-            **topic_counts  # Add topic data dynamically
+            "name": leg.name,
+            "state": leg.state,
+            "chamber": leg.chamber,
+            "party": leg.party,
+            "lid": leg.legislator_id,
+            "total_posts_tw_count": leg.total_posts_tw_count,
+            "total_likes_tw": leg.total_likes_tw_count or 0,
+            "total_retweets_tw": leg.total_retweets_tw_count or 0,
+            "total_misinfo_count_tw": leg.total_misinfo_count_tw_count or 0,
+            "total_interactions_tw": (leg.total_likes_tw_count or 0) + (leg.total_retweets_tw_count or 0),
+            "interaction_score_tw": leg.interaction_score_tw,
+            "overperforming_score_tw": leg.overperforming_score_tw,
+            "civility_score_tw": leg.civility_score_tw,
+            **{topic: getattr(leg, f"{topic}_count", 0) for topic in topic_keywords}
         })
 
     return JsonResponse(data, safe=False)
+
 
 def bipartite_flow_data(request):
     print("Starting bipartite_flow_data function")

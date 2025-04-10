@@ -3,8 +3,9 @@ import { Radar } from "./Radar";
 // import { SummaryLegislatorScatter } from "./SummaryLegislatorScatter";
 import { useState } from "react";
 import { LineChart } from "./PostLinechart";
-// import { LegislatorHex } from "./LegislatorHexBin";
-function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, setPostData, startDate, endDate }) {
+import { LegislatorHex } from "./LegislatorHexBin";
+import { RidgeLinePlot } from "./RidgeLine";
+function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, setPostData, startDate, endDate, legScatterData}) {
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
     { name: "total_interactions_tw", max: 93472549 },
@@ -27,55 +28,63 @@ function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, s
   }
 
   return (
-    <div>
-      {/* <SummaryLegislatorScatter
+    <div className="overflow-y-auto h-full p-2">
+      <LegislatorHex 
         width={400}
         height={400}
-        legislatorClicked={legislatorClicked}
-        setLegislatorClicked={setLegislatorClicked}
-        postData={postData}
-        setPostData={setPostData}
         startDate={startDate}
         endDate={endDate}
-      /> */}
-      {/* <LegislatorHex
-        width={400}
-        height={400}
-      /> */}
-      
+        setLegislatorClicked={setLegislatorClicked}
+        legScatterData={legScatterData}
+      />
       <div className="flex space-x-2 border-b border-base-300">
-      <button
-        className={`py-1 px-3 rounded-t ${cVal === 0 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`} onClick={() => handleChange(0)}>
-        Radar Accountability
+        <button
+          className={`py-1 px-3 rounded-t ${cVal === 0 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`} 
+          onClick={() => handleChange(0)}>
+          Radar Accountability
         </button>
-      <button className={`py-1 px-3 rounded-5 ${cVal === 1 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`} onClick={() => handleChange(1)}>
-        Radar Topics
+        <button 
+          className={`py-1 px-3 rounded-5 ${cVal === 1 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`} 
+          onClick={() => handleChange(1)}>
+          Radar Topics
         </button>
-        <button className={`py-1 px-3 rounded-5 ${cVal === 2 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`} onClick={() => handleChange(2)}>
+        <button 
+          className={`py-1 px-3 rounded-5 ${cVal === 2 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`} 
+          onClick={() => handleChange(2)}>
           LineChart Posts
-      </button>
+        </button>
       </div>
-      <div className="mt-4">
-        {cVal === 0 && <Radar
-          axisConfig={axisConfig}
-          width={300}
-          height={300}
-          data={legislatorClicked}
-        />}
+  
+      {/* 👇 scrollable container with max height */}
+      <div className="mt-4 overflow-y-auto max-h-[100px]">
+        {cVal === 0 && (
+          <Radar
+            axisConfig={axisConfig}
+            width={300}
+            height={300}
+            data={legislatorClicked}
+          />
+        )}
         {cVal === 1 && (
           <Radar
             axisConfig={axisConfigTopics}
             width={300}
             height={300}
-            data={legislatorClicked} />
+            data={legislatorClicked}
+          />
         )}
         {cVal === 2 && (
-          <LineChart data={postData} width={300} height={300} />
+          // <LineChart
+          //   data={postData}
+          //   width={300}
+          //   height={300}
+          // />
+          <RidgeLinePlot height={400} width={400} legislatorClicked={legislatorClicked} />
         )}
       </div>
-
     </div>
   );
+  
 }
 
 export default LegislatorCharts; 

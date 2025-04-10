@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Radar } from "./Radar";
 import { LineChart } from "./PostLinechart";
 import LegislatorCharts from "./LegislatorCharts";
@@ -8,6 +8,7 @@ import { BiTrendingUp } from "react-icons/bi";
 import { MdOutlineAccountBox } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
 import { IoEarthOutline } from "react-icons/io5";
+import dayjs from "dayjs"
 
 function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics }) {
   console.log("TabbedCharts re-rendered with props:", { 
@@ -27,6 +28,8 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
   const handleChange = (newValue) => {
     setValue(newValue);
   };
+
+  const [legScatterData, setLegScatterData] = useState([]);
 
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
@@ -53,6 +56,52 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
 
     // Add more legislators as needed
   ];
+
+  useEffect(() => {
+      // Determine whether to use default data or fetch from the server
+      console.log("Fetching data from server");
+      fetch("http://localhost:8000/api/legislators/scatter/")
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Legislator Data: ", data);
+          setLegScatterData(data);
+        })
+        .catch((error) =>
+          console.error("Error fetching legislator data:", error)
+        );
+  }, []);
+  
+  useEffect(() => {
+      console.log("filtering data");
+      if (startDate && endDate) {
+        const url = "http://localhost:8000/api/legislators/scatter/?";
+        const params = {
+          startDate: startDate.format("DD-MM-YYYY"),
+          endDate: endDate.format("DD-MM-YYYY"),
+        };
+        const queryParams = new URLSearchParams(params).toString();
+  
+        const query = `${url}${queryParams}`;
+        console.log("query", query);
+        fetch(query)
+          .then((response) => response.json())
+          .then((data) => {
+            setLegScatterData(data);
+          })
+          .catch((error) =>
+            console.error("Error filtering legislator data: ", error)
+          );
+        const filteredData = legScatterData.filter((item) => {
+          const itemDate = dayjs(item.date);
+          return (
+            itemDate.isSameOrAfter(startDate) && itemDate.isSameOrBefore(endDate)
+          );
+        });
+        setLegScatterData(filteredData);
+        console.log("done filtering");
+        console.log("filtered data", filteredData);
+      }
+    }, [startDate, endDate]);
 
   // created_at	topic	party	like_count	retweet_count	total_posts	total_interactions
 
@@ -146,6 +195,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
             setPostData={setPostData}
             startDate={startDate}
             endDate={endDate}
+            legScatterData={legScatterData}
           />
         )}
         {value === 4 && (
