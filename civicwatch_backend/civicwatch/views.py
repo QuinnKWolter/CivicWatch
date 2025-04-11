@@ -2,12 +2,12 @@ from django.shortcuts import render
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, Sum, Avg, Q, Case, When, IntegerField
+from django.db.models import Count, Sum, Avg, Q, Case, When, IntegerField, F
 from .models import Legislator, Post, LegislatorInteraction, Topic
 from datetime import datetime, timedelta, date
 from django.utils.dateparse import parse_date
 from django.db.models import Avg, DateField, Count
-from django.db.models.functions import TruncDate
+from django.db.models.functions import TruncDate, Coalesce
 from django.http import JsonResponse
 from .models import Post
 import json
@@ -35,10 +35,6 @@ def all_legislators(request):
 def legislator_detail(request, legislator_id):
     legislator = get_object_or_404(Legislator, pk=legislator_id)
     return JsonResponse({"id": legislator.legislator_id, "name": legislator.name, "party": legislator.party, "state": legislator.state})
-
-
-from django.db.models.functions import TruncDate
-from django.db.models import Count
 
 def legislator_posts_line_chart(request):
     name = request.GET.get("name") 
@@ -133,7 +129,7 @@ def geo_activity(request):
     return JsonResponse(list(geo_stats), safe=False)
 
 
-def geo_activity_posts(request):
+def geo_activity_topics(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     metric = request.GET.get('metric', 'posts')
@@ -154,8 +150,21 @@ def geo_activity_posts(request):
 
     if metric == 'posts':
         geo_stats = posts.values('state').annotate(total=Count('post_id'))
-    # else:
-    #     geo_stats = posts.values('state').annotate(total=Sum('like_count'))
+
+    elif metric == 'legislators':
+        geo_stats = Legislator.objects.filter(
+            legislator_id__in=posts.values('legislator_id') 
+        ).values('state').annotate(
+            legislator_count=Count('legislator_id', distinct=True)
+        )
+
+    elif metric == 'engagement':
+        geo_stats = posts.values('state').annotate(
+            total=Coalesce(Sum(F('like_count') + F('retweet_count')), 0)
+        )
+    for item in geo_stats:
+        party = Legislator.objects.filter(state=item['state']).values('party').first()
+        item['party'] = party['party'] if party else 'Unknown'
 
     return JsonResponse(list(geo_stats), safe=False)
 

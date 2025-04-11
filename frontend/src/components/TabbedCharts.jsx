@@ -11,14 +11,15 @@ import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs"
 import ChoroplethMap from './ChoroplethMap';
 
-function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics, activeTopics }) {
+function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics, selectedMetric }) {
   console.log("TabbedCharts re-rendered with props:", { 
     startDate, 
     endDate, 
     selectedTopics, 
     startDateType: typeof startDate, 
     endDateType: typeof endDate, 
-    selectedTopicsType: typeof selectedTopics 
+    selectedTopicsType: typeof selectedTopics ,
+    selectedMetric
   });
 
   const [value, setValue] = useState(0);
@@ -203,7 +204,12 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
           <div>
             <h6 className="text-lg">Geography Content</h6>
             {/* Add Geography content here */}
-            <ChoroplethMap startDate={startDate} endDate={endDate} activeTopics={activeTopics}/>
+            <ChoroplethMap 
+              startDate={startDate} 
+              endDate={endDate} 
+              activeTopics={selectedTopics}
+              selectedMetric={selectedMetric}
+            />
           </div>
         )}
       </div>

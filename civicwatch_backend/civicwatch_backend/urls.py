@@ -47,7 +47,7 @@ urlpatterns = [
 
     # Geographic Data APIs
     path("api/geo/activity/", views.geo_activity, name="geo_activity"),
-    path('api/geo/activity/posts/', views.geo_activity_posts, name='geo_activity_posts'),
+    path('api/geo/activity/topics/', views.geo_activity_topics, name='geo_activity_topics'),
 
     # Post Exploration APIs
     path("api/posts/", views.all_posts, name="all_posts"),
