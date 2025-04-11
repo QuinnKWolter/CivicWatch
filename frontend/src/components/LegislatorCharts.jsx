@@ -37,8 +37,8 @@ function LegislatorCharts({
 
   return (
     <div className="overflow-y-auto h-full p-2">
-      <div tabIndex={0} className="collapse bg-base-100 border-base-300 border">
-        <input type="checkbox" />
+      <div tabIndex={0} className="collapse collapse-arrow bg-base-100 border-base-300 border">
+        <input type="checkbox"  checked={true} />
         <div className="collapse-title font-semibold">Legislator Hex</div>
         <div className="collapse-content">
         <LegislatorHex
