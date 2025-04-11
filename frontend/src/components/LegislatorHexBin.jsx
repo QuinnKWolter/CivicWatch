@@ -219,7 +219,7 @@ export const LegislatorHex = ({ height, width, startDate, endDate, setLegislator
   }, [legScatterData, height, width]); // Re-run the effect when data, height, or width changes
 
   return (
-    <div style={{ position: "relative" }}>
+    <div className="flex justify-center items-center w-full h-full">
       <svg ref={svgRef} />
       {groupHoverData && (
         <TooltipGroup

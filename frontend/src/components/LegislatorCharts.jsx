@@ -5,7 +5,15 @@ import { useState } from "react";
 import { LineChart } from "./PostLinechart";
 import { LegislatorHex } from "./LegislatorHexBin";
 import { RidgeLinePlot } from "./RidgeLine";
-function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, setPostData, startDate, endDate, legScatterData}) {
+function LegislatorCharts({
+  legislatorClicked,
+  setLegislatorClicked,
+  postData,
+  setPostData,
+  startDate,
+  endDate,
+  legScatterData,
+}) {
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
     { name: "total_interactions_tw", max: 93472549 },
@@ -25,51 +33,72 @@ function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, s
 
   const handleChange = (newValue) => {
     setCVal(newValue);
-  }
+  };
 
   return (
     <div className="overflow-y-auto h-full p-2">
-      <LegislatorHex 
-        width={400}
-        height={400}
-        startDate={startDate}
-        endDate={endDate}
-        setLegislatorClicked={setLegislatorClicked}
-        legScatterData={legScatterData}
-      />
-      <div className="flex space-x-2 border-b border-base-300">
+      <div tabIndex={0} className="collapse bg-base-100 border-base-300 border">
+        <input type="checkbox" />
+        <div className="collapse-title font-semibold">Legislator Hex</div>
+        <div className="collapse-content">
+        <LegislatorHex
+          width={400}
+          height={400}
+          startDate={startDate}
+          endDate={endDate}
+          setLegislatorClicked={setLegislatorClicked}
+          legScatterData={legScatterData}
+          />
+          </div>
+      </div>
+      <div className="flex space-x-2 border-b border-base-300 mt-3">
         <button
-          className={`py-1 px-3 rounded-t ${cVal === 0 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`} 
-          onClick={() => handleChange(0)}>
+          className={`py-1 px-3 rounded-t ${
+            cVal === 0
+              ? "bg-primary text-primary-content"
+              : "bg-base-300 text-base-content"
+          }`}
+          onClick={() => handleChange(0)}
+        >
           Radar Accountability
         </button>
-        <button 
-          className={`py-1 px-3 rounded-5 ${cVal === 1 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`} 
-          onClick={() => handleChange(1)}>
+        <button
+          className={`py-1 px-3 rounded-5 ${
+            cVal === 1
+              ? "bg-primary text-primary-content"
+              : "bg-base-300 text-base-content"
+          }`}
+          onClick={() => handleChange(1)}
+        >
           Radar Topics
         </button>
-        <button 
-          className={`py-1 px-3 rounded-5 ${cVal === 2 ? 'bg-primary text-primary-content' : 'bg-base-300 text-base-content'}`} 
-          onClick={() => handleChange(2)}>
+        <button
+          className={`py-1 px-3 rounded-5 ${
+            cVal === 2
+              ? "bg-primary text-primary-content"
+              : "bg-base-300 text-base-content"
+          }`}
+          onClick={() => handleChange(2)}
+        >
           LineChart Posts
         </button>
       </div>
-  
+
       {/* 👇 scrollable container with max height */}
-      <div className="mt-4 overflow-y-auto max-h-[100px]">
+      <div className="mt-4 overflow-y-auto min-h-[400px]">
         {cVal === 0 && (
           <Radar
             axisConfig={axisConfig}
-            width={300}
-            height={300}
+            width={400}
+            height={400}
             data={legislatorClicked}
           />
         )}
         {cVal === 1 && (
           <Radar
             axisConfig={axisConfigTopics}
-            width={300}
-            height={300}
+            width= {400}
+            height= {400}
             data={legislatorClicked}
           />
         )}
@@ -79,13 +108,15 @@ function LegislatorCharts({ legislatorClicked, setLegislatorClicked, postData, s
           //   width={300}
           //   height={300}
           // />
-          <RidgeLinePlot height={400} width={400} legislatorClicked={legislatorClicked} />
+          <RidgeLinePlot
+            height={400}
+            width={900}
+            legislatorClicked={legislatorClicked}
+          />
         )}
       </div>
     </div>
   );
-  
 }
 
-export default LegislatorCharts; 
-
+export default LegislatorCharts;

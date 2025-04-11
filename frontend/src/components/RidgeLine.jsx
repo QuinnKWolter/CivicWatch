@@ -55,9 +55,9 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked }) => {
     if (Object.keys(testData).length === 0) return;
 
     const marginTop = 40;
-    const marginRight = 20;
+    const marginRight = 30;
     const marginBottom = 30;
-    const marginLeft = 120;
+    const marginLeft = 80;
     const overlap = 4;
 
     const dates = Object.values(testData)
@@ -167,7 +167,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked }) => {
   }, [testData, width, height]);
 
   return (
-    <div style={{ position: "relative" }}>
+    <div className="flex justify-center items-center w-full h-full">
       <svg ref={svgRef} />
     </div>
   );
