@@ -46,6 +46,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
     { name: "gun", max: 427 },
     { name: "immigra", max: 384 },
     { name: "rights", max: 327 },
+    
   ];
 
   const legislators = [
