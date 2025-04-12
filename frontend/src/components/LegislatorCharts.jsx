@@ -84,7 +84,6 @@ function LegislatorCharts({
         </button>
       </div>
 
-      {/* 👇 scrollable container with max height */}
       <div className="mt-4 overflow-y-auto min-h-[400px]">
         {cVal === 0 && (
           <Radar
@@ -112,6 +111,8 @@ function LegislatorCharts({
             height={400}
             width={900}
             legislatorClicked={legislatorClicked}
+            startDate={startDate}
+            endDate={endDate}
           />
         )}
       </div>

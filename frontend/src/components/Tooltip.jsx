@@ -37,8 +37,11 @@ export const TooltipGroup = ({ xPos, yPos, data, setLegislatorClicked }) => {
 
     const handleClick = (data) => {
         setLegislatorClicked(data)
-        console.log("set legislator data")
-    }
+  }
+  
+  // useEffect(() => {
+  //     console.log("leg data")
+  //   })
     
 
   return (

@@ -1,55 +1,54 @@
 import { useState, useEffect, useRef } from "react";
 import * as d3 from "d3";
+import dayjs from "dayjs";
 
-export const RidgeLinePlot = ({ width, height, legislatorClicked }) => {
+export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, endDate }) => {
   const svgRef = useRef(null);
   const [testData, setTestData] = useState({});
-  const [allDates, setAllDates] = useState([]);
-
-  const allPossibleTopics = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"]
+  
+  // Remove the allDates state since we can calculate it from testData when needed
+  const allPossibleTopics = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"];
 
   useEffect(() => {
-    fetch(`http://localhost:8000/api/legislator_posts/?name=${legislatorClicked.name}`)
+    
+
+    const url = "http://localhost:8000/api/legislator_posts/?"
+
+    const params = {
+      start_date: startDate.format("YYYY-MM-DD"),
+      end_date: endDate.format("YYYY-MM-DD"),
+      name: legislatorClicked.name
+    }
+
+
+
+    const queryParams = new URLSearchParams(params).toString()
+    const query = `${url}${queryParams}`;
+
+    fetch(query)
       .then((response) => response.json())
       .then((data) => {
-        
+        console.log(data)
         const updatedData = Object.fromEntries(
           Object.entries(data).map(([topic, posts]) => {
             if (posts.length < 10) {
-              // Set count to 0 for all posts in topics with fewer than 10 posts
               posts.forEach(post => post.count = 0);
             }
             return [topic, posts];
           })
         );
 
-        const dates = Object.values(updatedData)
-          .flat()
-          .map((d) => new Date(d.date));
-        const dateRange = d3.extent(dates);
-
-        const newAllDates = [];
-        for (let d = new Date(dateRange[0]); d <= dateRange[1]; d.setDate(d.getDate() + 1)) {
-          newAllDates.push(new Date(d));
-        }
-
-        setAllDates(newAllDates);
-        
-
+        // Fill in missing topics with empty data
         allPossibleTopics.forEach((topic) => {
           if (!updatedData[topic]) {
-            // Create empty posts with zero counts for this topic
-            updatedData[topic] = allDates.map((date) => ({
-              date: date.toISOString(),
-              count: 0,
-            }));
+            updatedData[topic] = [];
           }
         });
 
         setTestData(updatedData);
       })
       .catch((error) => console.error("Error fetching data", error));
-  }, [legislatorClicked]);
+  }, [legislatorClicked, startDate, endDate]); // Remove allDates from dependencies
 
   useEffect(() => {
     if (Object.keys(testData).length === 0) return;
@@ -60,6 +59,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked }) => {
     const marginLeft = 80;
     const overlap = 4;
 
+    // Calculate dates from testData
     const dates = Object.values(testData)
       .flat()
       .map((d) => new Date(d.date));
@@ -70,6 +70,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked }) => {
       allDates.push(new Date(d));
     }
 
+    // Rest of your rendering code...
     const topics = Object.keys(testData);
     const x = d3
       .scaleTime()
@@ -150,21 +151,16 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked }) => {
         .attr("stroke", colorScale(topic))
         .attr("stroke-width", 1)
         .attr("d", area(filledPosts));
-
-      // Optional: red baseline to debug
-      /*
-      d3.select(this)
-        .append("line")
-        .attr("x1", marginLeft)
-        .attr("x2", width - marginRight)
-        .attr("y1", 0)
-        .attr("y2", 0)
-        .attr("stroke", "red")
-        .attr("stroke-width", 0.5)
-        .attr("stroke-dasharray", "2,2");
-      */
     });
   }, [testData, width, height]);
+
+  if (!legislatorClicked || Object.keys(legislatorClicked).length === 0) {
+    return (
+      <div className="flex items-center justify-center">
+        No data available
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center items-center w-full h-full">

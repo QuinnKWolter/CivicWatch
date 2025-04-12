@@ -11,15 +11,6 @@ import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs"
 
 function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics }) {
-  console.log("TabbedCharts re-rendered with props:", { 
-    startDate, 
-    endDate, 
-    selectedTopics, 
-    startDateType: typeof startDate, 
-    endDateType: typeof endDate, 
-    selectedTopicsType: typeof selectedTopics 
-  });
-
   const [value, setValue] = useState(0);
 
   // Memoize selectedTopics to prevent unnecessary re-renders
@@ -57,23 +48,8 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
 
     // Add more legislators as needed
   ];
-
-  useEffect(() => {
-      // Determine whether to use default data or fetch from the server
-      console.log("Fetching data from server");
-      fetch("http://localhost:8000/api/legislators/scatter/")
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("Legislator Data: ", data);
-          setLegScatterData(data);
-        })
-        .catch((error) =>
-          console.error("Error fetching legislator data:", error)
-        );
-  }, []);
   
   useEffect(() => {
-      console.log("filtering data");
       if (startDate && endDate) {
         const url = "http://localhost:8000/api/legislators/scatter/?";
         const params = {
@@ -83,7 +59,6 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
         const queryParams = new URLSearchParams(params).toString();
   
         const query = `${url}${queryParams}`;
-        console.log("query", query);
         fetch(query)
           .then((response) => response.json())
           .then((data) => {
@@ -99,8 +74,6 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
           );
         });
         setLegScatterData(filteredData);
-        console.log("done filtering");
-        console.log("filtered data", filteredData);
       }
     }, [startDate, endDate]);
 

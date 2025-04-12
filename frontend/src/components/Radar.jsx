@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { useEffect, useMemo} from "react";
 import { INNER_RADIUS, RadarGrid } from "./RadarGrid";
 const MARGIN = 20;
 
@@ -11,32 +12,38 @@ export const Radar = ({ width, height, data, axisConfig }) => {
     );
   }
 
-  const outerRadius = Math.min(width, height) / 2 - MARGIN;
-  const variableNames = axisConfig.map((axis) => axis.name);
+  console.log("radar rerendering");
+  console.log("data radar", data)
 
-  const xScale = d3
-    .scaleBand()
-    .domain(variableNames)
-    .range([0, 2 * Math.PI]);
+  const { outerRadius, variableNames, xScale, yScales, allCoordinates, linePath } = useMemo(() => {
+    const outerRadius = Math.min(width, height) / 2 - MARGIN;
+    const variableNames = axisConfig.map((axis) => axis.name);
 
-  let yScales = [];
-  axisConfig.forEach((axis) => {
-    yScales[axis.name] = d3
-      .scaleRadial()
-      .domain([0, axis.max])
-      .range([INNER_RADIUS, outerRadius]);
-  });
+    const xScale = d3
+      .scaleBand()
+      .domain(variableNames)
+      .range([0, 2 * Math.PI]);
 
-  const allCoordinates = axisConfig.map((axis) => {
-    const yScale = yScales[axis.name];
-    const angle = xScale(axis.name) ?? 0;
-    const radius = yScale(data[axis.name]);
-    return [angle, radius];
-  });
+    let yScales = {};
+    axisConfig.forEach((axis) => {
+      yScales[axis.name] = d3
+        .scaleRadial()
+        .domain([0, axis.max])
+        .range([INNER_RADIUS, outerRadius]);
+    });
 
-  allCoordinates.push(allCoordinates[0]);
-  const linePath = d3.lineRadial()(allCoordinates);
+    const allCoordinates = axisConfig.map((axis) => {
+      const yScale = yScales[axis.name];
+      const angle = xScale(axis.name) ?? 0;
+      const radius = yScale(data[axis.name]);
+      return [angle, radius];
+    });
 
+    allCoordinates.push(allCoordinates[0]);
+    const linePath = d3.lineRadial()(allCoordinates);
+
+    return { outerRadius, variableNames, xScale, yScales, allCoordinates, linePath };
+  }, [width, height, data, axisConfig]); // Recalculate when these change
   return (
     <div className="flex justify-center items-center w-full h-full">
       <svg 
