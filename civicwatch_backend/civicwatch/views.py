@@ -82,109 +82,6 @@ def legislator_posts_line_chart(request):
 
     return JsonResponse(response, safe=False)
 
-
-# 🔹 Topic & Keyword APIs
-def all_topics(request):
-    topics = Topic.objects.values("id", "name", "description")
-    return JsonResponse(list(topics), safe=False)
-
-# 🔹 Bipartite Temporal Flow Diagram APIs
-def flow_posts(request):
-    posts = filter_posts(request)
-    post_counts = posts.values("created_at").annotate(count=Count("post_id"))
-    return JsonResponse(list(post_counts), safe=False)
-
-def flow_civility_misinformation(request):
-    posts = filter_posts(request)
-    stats = posts.aggregate(avg_civility=Avg("civility_score"), avg_misinfo=Avg("count_misinfo"))
-    return JsonResponse(stats, safe=False)
-
-def flow_engagement(request):
-    posts = filter_posts(request)
-    engagement = posts.aggregate(total_likes=Sum("like_count"), total_retweets=Sum("retweet_count"))
-    return JsonResponse(engagement, safe=False)
-
-# 🔹 Chord Diagram APIs
-def chord_interactions(request):
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    interaction_type = request.GET.get('interaction_type')
-
-    interactions = LegislatorInteraction.objects.filter(date__range=[start_date, end_date])
-    if interaction_type:
-        interactions = interactions.filter(interaction_type=interaction_type)
-
-    interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"))
-    return JsonResponse(list(interaction_counts), safe=False)
-
-def chord_top_legislators(request):
-    interactions = LegislatorInteraction.objects.values("source_legislator_id").annotate(total_interactions=Count("post_id"))
-    return JsonResponse(list(interactions), safe=False)
-
-# 🔹 Geographic Data API
-def geo_activity(request):
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    metric = request.GET.get('metric', 'posts')
-
-    posts = filter_posts(request)
-    geo_stats = posts.values("state").annotate(total=Count("post_id") if metric == "posts" else Sum("like_count"))
-    
-    return JsonResponse(list(geo_stats), safe=False)
-
-# 🔹 Post Exploration APIs
-def all_posts(request):
-    posts = filter_posts(request)
-    post_list = posts.values("post_id", "text", "created_at", "like_count", "retweet_count", "civility_score", "count_misinfo")
-    return JsonResponse(list(post_list), safe=False)
-
-def top_posts(request):
-    posts = filter_posts(request).order_by("-like_count")[:10]
-    post_list = posts.values("post_id", "text", "like_count", "retweet_count")
-    return JsonResponse(list(post_list), safe=False)
-
-# def legislators_scatter_data(request):
-#     start_date = request.GET.get('start_date')
-#     end_date = request.GET.get('end_date')
-
-#     legislators = Legislator.objects.all()
-
-#     topic_keywords = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"]
-
-#     posts_filter = Q()
-#     if start_date:
-#         start_date = parse_date(start_date)
-#         posts_filter &= Q(created_at__gte=start_date)
-#     if end_date:
-#         end_date = parse_date(end_date)
-#         posts_filter &= Q(created_at__lte=end_date)
-
-#     data = []
-#     for legislator in legislators:
-#         posts = legislator.tweets.filter(posts_filter)
-
-#         topic_counts = {topic: posts.filter(text__icontains=topic).count() for topic in topic_keywords}
-
-#         data.append({
-#             "name": legislator.name,
-#             "state": legislator.state,
-#             "chamber": legislator.chamber,
-#             "party": legislator.party,
-#             "lid": legislator.legislator_id,
-#             "total_posts_tw": posts.count(),
-#             "total_likes_tw": posts.aggregate(total_likes=Sum("like_count"))["total_likes"] or 0,
-#             "total_retweets_tw": posts.aggregate(total_retweets=Sum("retweet_count"))["total_retweets"] or 0,
-#             "total_misinfo_count_tw": posts.aggregate(total_misinfo=Sum("count_misinfo"))["total_misinfo"] or 0,
-#             "total_interactions_tw": posts.aggregate(total_interactions=Sum("like_count") + Sum("retweet_count"))["total_interactions"] or 0,
-#             "interaction_score_tw": legislator.interaction_score_tw,
-#             "overperforming_score_tw": legislator.overperforming_score_tw,
-#             "civility_score_tw": legislator.civility_score_tw,
-#             **topic_counts  # Add topic data dynamically
-#         })
-
-#     return JsonResponse(data, safe=False)
-
-
 def legislators_scatter_data(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
@@ -500,101 +397,22 @@ def overview_metrics(request):
     return JsonResponse(response_data)
 
 def bipartite_data(request):
-    """
-    API endpoint providing bipartite flow data based on date range and topics
-    
-    Parameters:
-    - start_date: ISO format date string (e.g., "2020-01-01")
-    - end_date: ISO format date string (e.g., "2021-12-31")
-    - topics: Comma-separated list of topic names
-    
-    Returns JSON data structured for the bipartite flow visualization
-    """
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    topics_param = request.GET.get('topics', '')
-    
-    # In a production environment, you would query a database here
-    # For this example, we'll just load the JSON file used in the frontend
     file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultBipartite.json')
     
     try:
         with open(file_path, 'r') as f:
             data = json.load(f)
-            
-        # Filter by date if needed
-        if start_date and end_date:
-            # You could implement date filtering here
-            # This is just a placeholder for the actual implementation
-            filtered_data = data
-        else:
-            filtered_data = data
-            
-        # Filter by topics if needed
-        if topics_param:
-            topics = [topic.strip() for topic in topics_param.split(',')]
-            # You could implement topic filtering here
-            # This is just a placeholder for the actual implementation
-            
-        return JsonResponse(filtered_data, safe=False)
+        return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
 def accountability_data(request):
-    """
-    API endpoint providing accountability data based on date range and misinformation toggle
-    
-    Parameters:
-    - start_date: ISO format date string (e.g., "2020-01-01")
-    - end_date: ISO format date string (e.g., "2021-12-31")
-    - show_misinformation: Boolean indicating whether to show misinformation or civility data
-    
-    Returns JSON data structured for the accountability line chart
-    """
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    show_misinformation = request.GET.get('show_misinformation', 'true').lower() == 'true'
-    
-    # In a production environment, you would query a database here
-    # For this example, we'll just load the JSON file used in the frontend
     file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultAccountability.json')
     
     try:
         with open(file_path, 'r') as f:
             raw_data = json.load(f)
-            
-        # Transform data as needed
-        topic_series = {}
-        
-        for date, parties in raw_data.items():
-            for party in ['Democratic', 'Republican']:
-                topics = parties.get(party, {})
-                for topic, values in topics.items():
-                    if topic not in topic_series:
-                        topic_series[topic] = {}
-                    if date not in topic_series[topic]:
-                        topic_series[topic][date] = {"date": date}
-                    
-                    if show_misinformation:
-                        topic_series[topic][date][party] = values.get("avg_misinfo", 0)
-                    else:
-                        # Apply transformations to civility values
-                        if party == 'Democratic':
-                            topic_series[topic][date][party] = 1 - values.get("avg_civility", 0)
-                        else:
-                            topic_series[topic][date][party] = values.get("avg_civility", 0) - 1
-        
-        # Format data into final structure
-        transformed = {}
-        for topic, date_map in topic_series.items():
-            transformed[topic] = sorted(date_map.values(), key=lambda x: x["date"])
-            
-        # Additional filtering by date if needed
-        if start_date and end_date:
-            # Implement date filtering here
-            pass
-        
-        return JsonResponse(transformed)
+        return JsonResponse(raw_data, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 

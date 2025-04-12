@@ -37,11 +37,13 @@ function AccountabilityLineChart({ startDate, endDate }) {
     rights: <FaBalanceScale />
   };
 
+  const currentTopic = topics[currentTopicIndex];
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:8000/api/flow/accountability_data/?start_date=${startDate?.format('YYYY-MM-DD')}&end_date=${endDate?.format('YYYY-MM-DD')}&show_misinformation=${showMisinformation}`);
+        const response = await fetch(`http://localhost:8000/api/flow/accountability_data/`);
         
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -49,7 +51,7 @@ function AccountabilityLineChart({ startDate, endDate }) {
 
         const data = await response.json();
         setChartData(data);
-        setFilteredData(data); // Since filtering will now happen on the server
+        setFilteredData(data);
         setError(null);
       } catch (err) {
         console.error("Error fetching accountability data:", err);
@@ -60,7 +62,40 @@ function AccountabilityLineChart({ startDate, endDate }) {
     };
 
     fetchData();
-  }, [startDate, endDate, showMisinformation]);
+  }, []);
+
+  useEffect(() => {
+    if (!chartData) return;
+
+    const filtered = Object.entries(chartData).reduce((acc, [date, parties]) => {
+      const itemDate = dayjs(date);
+      if (itemDate.isValid() && itemDate.isSameOrAfter(dayjs(startDate)) && itemDate.isSameOrBefore(dayjs(endDate))) {
+        acc[date] = {
+          Democratic: {
+            ...parties.Democratic,
+            value: showMisinformation 
+              ? parties.Democratic[currentTopic]?.avg_misinfo 
+              : 1 - parties.Democratic[currentTopic]?.avg_civility
+          },
+          Republican: {
+            ...parties.Republican,
+            value: showMisinformation 
+              ? parties.Republican[currentTopic]?.avg_misinfo 
+              : (parties.Republican[currentTopic]?.avg_civility ?? 0) - 1
+          }
+        };
+      }
+      return acc;
+    }, {});
+
+    setFilteredData(filtered);
+  }, [chartData, startDate, endDate, showMisinformation, currentTopic]);
+
+  const currentData = Object.entries(filteredData).map(([date, parties]) => ({
+    date,
+    Democratic: parties.Democratic.value,
+    Republican: parties.Republican.value
+  }));
 
   const applyOffset = (data, offset) => {
     if (!data) return [];
@@ -78,9 +113,6 @@ function AccountabilityLineChart({ startDate, endDate }) {
   const handleNext = () => {
     setCurrentTopicIndex((prevIndex) => (prevIndex < topics.length - 1 ? prevIndex + 1 : 0));
   };
-
-  const currentTopic = topics[currentTopicIndex];
-  const currentData = filteredData[currentTopic] || [];
 
   if (loading) {
     return (
