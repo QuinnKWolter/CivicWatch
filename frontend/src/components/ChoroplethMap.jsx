@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
@@ -51,7 +50,8 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
             selectedMetric === 'legislators' ? item.legislator_count :
             selectedMetric === 'engagement' ? item.total || 0 : 0,
           party: item.party,
-          metric: selectedMetric
+          metric: selectedMetric,
+          topic_breakdown: item.topic_breakdown || {}
         }));
         setEngagementData(formatted);
       })
@@ -72,7 +72,7 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
       .style('position', 'absolute')
       .style('padding', '6px')
       .style('background', '#fff')
-      .style('color', 'green')
+      .style('color', 'black')
       .style('border-radius', '4px')
       .style('pointer-events', 'none')
       .style('font-size', '14px')
@@ -106,7 +106,7 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
         if (stateData.party === 'D') return blueScale(stateData.total_engagement);
         return '#ffffff';
       })
-      .attr('stroke', '#fff')
+      .attr('stroke', '#333')
       .attr('stroke-width', 0.5)
       .on('mouseover', (event, d) => {
         const stateName = d.properties.name;
@@ -116,7 +116,16 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
           const metricLabel = stateData.metric === 'posts' ? 'Posts' :
                               stateData.metric === 'legislators' ? 'Legislators' :
                               stateData.metric === 'engagement' ? 'Engagement' : '';
-          tooltip.html(`<strong>${stateName}</strong><br>${metricLabel}: ${stateData.total_engagement.toLocaleString()}`);
+          let tooltipHtml = `<strong>${stateName}</strong><br>${metricLabel}: ${stateData.total_engagement.toLocaleString()}`;
+
+          if (selectedMetric === 'posts' && stateData.topic_breakdown && Object.keys(stateData.topic_breakdown).length > 0) {
+            tooltipHtml += `<br><br><u>Topic Breakdown:</u>`;
+            Object.entries(stateData.topic_breakdown).forEach(([topic, count]) => {
+              tooltipHtml += `<br>${topic}: ${count}`;
+            });
+          }
+
+          tooltip.html(tooltipHtml);
         }
       })
       .on('mousemove', event => {
@@ -127,9 +136,25 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
       });
 
     return () => tooltip.remove();
-  }, [geojson, engagementData]);
+  }, [geojson, engagementData, selectedMetric]);
 
-  return <svg ref={svgRef} style={{ width: '100%' }} />;
+  return (
+    <>
+      <svg ref={svgRef} style={{ width: '100%' }} />
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: '20px', marginTop: '10px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ width: '20px', height: '20px', backgroundColor: '#cc0000', marginRight: '6px' }}></div>
+          <span>Republican</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ width: '20px', height: '20px', backgroundColor: '#1e3a8a', marginRight: '6px' }}></div>
+          <span>Democrat</span>
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default ChoroplethMap;

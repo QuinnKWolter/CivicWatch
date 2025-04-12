@@ -128,7 +128,6 @@ def geo_activity(request):
     
     return JsonResponse(list(geo_stats), safe=False)
 
-
 def geo_activity_topics(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
@@ -145,15 +144,28 @@ def geo_activity_topics(request):
     if topic_list:
         topic_filter = Q()
         for t in topic_list:
-            topic_filter |= Q(text__icontains=t) 
-        posts = posts.filter(topic_filter)
+            topic_filter |= Q(topics__name__icontains=t)
+        posts = posts.filter(topic_filter).distinct()
 
     if metric == 'posts':
         geo_stats = posts.values('state').annotate(total=Count('post_id'))
 
+        topic_counts = (
+            posts.filter(topics__name__in=topic_list)
+            .values('state', 'topics__name')
+            .annotate(count=Count('post_id'))
+        )
+
+        topic_map = defaultdict(lambda: defaultdict(int))
+        for row in topic_counts:
+            topic_map[row['state']][row['topics__name']] = row['count']
+
+        for item in geo_stats:
+            item['topic_breakdown'] = topic_map.get(item['state'], {})
+
     elif metric == 'legislators':
         geo_stats = Legislator.objects.filter(
-            legislator_id__in=posts.values('legislator_id') 
+            legislator_id__in=posts.values('legislator_id')
         ).values('state').annotate(
             legislator_count=Count('legislator_id', distinct=True)
         )
@@ -162,11 +174,13 @@ def geo_activity_topics(request):
         geo_stats = posts.values('state').annotate(
             total=Coalesce(Sum(F('like_count') + F('retweet_count')), 0)
         )
+
     for item in geo_stats:
         party = Legislator.objects.filter(state=item['state']).values('party').first()
         item['party'] = party['party'] if party else 'Unknown'
 
     return JsonResponse(list(geo_stats), safe=False)
+
 
 
 # 🔹 Post Exploration APIs
