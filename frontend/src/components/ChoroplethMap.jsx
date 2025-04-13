@@ -165,3 +165,4 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
 };
 
 export default ChoroplethMap;
+
