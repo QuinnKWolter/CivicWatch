@@ -17,7 +17,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
     const params = {
       start_date: startDate.format("YYYY-MM-DD"),
       end_date: endDate.format("YYYY-MM-DD"),
-      name: legislatorClicked.name
+      name: legislatorClicked[0].name
     }
 
 

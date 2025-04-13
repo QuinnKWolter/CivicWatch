@@ -36,7 +36,7 @@ export const TooltipGroup = ({ xPos, yPos, data, setLegislatorClicked }) => {
    
 
     const handleClick = (data) => {
-        setLegislatorClicked(data)
+        setLegislatorClicked(data[0][0])
   }
   
   // useEffect(() => {

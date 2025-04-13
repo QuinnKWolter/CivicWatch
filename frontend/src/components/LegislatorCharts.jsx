@@ -5,6 +5,7 @@ import { useState } from "react";
 import { LineChart } from "./PostLinechart";
 import { LegislatorHex } from "./LegislatorHexBin";
 import { RidgeLinePlot } from "./RidgeLine";
+import {LegislatorHeatMap} from "./LegislatorHeatMap"
 function LegislatorCharts({
   legislatorClicked,
   setLegislatorClicked,
@@ -13,6 +14,7 @@ function LegislatorCharts({
   startDate,
   endDate,
   legScatterData,
+  monthlyLeg
 }) {
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
@@ -41,13 +43,22 @@ function LegislatorCharts({
         <input type="checkbox"  checked={true} />
         <div className="collapse-title font-semibold">Legislator Hex</div>
         <div className="collapse-content">
-        <LegislatorHex
+        {/* <LegislatorHex
           width={400}
           height={400}
           startDate={startDate}
           endDate={endDate}
           setLegislatorClicked={setLegislatorClicked}
           legScatterData={legScatterData}
+          /> */}
+          <LegislatorHeatMap 
+            width={400}
+            height={400}
+            startDate={startDate}
+            endDate={endDate}
+            data={monthlyLeg}
+            legScatterData={legScatterData}
+            setLegislatorClicked={setLegislatorClicked}
           />
           </div>
       </div>

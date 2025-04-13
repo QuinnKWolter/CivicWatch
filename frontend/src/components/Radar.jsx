@@ -12,10 +12,12 @@ export const Radar = ({ width, height, data, axisConfig }) => {
     );
   }
 
-  console.log("radar rerendering");
-  console.log("data radar", data)
+
+
+  const newData = data[0];
 
   const { outerRadius, variableNames, xScale, yScales, allCoordinates, linePath } = useMemo(() => {
+   
     const outerRadius = Math.min(width, height) / 2 - MARGIN;
     const variableNames = axisConfig.map((axis) => axis.name);
 
@@ -35,7 +37,7 @@ export const Radar = ({ width, height, data, axisConfig }) => {
     const allCoordinates = axisConfig.map((axis) => {
       const yScale = yScales[axis.name];
       const angle = xScale(axis.name) ?? 0;
-      const radius = yScale(data[axis.name]);
+      const radius = yScale(newData[axis.name]);
       return [angle, radius];
     });
 
@@ -43,7 +45,7 @@ export const Radar = ({ width, height, data, axisConfig }) => {
     const linePath = d3.lineRadial()(allCoordinates);
 
     return { outerRadius, variableNames, xScale, yScales, allCoordinates, linePath };
-  }, [width, height, data, axisConfig]); // Recalculate when these change
+  }, [width, height, newData, axisConfig]); // Recalculate when these change
   return (
     <div className="flex justify-center items-center w-full h-full">
       <svg 
@@ -60,9 +62,9 @@ export const Radar = ({ width, height, data, axisConfig }) => {
           />
           <path
             d={linePath}
-            stroke={data.party === "R" ? "#FF0000" : data.party === "D" ? "#0000FF" : "#cb1dd1"}
+            stroke={newData.party === "R" ? "#FF0000" : newData.party === "D" ? "#0000FF" : "#cb1dd1"}
             strokeWidth={3}
-            fill={data.party === "R" ? "#FF0000" : data.party === "D" ? "#0000FF" : "#cb1dd1"}
+            fill={newData.party === "R" ? "#FF0000" : newData.party === "D" ? "#0000FF" : "#cb1dd1"}
             fillOpacity={0.1}
           />
         </g>
