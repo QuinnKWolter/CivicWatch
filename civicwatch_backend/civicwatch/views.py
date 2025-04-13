@@ -132,8 +132,9 @@ def geo_activity_topics(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     metric = request.GET.get('metric', 'posts')
-    topic_list = request.GET.getlist('topic')
-
+    
+    topics_param = request.GET.get('topics', '')
+    topic_list = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
     posts = Post.objects.all()
 
     if start_date:
@@ -147,41 +148,53 @@ def geo_activity_topics(request):
             topic_filter |= Q(topics__name__icontains=t)
         posts = posts.filter(topic_filter).distinct()
 
+    geo_stats = []
+
     if metric == 'posts':
-        geo_stats = posts.values('state').annotate(total=Count('post_id'))
-
-        topic_counts = (
-            posts.filter(topics__name__in=topic_list)
-            .values('state', 'topics__name')
-            .annotate(count=Count('post_id'))
-        )
-
-        topic_map = defaultdict(lambda: defaultdict(int))
-        for row in topic_counts:
-            topic_map[row['state']][row['topics__name']] = row['count']
-
-        for item in geo_stats:
-            item['topic_breakdown'] = topic_map.get(item['state'], {})
+        post_counts = posts.values('state', 'party').annotate(total=Count('post_id'))
+        geo_stats = list(post_counts)
 
     elif metric == 'legislators':
-        geo_stats = Legislator.objects.filter(
-            legislator_id__in=posts.values('legislator_id')
-        ).values('state').annotate(
+        legislator_counts = posts.values('state', 'party', 'legislator_id').distinct().annotate(
             legislator_count=Count('legislator_id', distinct=True)
         )
+        geo_stats = list(legislator_counts)
 
     elif metric == 'engagement':
-        geo_stats = posts.values('state').annotate(
-            total=Coalesce(Sum(F('like_count') + F('retweet_count')), 0)
+        engagement_data = posts.values('state', 'party').annotate(
+            total_engagement=Sum(F('like_count') + F('retweet_count'))
         )
+        geo_stats = list(engagement_data)
 
-    for item in geo_stats:
-        party = Legislator.objects.filter(state=item['state']).values('party').first()
-        item['party'] = party['party'] if party else 'Unknown'
+    state_party_data = {}
+    for entry in geo_stats:
+        state = entry['state']
+        party = entry['party']
+        
+        if party not in ['Democratic', 'Republican']:
+            party = 'Other'
+        
+        total = entry['total'] if metric == 'posts' else entry['legislator_count'] if metric == 'legislators' else entry['total_engagement']
+        if state not in state_party_data:
+            state_party_data[state] = {
+                'state': state,
+                'Democratic': 0,
+                'Republican': 0,
+                'Other': 0,
+                'total': 0
+            }
+        if party == 'Democratic':
+            state_party_data[state]['Democratic'] += total
+        elif party == 'Republican':
+            state_party_data[state]['Republican'] += total
+        else:
+            state_party_data[state]['Other'] += total
 
-    return JsonResponse(list(geo_stats), safe=False)
+        state_party_data[state]['total'] += total
 
+    geo_stats = list(state_party_data.values())
 
+    return JsonResponse(geo_stats, safe=False)
 
 # 🔹 Post Exploration APIs
 def all_posts(request):

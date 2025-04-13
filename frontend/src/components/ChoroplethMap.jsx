@@ -35,7 +35,7 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
 
     const formattedStart = startDate.format('YYYY-MM-DD');
     const formattedEnd = endDate.format('YYYY-MM-DD');
-    const topicsParam = activeTopics.map(topic => `topic=${topic}`).join('&');
+    const topicsParam = `topics=${activeTopics.join(',')}`;
 
     const url = `http://127.0.0.1:8000/api/geo/activity/topics/?start_date=${formattedStart}&end_date=${formattedEnd}&${topicsParam}&metric=${selectedMetric}`;
     console.log('Fetching from:', url);
@@ -45,13 +45,9 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
       .then(data => {
         const formatted = data.map(item => ({
           state: stateAbbrevToName[item.state] ?? item.state,
-          total_engagement:
-            selectedMetric === 'posts' ? item.total :
-            selectedMetric === 'legislators' ? item.legislator_count :
-            selectedMetric === 'engagement' ? item.total || 0 : 0,
-          party: item.party,
-          metric: selectedMetric,
-          topic_breakdown: item.topic_breakdown || {}
+          republicanTotal: item.Republican || 0,
+          democratTotal: item.Democratic || 0,
+          total_engagement: item.total || 0,
         }));
         setEngagementData(formatted);
       })
@@ -83,16 +79,13 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
     const stateEngagementMap = new Map();
     engagementData.forEach(d => stateEngagementMap.set(d.state, d));
 
-    const republicanData = engagementData.filter(d => d.party === 'R');
-    const democratData = engagementData.filter(d => d.party === 'D');
-
     const redScale = d3.scaleLinear()
-      .domain([0, d3.max(republicanData, d => d.total_engagement) || 1])
-      .range(['#f4cccc', '#cc0000']);
+      .domain([0, d3.max(engagementData, d => d.republicanTotal)])
+      .range(['#f4cccc', '#cc0000']); 
 
     const blueScale = d3.scaleLinear()
-      .domain([0, d3.max(democratData, d => d.total_engagement) || 1])
-      .range(['#add8e6', '#1e3a8a']);
+      .domain([0, d3.max(engagementData, d => d.democratTotal)])
+      .range(['#add8e6', '#1e3a8a']);  
 
     svg.append('g')
       .selectAll('path')
@@ -101,33 +94,48 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
       .attr('d', path)
       .attr('fill', d => {
         const stateData = stateEngagementMap.get(d.properties.name);
-        if (!stateData || stateData.total_engagement === 0) return '#ffffff';
-        if (stateData.party === 'R') return redScale(stateData.total_engagement);
-        if (stateData.party === 'D') return blueScale(stateData.total_engagement);
-        return '#ffffff';
+        if (!stateData) return '#ffffff';
+
+        const republicanTotal = stateData.republicanTotal;
+        const democratTotal = stateData.democratTotal;
+
+        if (republicanTotal > democratTotal) {
+          return redScale(republicanTotal);
+        } else if (democratTotal > republicanTotal) {
+          return blueScale(democratTotal); 
+        }
+
+        return d3.interpolateRgb(redScale(republicanTotal), blueScale(democratTotal))(0.5);
       })
       .attr('stroke', '#333')
       .attr('stroke-width', 0.5)
       .on('mouseover', (event, d) => {
         const stateName = d.properties.name;
         const stateData = stateEngagementMap.get(stateName);
-        if (stateData && stateData.total_engagement !== undefined) {
+      
+        if (stateData) {
           tooltip.transition().duration(200).style('opacity', 0.9);
-          const metricLabel = stateData.metric === 'posts' ? 'Posts' :
-                              stateData.metric === 'legislators' ? 'Legislators' :
-                              stateData.metric === 'engagement' ? 'Engagement' : '';
-          let tooltipHtml = `<strong>${stateName}</strong><br>${metricLabel}: ${stateData.total_engagement.toLocaleString()}`;
-
-          if (selectedMetric === 'posts' && stateData.topic_breakdown && Object.keys(stateData.topic_breakdown).length > 0) {
-            tooltipHtml += `<br><br><u>Topic Breakdown:</u>`;
-            Object.entries(stateData.topic_breakdown).forEach(([topic, count]) => {
-              tooltipHtml += `<br>${topic}: ${count}`;
-            });
+      
+          const total = stateData.total_engagement; // Total engagement for the selected metric
+          const metricLabel = selectedMetric === 'posts' ? 'posts' :
+                              selectedMetric === 'legislators' ? 'legislators' :
+                              selectedMetric === 'engagement' ? 'engagements' : 'records';
+      
+          const formattedStart = startDate.format('YYYY-MM-DD');
+          const formattedEnd = endDate.format('YYYY-MM-DD');
+          const selectedTopics = selectedMetric === 'posts' ? (activeTopics.join(', ') || 'No topic selected') : '';
+      
+          let tooltipHtml = `<strong>${stateName}</strong><br>`;
+          tooltipHtml += `${total.toLocaleString()} ${metricLabel}`; 
+          tooltipHtml += `<br>from ${formattedStart} to ${formattedEnd}`; 
+          if (selectedTopics) {
+            tooltipHtml += `<br><strong>Topics:</strong> ${selectedTopics}`; 
           }
-
+      
           tooltip.html(tooltipHtml);
         }
       })
+      
       .on('mousemove', event => {
         tooltip.style('left', `${event.pageX + 10}px`).style('top', `${event.pageY - 28}px`);
       })
@@ -141,7 +149,6 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
   return (
     <>
       <svg ref={svgRef} style={{ width: '100%' }} />
-
       {/* Legend */}
       <div style={{ display: 'flex', gap: '20px', marginTop: '10px', justifyContent: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
