@@ -58,4 +58,5 @@ urlpatterns = [
     path('api/test/topic-counts/', views.topic_post_counts, name='topic_post_counts'),
     path("api/posts/statistics/", views.post_statistics, name="post_statistics"),
     path('api/trend_data/', views.trend_data, name='trend_data'),
+    path('api/legislators/posts-by-month/', views.legislator_posts_by_month, name='posts_per_month')
 ]

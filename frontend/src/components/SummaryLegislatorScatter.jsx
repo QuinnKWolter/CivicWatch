@@ -35,6 +35,7 @@ export const SummaryLegislatorScatter = ({
     rights,
     party,
   }) => {
+    
     setLegislatorClicked([
       {
         name: name,

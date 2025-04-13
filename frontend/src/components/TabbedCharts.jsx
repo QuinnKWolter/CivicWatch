@@ -12,17 +12,9 @@ import dayjs from "dayjs"
 import ChoroplethMap from './ChoroplethMap';
 
 function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics, selectedMetric }) {
-  console.log("TabbedCharts re-rendered with props:", { 
-    startDate, 
-    endDate, 
-    selectedTopics, 
-    startDateType: typeof startDate, 
-    endDateType: typeof endDate, 
-    selectedTopicsType: typeof selectedTopics ,
-    selectedMetric
-  });
-
   const [value, setValue] = useState(0);
+
+  const [monthlyLeg, setMonthlyLeg] = useState([]);
 
   // Memoize selectedTopics to prevent unnecessary re-renders
   const memoizedSelectedTopics = useMemo(() => selectedTopics, [selectedTopics]);
@@ -59,24 +51,10 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
 
     // Add more legislators as needed
   ];
-
-  useEffect(() => {
-      // Determine whether to use default data or fetch from the server
-      console.log("Fetching data from server");
-      fetch("http://localhost:8000/api/legislators/scatter/")
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("Legislator Data: ", data);
-          setLegScatterData(data);
-        })
-        .catch((error) =>
-          console.error("Error fetching legislator data:", error)
-        );
-  }, []);
   
   useEffect(() => {
-      console.log("filtering data");
-      if (startDate && endDate) {
+    if (startDate && endDate) {
+        
         const url = "http://localhost:8000/api/legislators/scatter/?";
         const params = {
           startDate: startDate.format("DD-MM-YYYY"),
@@ -85,7 +63,6 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
         const queryParams = new URLSearchParams(params).toString();
   
         const query = `${url}${queryParams}`;
-        console.log("query", query);
         fetch(query)
           .then((response) => response.json())
           .then((data) => {
@@ -101,10 +78,30 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
           );
         });
         setLegScatterData(filteredData);
-        console.log("done filtering");
-        console.log("filtered data", filteredData);
       }
-    }, [startDate, endDate]);
+  }, [startDate, endDate]);
+  
+  useEffect(() => {
+    if (startDate && endDate) {
+      const url = "http://localhost:8000/api/legislators/posts-by-month/?"
+      const params = {
+        start_date: startDate.format("YYYY-MM-DD"),
+        end_date: endDate.format("YYYY-MM-DD")
+      }
+      const queryParams = new URLSearchParams(params).toString();
+
+      const query = `${url}${queryParams}`;
+      fetch(query)
+        .then((response) => response.json())
+        .then((data) => {
+          setMonthlyLeg(data);
+        })
+        .catch((error) =>
+          console.error("Error filtering legislator data", error));
+      
+    }
+    
+  },[startDate, endDate])
 
   // created_at	topic	party	like_count	retweet_count	total_posts	total_interactions
 
@@ -199,6 +196,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
             startDate={startDate}
             endDate={endDate}
             legScatterData={legScatterData}
+            monthlyLeg={monthlyLeg}
           />
         )}
         {value === 4 && (

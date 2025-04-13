@@ -7,7 +7,7 @@ from .models import Legislator, Post, LegislatorInteraction, Topic
 from datetime import datetime, timedelta, date
 from django.utils.dateparse import parse_date
 from django.db.models import Avg, DateField, Count
-from django.db.models.functions import TruncDate, Coalesce
+from django.db.models.functions import TruncDate, TruncMonth
 from django.http import JsonResponse
 from .models import Post
 import json
@@ -35,6 +35,55 @@ def all_legislators(request):
 def legislator_detail(request, legislator_id):
     legislator = get_object_or_404(Legislator, pk=legislator_id)
     return JsonResponse({"id": legislator.legislator_id, "name": legislator.name, "party": legislator.party, "state": legislator.state})
+
+
+def legislator_posts_by_month(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    legislator_id = request.GET.get('legislator_id')
+
+    posts_query = Post.objects.all()
+
+    tweet_filters = {}
+
+    #apply date filter
+    if start_date:
+        tweet_filters['created_at__gte'] = start_date
+    if end_date:
+        tweet_filters['created_at__lte'] = end_date
+
+    if legislator_id:
+        posts_query = posts_query.filter(legislator_id=legislator_id)
+    
+    legislators_data = (
+        posts_query
+        .filter(**tweet_filters)
+        .annotate(month=TruncMonth('created_at'))
+        .values('legislator_id', 'legislator__name', 'month', 'party')
+        .annotate(post_count=Count('post_id'))
+        .order_by('legislator__name', 'month')
+    )
+
+    result = {}
+    for entry in legislators_data:
+        legislator_id = entry['legislator_id']
+        name = entry['legislator__name']
+        month = entry['month'].strftime('%Y-%m') if entry['month'] else None
+        count = entry['post_count']
+        party = entry['party']
+
+        if legislator_id not in result:
+            result[legislator_id] = {
+                'legislator_id': legislator_id,
+                'name' : name,
+                'monthly_post_counts' : {},
+                'party' : party
+            }
+        if month:
+            result[legislator_id]['monthly_post_counts'][month] = count
+
+    return JsonResponse({'legislators' : list(result.values())})
+
 
 def legislator_posts_line_chart(request):
     name = request.GET.get("name") 
