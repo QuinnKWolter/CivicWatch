@@ -82,7 +82,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
   
   useEffect(() => {
     if (startDate && endDate) {
-      const url = "http://localhost:8000/api/legislators/posts-by-month/?"
+      const url = "http://localhost:8000/api/legislators/legislator_posts_by_month_top_50/?"
       const params = {
         start_date: startDate.format("YYYY-MM-DD"),
         end_date: endDate.format("YYYY-MM-DD")
