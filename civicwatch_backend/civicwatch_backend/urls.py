@@ -52,5 +52,6 @@ urlpatterns = [
     path("api/engagement_metrics/", views.engagement_metrics, name="engagement_metrics"),
     path("api/default_engagement_data/", views.default_engagement_data, name="default_engagement_data"),
     path("api/default_overview_data/", views.default_overview_data, name="default_overview_data"),
-    path('api/legislators/posts-by-month/', views.legislator_posts_by_month, name='posts_per_month')
+    path('api/legislators/posts-by-month/', views.legislator_posts_by_month, name='posts_per_month'),
+    path('api/legislators/legislator_posts_by_month_top_50/', views.legislator_posts_by_month_top_50, name='posts_per_month_50')
 ]

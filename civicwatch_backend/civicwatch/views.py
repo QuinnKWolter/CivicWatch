@@ -83,6 +83,133 @@ def legislator_posts_by_month(request):
 
     return JsonResponse({'legislators' : list(result.values())})
 
+from django.http import JsonResponse
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
+# Ensure your models are imported
+from .models import Post, Legislator
+
+def legislator_posts_by_month_top_50(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    specific_legislator_id = request.GET.get('legislator_id')
+    limit_per_party = 50
+
+   
+    posts_query = Post.objects.select_related('legislator').all() 
+
+    
+    date_filters = {}
+    if start_date:
+        date_filters['created_at__gte'] = start_date
+    if end_date:
+        date_filters['created_at__lte'] = end_date
+
+    
+    if date_filters:
+        posts_query = posts_query.filter(**date_filters)
+
+  
+    if specific_legislator_id:
+       
+        monthly_data = (
+            posts_query
+            .filter(legislator_id=specific_legislator_id) 
+            .annotate(month=TruncMonth('created_at'))
+            
+            .values('legislator_id', 'legislator__name', 'month', 'legislator__party')
+           
+            .annotate(post_count=Count('post_id'))
+            .order_by('legislator__name', 'month') 
+        )
+        legislator_ids_to_include = {int(specific_legislator_id)}
+
+    else:
+     
+        legislator_totals = (
+            posts_query 
+            
+            .values('legislator_id', 'legislator__name', 'legislator__party')
+            
+            .annotate(total_post_count=Count('post_id'))
+            
+            .order_by('legislator__party', '-total_post_count')
+        )
+
+       
+        legislator_ids_to_include = set()
+        party_counts = {}
+
+        for legislator in legislator_totals:
+            
+            party = legislator['legislator__party']
+            current_party_count = party_counts.get(party, 0)
+
+            if current_party_count < limit_per_party:
+              
+                legislator_ids_to_include.add(legislator['legislator_id'])
+                party_counts[party] = current_party_count + 1
+
+        if not legislator_ids_to_include:
+            return JsonResponse({'legislators': []})
+
+        
+        monthly_data = (
+            posts_query
+            .filter(legislator_id__in=legislator_ids_to_include) 
+            .annotate(month=TruncMonth('created_at'))
+             
+            .values('legislator_id', 'legislator__name', 'month', 'legislator__party')
+           
+            .annotate(post_count=Count('post_id'))
+            .order_by('legislator__name', 'month') 
+        )
+
+    
+    result = {}
+
+   
+    if not specific_legislator_id and legislator_ids_to_include:
+        
+        legislator_details = Legislator.objects.filter(legislator_id__in=legislator_ids_to_include)\
+                                             .values('legislator_id', 'name', 'party') 
+        for leg in legislator_details:
+            l_id = leg['legislator_id']
+            if l_id not in result:
+                 result[l_id] = {
+                    'legislator_id': l_id,
+                    'name': leg['name'],        
+                    'monthly_post_counts': {},
+                    'party': leg['party']        
+                 }
+
+   
+    for entry in monthly_data:
+       
+        l_id = entry['legislator_id']
+        name = entry['legislator__name']
+        month_obj = entry['month']
+        count = entry['post_count']
+        party = entry['legislator__party'] 
+
+        
+        if l_id not in result:
+            result[l_id] = {
+                'legislator_id': l_id,
+                'name': name,
+                'monthly_post_counts': {},
+                'party': party
+            }
+
+       
+        if month_obj:
+            month_str = month_obj.strftime('%Y-%m')
+            result[l_id]['monthly_post_counts'][month_str] = count
+
+    return JsonResponse({'legislators': list(result.values())})
+
+
+
 
 def legislator_posts_line_chart(request):
     name = request.GET.get("name") 

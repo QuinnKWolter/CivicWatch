@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
 
-export const LegislatorHeatMap = ({ height = 600, width = 1000, data, legScatterData, setLegislatorClicked }) => {
+export const LegislatorHeatMap = ({ height = 600, width = 1000, data, legScatterData, setLegislatorClicked, party }) => {
   const margin = { top: 50, right: 30, bottom: 50, left: 159 };
   const svgRef = useRef(null);
   const [rowHeight] = useState(20);
@@ -12,15 +12,15 @@ export const LegislatorHeatMap = ({ height = 600, width = 1000, data, legScatter
   }
 
   useEffect(() => {
-    if (!data?.legislators?.length) return;
-
+    console.log("DATA", data)
+    if (!data.length) return;
     // Calculate needed height
-    const neededHeight = margin.top + margin.bottom + (data.legislators.length * rowHeight);
+    const neededHeight = margin.top + margin.bottom + (data.length * rowHeight);
     setTotalHeight(neededHeight);
 
     // Process data
     const allMonths = new Set();
-    const processedData = data.legislators.map(legislator => {
+    const processedData = data.map(legislator => {
       const months = Object.entries(legislator.monthly_post_counts)
         .map(([monthStr, count]) => {
           const date = d3.timeParse("%Y-%m")(monthStr);
@@ -38,11 +38,11 @@ export const LegislatorHeatMap = ({ height = 600, width = 1000, data, legScatter
     const names = processedData.map(d => d.name);
 
     const allDates = d3.timeMonths(
-      d3.min(data.legislators.flatMap(d =>
+      d3.min(data.flatMap(d =>
         Object.keys(d.monthly_post_counts).map(monthStr => d3.timeParse("%Y-%m")(monthStr))
       )),
       d3.timeMonth.offset(
-        d3.max(data.legislators.flatMap(d =>
+        d3.max(data.flatMap(d =>
           Object.keys(d.monthly_post_counts).map(monthStr => d3.timeParse("%Y-%m")(monthStr))
         )),
         1
@@ -59,18 +59,26 @@ export const LegislatorHeatMap = ({ height = 600, width = 1000, data, legScatter
       .range([margin.top, neededHeight - margin.bottom])
       .padding(0.2);
     
-      const maxPostedCount = d3.max(data.legislators.flatMap(d =>
+      const maxPostedCount = d3.max(data.flatMap(d =>
         Object.values(d.monthly_post_counts)
       ));
 
     const maxCount = d3.max(processedData.flatMap(d => d.months.map(m => m.count)));
-    const postCounts = data.legislators.flatMap(d => Object.values(d.monthly_post_counts));
+    const postCounts = data.flatMap(d => Object.values(d.monthly_post_counts));
     const q95 = d3.quantile(postCounts.sort(d3.ascending), 0.95); // 95th percentile
-    
+    let color;
     // Create a nonlinear color scale focused on typical values
-    const color = d3.scaleSequential(d3.interpolateBlues)
-      .domain([0, q95 * 0.3, q95]) // 30% of 95th percentile as mid-point
-      .unknown("#f8f8f8"); // Very light gray for zeros
+    if (party === 1) {
+      color = d3.scaleSequential(d3.interpolateBlues)
+        .domain([0, q95 * 0.3, q95]) // 30% of 95th percentile as mid-point
+        .unknown("#f8f8f8"); // Very light gray for zeros
+    }
+    else {
+      color = d3.scaleSequential(d3.interpolateReds)
+        .domain([0, q95 * 0.3, q95]) // 30% of 95th percentile as mid-point
+        .unknown("#f8f8f8"); // Very light gray for zeros
+    }
+    
       
 
     // Clear and setup SVG
@@ -143,7 +151,7 @@ export const LegislatorHeatMap = ({ height = 600, width = 1000, data, legScatter
 
   }, [data, height, width, margin, rowHeight]);
 
-  if (!data?.legislators?.length) {
+  if (!data?.length) {
     return <div className="flex items-center justify-center">No data available</div>;
   }
 
