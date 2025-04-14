@@ -9,6 +9,7 @@ import { MdOutlineAccountBox } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
 import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs"
+import EngagementCharts from "./EngagementCharts";
 
 function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics }) {
   console.log("TabbedCharts re-rendered with props:", { 
@@ -60,11 +61,9 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
 
   useEffect(() => {
       // Determine whether to use default data or fetch from the server
-      console.log("Fetching data from server");
       fetch("http://localhost:8000/api/legislators/scatter/")
         .then((response) => response.json())
         .then((data) => {
-          console.log("Legislator Data: ", data);
           setLegScatterData(data);
         })
         .catch((error) =>
@@ -73,7 +72,6 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
   }, []);
   
   useEffect(() => {
-      console.log("filtering data");
       if (startDate && endDate) {
         const url = "http://localhost:8000/api/legislators/scatter/?";
         const params = {
@@ -83,7 +81,6 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
         const queryParams = new URLSearchParams(params).toString();
   
         const query = `${url}${queryParams}`;
-        console.log("query", query);
         fetch(query)
           .then((response) => response.json())
           .then((data) => {
@@ -99,49 +96,8 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
           );
         });
         setLegScatterData(filteredData);
-        console.log("done filtering");
-        console.log("filtered data", filteredData);
       }
     }, [startDate, endDate]);
-
-  // created_at	topic	party	like_count	retweet_count	total_posts	total_interactions
-
-  const posts = [
-    { post_id: 1, interaction_score: 0.45, post_accountability_score: 0.62 }, // accountability score some weighted metric?
-    { post_id: 2, interaction_score: 0.32, post_accountability_score: 0.92 },
-    { post_id: 3, interaction_score: 0.45, post_accountability_score: 0.85 },
-    { post_id: 4, interaction_score: 0.29, post_accountability_score: 0.78 },
-    { post_id: 5, interaction_score: 0.63, post_accountability_score: 0.89 },
-    { post_id: 6, interaction_score: 0.51, post_accountability_score: 0.72 },
-    { post_id: 7, interaction_score: 0.38, post_accountability_score: 0.95 },
-    { post_id: 8, interaction_score: 0.66, post_accountability_score: 0.88 },
-    { post_id: 9, interaction_score: 0.47, post_accountability_score: 0.77 },
-    { post_id: 10, interaction_score: 0.34, post_accountability_score: 0.81 },
-    { post_id: 11, interaction_score: 0.58, post_accountability_score: 0.9 },
-    { post_id: 12, interaction_score: 0.4, post_accountability_score: 0.83 },
-    { post_id: 13, interaction_score: 0.49, post_accountability_score: 0.76 },
-    { post_id: 14, interaction_score: 0.68, post_accountability_score: 0.93 },
-    { post_id: 15, interaction_score: 0.55, post_accountability_score: 0.87 },
-    { post_id: 16, interaction_score: 0.37, post_accountability_score: 0.84 },
-    { post_id: 17, interaction_score: 0.61, post_accountability_score: 0.8 },
-    { post_id: 18, interaction_score: 0.46, post_accountability_score: 0.79 },
-    { post_id: 19, interaction_score: 0.33, post_accountability_score: 0.86 },
-    { post_id: 20, interaction_score: 0.59, post_accountability_score: 0.91 },
-    { post_id: 21, interaction_score: 0.42, post_accountability_score: 0.82 },
-    { post_id: 22, interaction_score: 0.36, post_accountability_score: 0.75 },
-    { post_id: 23, interaction_score: 0.62, post_accountability_score: 0.88 },
-    { post_id: 24, interaction_score: 0.44, post_accountability_score: 0.94 },
-    { post_id: 25, interaction_score: 0.5, post_accountability_score: 0.7 },
-    { post_id: 26, interaction_score: 0.64, post_accountability_score: 0.89 },
-    { post_id: 27, interaction_score: 0.41, post_accountability_score: 0.85 },
-    { post_id: 28, interaction_score: 0.56, post_accountability_score: 0.92 },
-    { post_id: 29, interaction_score: 0.35, post_accountability_score: 0.73 },
-    { post_id: 30, interaction_score: 0.48, post_accountability_score: 0.78 },
-    { post_id: 31, interaction_score: 0.6, post_accountability_score: 0.96 },
-    { post_id: 32, interaction_score: 0.43, post_accountability_score: 0.74 },
-  ];
-
-  const metrics = ["overperforming_score", "civility_score", "count_misinfo"];
 
   const tabs = [
     { icon: <RiDashboardLine />, label: "Overview", value: 0 },
@@ -176,15 +132,9 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
       </div>
       <div className="mt-4 transition-opacity duration-500 ease-in-out">
         {value === 0 && <OverviewCharts startDate={startDate} endDate={endDate} selectedTopics={memoizedSelectedTopics} />}
-        {value === 1 && (
-          <div>
-            <h6 className="text-lg">Engagement Content</h6>
-            {/* Add Engagement content here */}
-          </div>
-        )}
+        {value === 1 && <EngagementCharts startDate={startDate} endDate={endDate} selectedTopics={memoizedSelectedTopics} />}
         {value === 2 && (
           <div>
-            <h6 className="text-lg">Accountability Content</h6>
             <LineChart data={postData} width={300} height={300} />
           </div>
         )}

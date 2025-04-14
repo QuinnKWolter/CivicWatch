@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { FaSpinner } from 'react-icons/fa';
 
 function TrendLineChart({ startDate, endDate, selectedTopics }) {
@@ -21,7 +21,7 @@ function TrendLineChart({ startDate, endDate, selectedTopics }) {
 
         const data = await response.json();
         console.log('Fetched trend data:', data);
-        setTrendData(data);
+        setTrendData(Object.entries(data).map(([date, values]) => ({ date, ...values })));
         setError(null);
       } catch (err) {
         console.error("Error fetching trend data:", err);
@@ -58,8 +58,9 @@ function TrendLineChart({ startDate, endDate, selectedTopics }) {
         <XAxis dataKey="date" />
         <YAxis />
         <Tooltip />
-        <Line type="monotone" dataKey="Democratic" stroke="#8884d8" />
-        <Line type="monotone" dataKey="Republican" stroke="#82ca9d" />
+        <Legend />
+        <Line type="monotone" dataKey="Democratic.totalPosts" stroke="#8884d8" name="Democratic Posts" />
+        <Line type="monotone" dataKey="Republican.totalPosts" stroke="#82ca9d" name="Republican Posts" />
       </LineChart>
     </ResponsiveContainer>
   );

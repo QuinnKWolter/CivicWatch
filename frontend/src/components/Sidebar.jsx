@@ -18,14 +18,14 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
               <label className="block text-base-content mt-4">Date Range (From, To)</label>
                 <input
                   type="date"
-                  className="w-full bg-base-300 text-base-content p-2 rounded"
+                  className="w-full bg-base-300 text-base-content p-2 m-1 rounded"
                   value={dayjs(startDate).format('YYYY-MM-DD')}
                   onChange={(e) => setStartDate(dayjs(e.target.value))}
                 />
                 <br/>
                 <input
                   type="date"
-                  className="w-full bg-base-300 text-base-content p-2 rounded"
+                  className="w-full bg-base-300 text-base-content p-2 m-1 rounded"
                   value={dayjs(endDate).format('YYYY-MM-DD')}
                   onChange={(e) => setEndDate(dayjs(e.target.value)) }
                 />

@@ -1,14 +1,13 @@
 from django.shortcuts import render
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Sum, Avg, Q, Case, When, IntegerField
 from .models import Legislator, Post, LegislatorInteraction, Topic
 from datetime import datetime, timedelta, date
 from django.utils.dateparse import parse_date
 from django.db.models import Avg, DateField, Count
-from django.db.models.functions import TruncDate
-from django.http import JsonResponse
+from django.db.models.functions import TruncDate, TruncWeek, TruncDay
 from .models import Post
 import json
 import os
@@ -434,7 +433,14 @@ def trend_data(request):
     
     filtered_posts = Post.objects.filter(filters).select_related('legislator').distinct()
     
-    trend_data = filtered_posts.annotate(date=TruncDate('created_at')).values('date', 'party').annotate(
+    # Determine binning by week or day
+    date_diff = (end_date_obj - start_date_obj).days
+    if date_diff > 365:
+        date_trunc = TruncWeek('created_at')
+    else:
+        date_trunc = TruncDay('created_at')
+    
+    trend_data = filtered_posts.annotate(date=date_trunc).values('date', 'party').annotate(
         total_posts=Count('post_id'),
         avg_interaction_score=Avg('interaction_score'),
         total_likes=Sum('like_count'),
@@ -454,3 +460,74 @@ def trend_data(request):
         }
     
     return JsonResponse(trend_data_dict, safe=False)
+
+def engagement_metrics(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    topics_param = request.GET.get('topics', '')
+
+    topics = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
+
+    filters = Q()
+    if start_date and end_date:
+        start_date_obj = parse_date(start_date)
+        end_date_obj = parse_date(end_date)
+        filters &= Q(created_at__range=[start_date_obj, end_date_obj])
+
+    if topics:
+        filters &= Q(topics__name__in=topics)
+
+    filtered_posts = Post.objects.filter(filters).select_related('legislator').distinct()
+
+    # Calculate engagement metrics
+    engagement_data = filtered_posts.values('party', 'topics__name').annotate(
+        total_engagement=Sum('like_count') + Sum('retweet_count'),
+        total_likes=Sum('like_count'),
+        total_retweets=Sum('retweet_count')
+    ).order_by('party', 'topics__name')
+
+    # Structure the response
+    response_data = {
+        "total_engagement": filtered_posts.aggregate(total=Sum('like_count') + Sum('retweet_count'))['total'],
+        "by_party": {}
+    }
+
+    for item in engagement_data:
+        party = item['party']
+        topic = item['topics__name']
+        topic_with_party = f"{topic} ({'D' if party == 'Democratic' else 'R'})"
+        if party not in response_data['by_party']:
+            response_data['by_party'][party] = {
+                "total_engagement": 0,
+                "topics": {}
+            }
+        response_data['by_party'][party]['total_engagement'] += item['total_engagement']
+        response_data['by_party'][party]['topics'][topic_with_party] = {
+            "engagement": item['total_engagement'],
+            "likes": item['total_likes'],
+            "retweets": item['total_retweets']
+        }
+
+    return JsonResponse(response_data)
+
+def default_engagement_data(request):
+    # Path to the JSON file
+    json_file_path = os.path.join(os.path.dirname(__file__), '../static/data/defaultEngagementTab.json')
+    
+    try:
+        with open(json_file_path, 'r') as json_file:
+            data = json.load(json_file)
+        return JsonResponse(data, safe=False)
+    except FileNotFoundError:
+        return HttpResponse(status=404, content="Default engagement data not found.")
+
+def default_overview_data(request):
+    # Path to the JSON file
+    json_file_path = os.path.join(os.path.dirname(__file__), '../static/data/defaultOverviewTab.json')
+    
+    try:
+        with open(json_file_path, 'r') as json_file:
+            data = json.load(json_file)
+        return JsonResponse(data, safe=False)
+    except FileNotFoundError:
+        return HttpResponse(status=404, content="Default overview data not found.")
