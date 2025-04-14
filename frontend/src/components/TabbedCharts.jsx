@@ -9,8 +9,9 @@ import { MdOutlineAccountBox } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
 import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs"
+import ChoroplethMap from './ChoroplethMap';
 
-function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics }) {
+function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics, selectedMetric }) {
   const [value, setValue] = useState(0);
 
   const [monthlyLeg, setMonthlyLeg] = useState([]);
@@ -202,6 +203,12 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
           <div>
             <h6 className="text-lg">Geography Content</h6>
             {/* Add Geography content here */}
+            <ChoroplethMap 
+              startDate={startDate} 
+              endDate={endDate} 
+              activeTopics={selectedTopics}
+              selectedMetric={selectedMetric}
+            />
           </div>
         )}
       </div>

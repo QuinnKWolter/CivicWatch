@@ -11,7 +11,7 @@ const SidebarAbout = ({ aboutOpen, toggleAbout }) => {
       social: { github: "https://github.com/QuinnKWolter", linkedin: "https://www.linkedin.com/in/quinn-k-wolter-4b68bb8b/" }
     },
     { 
-      name: "Radhita Purohit", 
+      name: "Radhika Purohit", 
       role: "Backend Developer",
       social: { github: "https://github.com/Radhika710", linkedin: "https://www.linkedin.com/in/radhika-purohit/" }
     },
