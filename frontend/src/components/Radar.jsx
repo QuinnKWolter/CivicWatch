@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { useEffect, useMemo} from "react";
 import { INNER_RADIUS, RadarGrid } from "./RadarGrid";
 const MARGIN = 20;
 
@@ -11,32 +12,40 @@ export const Radar = ({ width, height, data, axisConfig }) => {
     );
   }
 
-  const outerRadius = Math.min(width, height) / 2 - MARGIN;
-  const variableNames = axisConfig.map((axis) => axis.name);
 
-  const xScale = d3
-    .scaleBand()
-    .domain(variableNames)
-    .range([0, 2 * Math.PI]);
 
-  let yScales = [];
-  axisConfig.forEach((axis) => {
-    yScales[axis.name] = d3
-      .scaleRadial()
-      .domain([0, axis.max])
-      .range([INNER_RADIUS, outerRadius]);
-  });
+  const newData = data[0];
 
-  const allCoordinates = axisConfig.map((axis) => {
-    const yScale = yScales[axis.name];
-    const angle = xScale(axis.name) ?? 0;
-    const radius = yScale(data[axis.name]);
-    return [angle, radius];
-  });
+  const { outerRadius, variableNames, xScale, yScales, allCoordinates, linePath } = useMemo(() => {
+   
+    const outerRadius = Math.min(width, height) / 2 - MARGIN;
+    const variableNames = axisConfig.map((axis) => axis.name);
 
-  allCoordinates.push(allCoordinates[0]);
-  const linePath = d3.lineRadial()(allCoordinates);
+    const xScale = d3
+      .scaleBand()
+      .domain(variableNames)
+      .range([0, 2 * Math.PI]);
 
+    let yScales = {};
+    axisConfig.forEach((axis) => {
+      yScales[axis.name] = d3
+        .scaleRadial()
+        .domain([0, axis.max])
+        .range([INNER_RADIUS, outerRadius]);
+    });
+
+    const allCoordinates = axisConfig.map((axis) => {
+      const yScale = yScales[axis.name];
+      const angle = xScale(axis.name) ?? 0;
+      const radius = yScale(newData[axis.name]);
+      return [angle, radius];
+    });
+
+    allCoordinates.push(allCoordinates[0]);
+    const linePath = d3.lineRadial()(allCoordinates);
+
+    return { outerRadius, variableNames, xScale, yScales, allCoordinates, linePath };
+  }, [width, height, newData, axisConfig]); // Recalculate when these change
   return (
     <div className="flex justify-center items-center w-full h-full">
       <svg 
@@ -53,9 +62,9 @@ export const Radar = ({ width, height, data, axisConfig }) => {
           />
           <path
             d={linePath}
-            stroke={data.party === "R" ? "#FF0000" : data.party === "D" ? "#0000FF" : "#cb1dd1"}
+            stroke={newData.party === "R" ? "#FF0000" : newData.party === "D" ? "#0000FF" : "#cb1dd1"}
             strokeWidth={3}
-            fill={data.party === "R" ? "#FF0000" : data.party === "D" ? "#0000FF" : "#cb1dd1"}
+            fill={newData.party === "R" ? "#FF0000" : newData.party === "D" ? "#0000FF" : "#cb1dd1"}
             fillOpacity={0.1}
           />
         </g>

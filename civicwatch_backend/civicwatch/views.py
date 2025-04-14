@@ -2,12 +2,12 @@ from django.shortcuts import render
 
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Count, Sum, Avg, Q, Case, When, IntegerField
+from django.db.models import Count, Sum, Avg, Q, Case, When, IntegerField, F
 from .models import Legislator, Post, LegislatorInteraction, Topic
 from datetime import datetime, timedelta, date
 from django.utils.dateparse import parse_date
 from django.db.models import Avg, DateField, Count
-from django.db.models.functions import TruncDate, TruncWeek, TruncDay
+from django.db.models.functions import TruncDate, TruncWeek, TruncDay, TruncMonth
 from .models import Post
 import json
 import os
@@ -36,8 +36,53 @@ def legislator_detail(request, legislator_id):
     return JsonResponse({"id": legislator.legislator_id, "name": legislator.name, "party": legislator.party, "state": legislator.state})
 
 
-from django.db.models.functions import TruncDate
-from django.db.models import Count
+def legislator_posts_by_month(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    legislator_id = request.GET.get('legislator_id')
+
+    posts_query = Post.objects.all()
+
+    tweet_filters = {}
+
+    #apply date filter
+    if start_date:
+        tweet_filters['created_at__gte'] = start_date
+    if end_date:
+        tweet_filters['created_at__lte'] = end_date
+
+    if legislator_id:
+        posts_query = posts_query.filter(legislator_id=legislator_id)
+    
+    legislators_data = (
+        posts_query
+        .filter(**tweet_filters)
+        .annotate(month=TruncMonth('created_at'))
+        .values('legislator_id', 'legislator__name', 'month', 'party')
+        .annotate(post_count=Count('post_id'))
+        .order_by('legislator__name', 'month')
+    )
+
+    result = {}
+    for entry in legislators_data:
+        legislator_id = entry['legislator_id']
+        name = entry['legislator__name']
+        month = entry['month'].strftime('%Y-%m') if entry['month'] else None
+        count = entry['post_count']
+        party = entry['party']
+
+        if legislator_id not in result:
+            result[legislator_id] = {
+                'legislator_id': legislator_id,
+                'name' : name,
+                'monthly_post_counts' : {},
+                'party' : party
+            }
+        if month:
+            result[legislator_id]['monthly_post_counts'][month] = count
+
+    return JsonResponse({'legislators' : list(result.values())})
+
 
 def legislator_posts_line_chart(request):
     name = request.GET.get("name") 
@@ -80,6 +125,177 @@ def legislator_posts_line_chart(request):
         response[topic].append({"date": date, "count": count})
 
     return JsonResponse(response, safe=False)
+
+
+# 🔹 Topic & Keyword APIs
+def all_topics(request):
+    topics = Topic.objects.values("id", "name", "description")
+    return JsonResponse(list(topics), safe=False)
+
+# 🔹 Bipartite Temporal Flow Diagram APIs
+def flow_posts(request):
+    posts = filter_posts(request)
+    post_counts = posts.values("created_at").annotate(count=Count("post_id"))
+    return JsonResponse(list(post_counts), safe=False)
+
+def flow_civility_misinformation(request):
+    posts = filter_posts(request)
+    stats = posts.aggregate(avg_civility=Avg("civility_score"), avg_misinfo=Avg("count_misinfo"))
+    return JsonResponse(stats, safe=False)
+
+def flow_engagement(request):
+    posts = filter_posts(request)
+    engagement = posts.aggregate(total_likes=Sum("like_count"), total_retweets=Sum("retweet_count"))
+    return JsonResponse(engagement, safe=False)
+
+# 🔹 Chord Diagram APIs
+def chord_interactions(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    interaction_type = request.GET.get('interaction_type')
+
+    interactions = LegislatorInteraction.objects.filter(date__range=[start_date, end_date])
+    if interaction_type:
+        interactions = interactions.filter(interaction_type=interaction_type)
+
+    interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"))
+    return JsonResponse(list(interaction_counts), safe=False)
+
+def chord_top_legislators(request):
+    interactions = LegislatorInteraction.objects.values("source_legislator_id").annotate(total_interactions=Count("post_id"))
+    return JsonResponse(list(interactions), safe=False)
+
+# 🔹 Geographic Data API
+def geo_activity(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    metric = request.GET.get('metric', 'posts')
+
+    posts = filter_posts(request)
+    geo_stats = posts.values("state").annotate(total=Count("post_id") if metric == "posts" else Sum("like_count"))
+    
+    return JsonResponse(list(geo_stats), safe=False)
+
+def geo_activity_topics(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    metric = request.GET.get('metric', 'posts')
+
+    topics_param = request.GET.get('topics', '')
+    topic_list = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
+
+    posts = Post.objects.all()
+
+    if start_date:
+        posts = posts.filter(created_at__gte=start_date)
+    if end_date:
+        posts = posts.filter(created_at__lte=end_date)
+
+    if topic_list:
+        posts = posts.filter(topics__name__in=topic_list).distinct()
+
+    geo_stats = []
+
+    if metric == 'posts':
+        post_counts = posts.values('state', 'party').annotate(total=Count('post_id'))
+        geo_stats = list(post_counts)
+
+    elif metric == 'legislators':
+        legislator_counts = posts.values('state', 'party', 'legislator_id').distinct().annotate(
+            legislator_count=Count('legislator_id', distinct=True)
+        )
+        geo_stats = list(legislator_counts)
+
+    elif metric == 'engagement':
+        unique_post_ids = posts.values_list('post_id', flat=True).distinct()
+        filtered_posts = Post.objects.filter(post_id__in=unique_post_ids)
+
+        engagement_data = filtered_posts.values('state', 'party').annotate(
+            total_engagement=Sum(F('like_count') + F('retweet_count'))
+        )
+        geo_stats = list(engagement_data)
+
+    state_party_data = {}
+    for entry in geo_stats:
+        state = entry['state']
+        party = entry['party']
+
+        if party not in ['Democratic', 'Republican']:
+            party = 'Other'
+
+        total = (
+            entry['total'] if metric == 'posts'
+            else entry['legislator_count'] if metric == 'legislators'
+            else entry['total_engagement']
+        )
+
+        if state not in state_party_data:
+            state_party_data[state] = {
+                'state': state,
+                'Democratic': 0,
+                'Republican': 0,
+                'Other': 0,
+                'total': 0
+            }
+
+        state_party_data[state][party] += total
+        state_party_data[state]['total'] += total
+
+    return JsonResponse(list(state_party_data.values()), safe=False)
+
+
+# 🔹 Post Exploration APIs
+def all_posts(request):
+    posts = filter_posts(request)
+    post_list = posts.values("post_id", "text", "created_at", "like_count", "retweet_count", "civility_score", "count_misinfo")
+    return JsonResponse(list(post_list), safe=False)
+
+def top_posts(request):
+    posts = filter_posts(request).order_by("-like_count")[:10]
+    post_list = posts.values("post_id", "text", "like_count", "retweet_count")
+    return JsonResponse(list(post_list), safe=False)
+
+# def legislators_scatter_data(request):
+#     start_date = request.GET.get('start_date')
+#     end_date = request.GET.get('end_date')
+
+#     legislators = Legislator.objects.all()
+
+#     topic_keywords = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"]
+
+#     posts_filter = Q()
+#     if start_date:
+#         start_date = parse_date(start_date)
+#         posts_filter &= Q(created_at__gte=start_date)
+#     if end_date:
+#         end_date = parse_date(end_date)
+#         posts_filter &= Q(created_at__lte=end_date)
+
+#     data = []
+#     for legislator in legislators:
+#         posts = legislator.tweets.filter(posts_filter)
+
+#         topic_counts = {topic: posts.filter(text__icontains=topic).count() for topic in topic_keywords}
+
+#         data.append({
+#             "name": legislator.name,
+#             "state": legislator.state,
+#             "chamber": legislator.chamber,
+#             "party": legislator.party,
+#             "lid": legislator.legislator_id,
+#             "total_posts_tw": posts.count(),
+#             "total_likes_tw": posts.aggregate(total_likes=Sum("like_count"))["total_likes"] or 0,
+#             "total_retweets_tw": posts.aggregate(total_retweets=Sum("retweet_count"))["total_retweets"] or 0,
+#             "total_misinfo_count_tw": posts.aggregate(total_misinfo=Sum("count_misinfo"))["total_misinfo"] or 0,
+#             "total_interactions_tw": posts.aggregate(total_interactions=Sum("like_count") + Sum("retweet_count"))["total_interactions"] or 0,
+#             "interaction_score_tw": legislator.interaction_score_tw,
+#             "overperforming_score_tw": legislator.overperforming_score_tw,
+#             "civility_score_tw": legislator.civility_score_tw,
+#             **topic_counts  # Add topic data dynamically
+#         })
+
+#     return JsonResponse(data, safe=False)
+
 
 def legislators_scatter_data(request):
     start_date = request.GET.get('start_date')
