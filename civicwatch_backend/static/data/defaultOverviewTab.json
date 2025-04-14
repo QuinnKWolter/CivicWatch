@@ -1,0 +1,46 @@
+{
+    "summaryMetrics": {
+        "Democratic": {
+            "totalPosts": 228633,
+            "avgInteractionScore": 0.5697866372306869,
+            "totalLikes": 6703170,
+            "totalRetweets": 315886204
+        },
+        "Republican": {
+            "totalPosts": 58824,
+            "avgInteractionScore": 0.5559131685946617,
+            "totalLikes": 1496708,
+            "totalRetweets": 47629249
+        }
+    },
+    "visualizations": {
+        "barChartPartySummary": [
+            {
+                "party": "Democratic",
+                "totalPosts": 228633,
+                "likes": 6703170,
+                "retweets": 315886204
+            },
+            {
+                "party": "Republican",
+                "totalPosts": 58824,
+                "likes": 1496708,
+                "retweets": 47629249
+            }
+        ],
+        "radarChartMetrics": [
+            {
+                "party": "Democratic",
+                "avgCivilityScore": 1,
+                "avgMisinfoScore": 0.00011371936684555598,
+                "avgInteractionScore": 0.5697866372306869
+            },
+            {
+                "party": "Republican",
+                "avgCivilityScore": 1,
+                "avgMisinfoScore": 0.013259893920848633,
+                "avgInteractionScore": 0.5559131685946617
+            }
+        ]
+    }
+}

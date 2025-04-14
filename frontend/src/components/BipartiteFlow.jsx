@@ -32,7 +32,7 @@ function BipartiteFlow({ activeTopics, startDate, endDate, onDateChange, selecte
       setLoading(true);
       try {
         const topicsParam = activeTopics.join(',');
-        const response = await fetch(`http://localhost:8000/api/flow/bipartite_data/?start_date=${startDate?.format('YYYY-MM-DD')}&end_date=${endDate?.format('YYYY-MM-DD')}&topics=${topicsParam}`);
+        const response = await fetch(`http://localhost:8000/api/flow/bipartite_data/`);
         
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -50,7 +50,7 @@ function BipartiteFlow({ activeTopics, startDate, endDate, onDateChange, selecte
     };
 
     fetchData();
-  }, [activeTopics, startDate, endDate]);
+  }, []);
 
   // Filter data based on startDate and endDate
   const filteredData = data.filter(item => {

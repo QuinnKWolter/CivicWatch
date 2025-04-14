@@ -3,7 +3,6 @@ import {
   BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, 
   PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
-import axios from "axios";
 import { 
   FaChartBar, FaChartLine, FaBullseye, FaSpinner, 
   FaNewspaper, FaThumbsUp, FaRetweet, FaExchangeAlt 
@@ -12,6 +11,7 @@ import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 import TrendLineChart from './TrendLineChart'; // Import the new component
+import { colorMap } from './BipartiteFlow'; // Import colorMap
 
 function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
   const [data, setData] = useState(null);
@@ -45,17 +45,29 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const topicsParam = selectedTopics.join(',');
+        const defaultStartDate = '2020-01-01';
+        const defaultEndDate = '2021-12-31';
+        const defaultTopics = Object.keys(colorMap); // Use colorMap to determine defaultTopics
 
-        const response = await axios.get('http://localhost:8000/api/overview_metrics/', {
-          params: {
-            start_date: startDate.format('YYYY-MM-DD'),
-            end_date: endDate.format('YYYY-MM-DD'),
-            topics: topicsParam
-          }
-        });
+        let response;
+        if (
+          startDate.format('YYYY-MM-DD') === defaultStartDate &&
+          endDate.format('YYYY-MM-DD') === defaultEndDate &&
+          selectedTopics.length === defaultTopics.length &&
+          selectedTopics.every(topic => defaultTopics.includes(topic))
+        ) {
+          // Fetch default data
+          response = await fetch('http://localhost:8000/api/default_overview_data/');
+        } else {
+          // Fetch regular data
+          const topicsParam = selectedTopics.join(',');
+          response = await fetch(`http://localhost:8000/api/overview_metrics/?start_date=${startDate.format('YYYY-MM-DD')}&end_date=${endDate.format('YYYY-MM-DD')}&topics=${topicsParam}`);
+        }
 
-        setData(response.data);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        console.log(data);
+        setData(data);
         setError(null);
       } catch (err) {
         console.error("Error fetching overview metrics:", err);

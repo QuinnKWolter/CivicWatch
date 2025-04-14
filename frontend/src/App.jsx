@@ -147,6 +147,7 @@ function App() {
                     startDate={startDate}
                     endDate={endDate}
                     selectedTopics={activeTopics}
+                    selectedMetric={selectedMetric}
                   />
                 </div>
                 <div className="col-span-3 bg-base-200 rounded-lg shadow-lg overflow-hidden">
