@@ -110,3 +110,9 @@ lerna-debug.log*
 .node_repl_history
 .tern-port
 .vscode-test
+.package-lock.json
+.*.sql
+civicwatch_backend/db_dump.sql
+frontend/package-lock.json
+frontend/package.json
+civicwatch_backend/load_dump.py
