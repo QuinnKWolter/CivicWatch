@@ -20,6 +20,7 @@ function AccountabilityInterface({ startDate, endDate, selectedTopics }) {
         }
 
         const data = await response.json();
+        console.log(data);
         setData(data);
         setError(null);
       } catch (err) {

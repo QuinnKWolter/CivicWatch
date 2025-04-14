@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Radar } from "./Radar";
 // import { SummaryLegislatorScatter } from "./SummaryLegislatorScatter";
 import { useState } from "react";
@@ -15,7 +15,7 @@ function LegislatorCharts({
   startDate,
   endDate,
   legScatterData,
-  monthlyLeg
+  monthlyLeg,
 }) {
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
@@ -33,36 +33,77 @@ function LegislatorCharts({
   ];
 
   const [cVal, setCVal] = useState(0);
+  const [dVal, setDVal] = useState(0);
+  const [demData, setDemData] = useState([]);
+  const [repubData, setRepubData] = useState([]);
 
   const handleChange = (newValue) => {
     setCVal(newValue);
   };
 
+  const handleDChange = (newValue) => {
+    setDVal(newValue);
+  };
+
+  useEffect(() => {
+    setDemData(monthlyLeg.legislators.filter((d) => d.party === "D"));
+    setRepubData(monthlyLeg.legislators.filter((d) => d.party === "R"));
+    console.log("repub data", monthlyLeg.legislators.filter((d) => d.party === "R"));
+  }, [monthlyLeg]);
+
   return (
     <div className="overflow-y-auto h-full p-2">
-      <div tabIndex={0} className="collapse collapse-arrow bg-base-100 border-base-300 border">
-        <input type="checkbox"  checked={true} />
-        <div className="collapse-title font-semibold">Legislator Hex</div>
-        <div className="collapse-content">
-        {/* <LegislatorHex
-          width={400}
-          height={400}
-          startDate={startDate}
-          endDate={endDate}
-          setLegislatorClicked={setLegislatorClicked}
-          legScatterData={legScatterData}
-          /> */}
-          <LegislatorHeatMap 
+      <div className="flex space-x-2 border-b border-base-300 mt-3">
+        <button
+          className={`py-1 px-3 rounded-t ${
+            dVal === 0
+              ? "bg-primary text-primary-content"
+              : "bg-base-300 text-base-content"
+          }`}
+          onClick={() => handleDChange(0)}
+        >
+          Democrat Post Heat Map
+        </button>
+        <button
+          className={`py-1 px-3 rounded-5 ${
+            dVal === 1
+              ? "bg-primary text-primary-content"
+              : "bg-base-300 text-base-content"
+          }`}
+          onClick={() => handleDChange(1)}
+        >
+          Republican Post Heat Map
+        </button>
+      </div>
+
+      <div className="mt-4 overflow-y-auto min-h-[400px]">
+        {dVal === 0 && (
+          <LegislatorHeatMap
             width={400}
             height={400}
             startDate={startDate}
             endDate={endDate}
-            data={monthlyLeg}
+            data={demData}
             legScatterData={legScatterData}
             setLegislatorClicked={setLegislatorClicked}
+            party={1}
           />
-          </div>
+        )}
+        {dVal === 1 && (
+          
+          <LegislatorHeatMap
+            width={400}
+            height={400}
+            startDate={startDate}
+            endDate={endDate}
+            data={repubData}
+            legScatterData={legScatterData}
+            setLegislatorClicked={setLegislatorClicked}
+            party={2}
+          />
+        )}
       </div>
+
       <div className="flex space-x-2 border-b border-base-300 mt-3">
         <button
           className={`py-1 px-3 rounded-t ${
@@ -108,8 +149,8 @@ function LegislatorCharts({
         {cVal === 1 && (
           <Radar
             axisConfig={axisConfigTopics}
-            width= {400}
-            height= {400}
+            width={400}
+            height={400}
             data={legislatorClicked}
           />
         )}
