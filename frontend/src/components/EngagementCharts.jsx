@@ -195,7 +195,7 @@ function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
   const renderTopicList = (party, topics, totalEngagement) => (
     <div className="flex-1 overflow-y-auto max-h-64 p-2">
       <p className={`text-lg font-bold mb-2 ${party === 'Democratic' ? 'text-blue-500' : 'text-red-500'}`}>
-        {party} Top Topics<br/><p className={'text-sm'}>Total Engagement: {formatNumber(totalEngagement)}</p>
+        {party} Top Topics<br/><span className={'text-sm'}>Total Engagement: {formatNumber(totalEngagement)}</span>
       </p>
       <ul className="space-y-2">
         {Object.entries(topics)

@@ -6,6 +6,7 @@ import { LineChart } from "./PostLinechart";
 import { LegislatorHex } from "./LegislatorHexBin";
 import { RidgeLinePlot } from "./RidgeLine";
 import {LegislatorHeatMap} from "./LegislatorHeatMap"
+
 function LegislatorCharts({
   legislatorClicked,
   setLegislatorClicked,

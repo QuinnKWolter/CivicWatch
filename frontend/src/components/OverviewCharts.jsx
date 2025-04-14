@@ -3,10 +3,7 @@ import {
   BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, 
   PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
-import { 
-  FaChartBar, FaChartLine, FaBullseye, FaSpinner, 
-  FaNewspaper, FaThumbsUp, FaRetweet, FaExchangeAlt 
-} from "react-icons/fa";
+import { FaChartBar, FaChartLine, FaBullseye, FaSpinner, FaNewspaper, FaThumbsUp, FaRetweet, FaExchangeAlt, FaDemocrat, FaRepublican } from "react-icons/fa";
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
@@ -147,7 +144,11 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
           <div key={party} className="card shadow-md">
             <div className="card-body p-2">
               <h2 className="card-title text-lg flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-1 ${party === 'Democratic' ? 'bg-blue-500' : 'bg-red-500'}`}></div>
+                {party === 'Democratic' ? (
+                  <FaDemocrat className="text-blue-500 mr-1" />
+                ) : (
+                  <FaRepublican className="text-red-500 mr-1" />
+                )}
                 {party === 'Democratic' ? 'Democrats' : 'Republicans'}
               </h2>
               <div className="grid grid-cols-2 gap-2 mt-1">

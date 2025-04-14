@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Radar } from "./Radar";
 import { LineChart } from "./PostLinechart";
-import LegislatorCharts from "./LegislatorCharts";
 import OverviewCharts from "./OverviewCharts";
+import EngagementCharts from "./EngagementCharts";
+import GeographyCharts from "./GeographyCharts";
+import LegislatorCharts from "./LegislatorCharts";
 import { RiDashboardLine } from "react-icons/ri";
 import { BiTrendingUp } from "react-icons/bi";
 import { MdOutlineAccountBox } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
 import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs"
-import EngagementCharts from "./EngagementCharts";
-import ChoroplethMap from './ChoroplethMap';
+import AccountabilityInterface from "./AccountabilityInterface";
 
 function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics, selectedMetric }) {
   const [value, setValue] = useState(0);
@@ -150,9 +151,11 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
         {value === 0 && <OverviewCharts startDate={startDate} endDate={endDate} selectedTopics={memoizedSelectedTopics} />}
         {value === 1 && <EngagementCharts startDate={startDate} endDate={endDate} selectedTopics={memoizedSelectedTopics} />}
         {value === 2 && (
-          <div>
-            <LineChart data={postData} width={300} height={300} />
-          </div>
+          <AccountabilityInterface 
+            startDate={startDate} 
+            endDate={endDate} 
+            selectedTopics={memoizedSelectedTopics}
+          />
         )}
         {value === 3 && (
           <LegislatorCharts
@@ -167,16 +170,12 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
           />
         )}
         {value === 4 && (
-          <div>
-            <h6 className="text-lg">Geography Content</h6>
-            {/* Add Geography content here */}
-            <ChoroplethMap 
-              startDate={startDate} 
-              endDate={endDate} 
-              activeTopics={selectedTopics}
-              selectedMetric={selectedMetric}
-            />
-          </div>
+          <GeographyCharts 
+            startDate={startDate} 
+            endDate={endDate} 
+            selectedTopics={memoizedSelectedTopics}
+            selectedMetric={selectedMetric}
+          />
         )}
       </div>
     </div>

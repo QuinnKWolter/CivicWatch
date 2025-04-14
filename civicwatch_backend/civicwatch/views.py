@@ -184,6 +184,33 @@ def geo_activity_topics(request):
     topics_param = request.GET.get('topics', '')
     topic_list = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
 
+    # Define the default conditions
+    default_start_date = '2020-01-01'
+    default_end_date = '2021-12-31'
+    default_topics = ['abortion', 'blacklivesmatter', 'capitol', 'climate', 'covid', 'gun', 'immigra', 'rights']
+
+    # Check if the request matches the default conditions
+    if (start_date == default_start_date and end_date == default_end_date and
+        set(topic_list) == set(default_topics)):
+
+        # Determine which default file to serve based on the metric
+        if metric == 'posts':
+            file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultChoroplethPosts.json')
+        elif metric == 'legislators':
+            file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultChoroplethLegislators.json')
+        elif metric == 'engagement':
+            file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultChoroplethEngagement.json')
+        else:
+            return JsonResponse({"error": "Invalid metric"}, status=400)
+
+        try:
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            return JsonResponse(data, safe=False)
+        except FileNotFoundError:
+            return JsonResponse({"error": "Default data file not found"}, status=404)
+
+    # If not default, proceed with the regular logic
     posts = Post.objects.all()
 
     if start_date:
@@ -221,7 +248,7 @@ def geo_activity_topics(request):
         party = entry['party']
 
         if party not in ['Democratic', 'Republican']:
-            party = 'Other'
+            continue
 
         total = (
             entry['total'] if metric == 'posts'
@@ -234,7 +261,6 @@ def geo_activity_topics(request):
                 'state': state,
                 'Democratic': 0,
                 'Republican': 0,
-                'Other': 0,
                 'total': 0
             }
 
@@ -630,6 +656,50 @@ def accountability_data(request):
         return JsonResponse(raw_data, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+def accountability_interface(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    topics_param = request.GET.get('topics', '')
+    topic_list = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
+
+    posts = Post.objects.all()
+
+    if start_date:
+        posts = posts.filter(created_at__gte=start_date)
+    if end_date:
+        posts = posts.filter(created_at__lte=end_date)
+    if topic_list:
+        posts = posts.filter(topics__name__in=topic_list).distinct()
+
+    # Group by party and calculate counts
+    party_data = posts.values('party').annotate(
+        civil_count=Count('post_id', filter=Q(civility_score=1)),
+        uncivil_count=Count('post_id', filter=~Q(civility_score=1)),
+        misinformative_count=Count('post_id', filter=~Q(count_misinfo=0)),
+        informative_count=Count('post_id', filter=Q(count_misinfo=0))
+    )
+
+    # Prepare data for response
+    data = {
+        'overall': {
+            'civil_vs_uncivil': f"{posts.filter(civility_score=1).count()}/{posts.count()}",
+            'informative_vs_misinformative': f"{posts.filter(count_misinfo=0).count()}/{posts.count()}"
+        },
+        'by_party': {}
+    }
+
+    for entry in party_data:
+        party = entry['party']
+        total_civil_uncivil = entry['civil_count'] + entry['uncivil_count']
+        total_informative_misinformative = entry['informative_count'] + entry['misinformative_count']
+
+        data['by_party'][party] = {
+            'civil_vs_uncivil': f"{entry['civil_count']}/{total_civil_uncivil}",
+            'informative_vs_misinformative': f"{entry['informative_count']}/{total_informative_misinformative}"
+        }
+
+    return JsonResponse(data)
 
 def trend_data(request):
     start_date = request.GET.get('start_date')

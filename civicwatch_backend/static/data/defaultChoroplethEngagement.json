@@ -1,0 +1,302 @@
+[
+    {
+        "state": "AK",
+        "Democratic": 932627,
+        "Republican": 8986,
+        "total": 941613
+    },
+    {
+        "state": "AL",
+        "Democratic": 852094,
+        "Republican": 4905775,
+        "total": 5757869
+    },
+    {
+        "state": "AR",
+        "Democratic": 1537046,
+        "Republican": 2778859,
+        "total": 4315905
+    },
+    {
+        "state": "AZ",
+        "Democratic": 16521994,
+        "Republican": 8536567,
+        "total": 25058561
+    },
+    {
+        "state": "CA",
+        "Democratic": 13199179,
+        "Republican": 1055083,
+        "total": 14254262
+    },
+    {
+        "state": "CO",
+        "Democratic": 6922931,
+        "Republican": 396076,
+        "total": 7319007
+    },
+    {
+        "state": "CT",
+        "Democratic": 3184399,
+        "Republican": 174032,
+        "total": 3358431
+    },
+    {
+        "state": "DE",
+        "Democratic": 6946458,
+        "Republican": 27,
+        "total": 6946485
+    },
+    {
+        "state": "FL",
+        "Democratic": 4907957,
+        "Republican": 2419056,
+        "total": 7327013
+    },
+    {
+        "state": "GA",
+        "Democratic": 5873572,
+        "Republican": 892333,
+        "total": 6765905
+    },
+    {
+        "state": "HI",
+        "Democratic": 411236,
+        "Republican": 649,
+        "total": 411885
+    },
+    {
+        "state": "IA",
+        "Democratic": 1676262,
+        "Republican": 110162,
+        "total": 1786424
+    },
+    {
+        "state": "ID",
+        "Democratic": 430739,
+        "Republican": 146306,
+        "total": 577045
+    },
+    {
+        "state": "IL",
+        "Democratic": 1651306,
+        "Republican": 490092,
+        "total": 2141398
+    },
+    {
+        "state": "IN",
+        "Democratic": 388342,
+        "Republican": 1045284,
+        "total": 1433626
+    },
+    {
+        "state": "KS",
+        "Democratic": 1384442,
+        "Republican": 472885,
+        "total": 1857327
+    },
+    {
+        "state": "KY",
+        "Democratic": 4329135,
+        "Republican": 682223,
+        "total": 5011358
+    },
+    {
+        "state": "LA",
+        "Democratic": 1271926,
+        "Republican": 299815,
+        "total": 1571741
+    },
+    {
+        "state": "MA",
+        "Democratic": 9966569,
+        "Republican": 150793,
+        "total": 10117362
+    },
+    {
+        "state": "MD",
+        "Democratic": 9690524,
+        "Republican": 1019461,
+        "total": 10709985
+    },
+    {
+        "state": "ME",
+        "Democratic": 4910581,
+        "Republican": 33190,
+        "total": 4943771
+    },
+    {
+        "state": "MI",
+        "Democratic": 7517204,
+        "Republican": 329739,
+        "total": 7846943
+    },
+    {
+        "state": "MN",
+        "Democratic": 18535198,
+        "Republican": 808514,
+        "total": 19343712
+    },
+    {
+        "state": "MO",
+        "Democratic": 8106068,
+        "Republican": 1655738,
+        "total": 9761806
+    },
+    {
+        "state": "MS",
+        "Democratic": 1493838,
+        "Republican": 510949,
+        "total": 2004787
+    },
+    {
+        "state": "MT",
+        "Democratic": 2819205,
+        "Republican": 468421,
+        "total": 3287626
+    },
+    {
+        "state": "NC",
+        "Democratic": 6575222,
+        "Republican": 3693032,
+        "total": 10268254
+    },
+    {
+        "state": "ND",
+        "Democratic": 297978,
+        "Republican": 51646,
+        "total": 349624
+    },
+    {
+        "state": "NE",
+        "Democratic": 1553529,
+        "Republican": 120,
+        "total": 1553649
+    },
+    {
+        "state": "NH",
+        "Democratic": 43774957,
+        "Republican": 1108722,
+        "total": 44883679
+    },
+    {
+        "state": "NJ",
+        "Democratic": 1198696,
+        "Republican": 162722,
+        "total": 1361418
+    },
+    {
+        "state": "NM",
+        "Democratic": 25246174,
+        "Republican": 14520,
+        "total": 25260694
+    },
+    {
+        "state": "NV",
+        "Democratic": 5048578,
+        "Republican": 232595,
+        "total": 5281173
+    },
+    {
+        "state": "NY",
+        "Democratic": 15815791,
+        "Republican": 825472,
+        "total": 16641263
+    },
+    {
+        "state": "OH",
+        "Democratic": 4881754,
+        "Republican": 673104,
+        "total": 5554858
+    },
+    {
+        "state": "OK",
+        "Democratic": 4528333,
+        "Republican": 521300,
+        "total": 5049633
+    },
+    {
+        "state": "OR",
+        "Democratic": 2236172,
+        "Republican": 1916766,
+        "total": 4152938
+    },
+    {
+        "state": "PA",
+        "Democratic": 9512270,
+        "Republican": 1003143,
+        "total": 10515413
+    },
+    {
+        "state": "RI",
+        "Democratic": 3909197,
+        "Republican": 824681,
+        "total": 4733878
+    },
+    {
+        "state": "SC",
+        "Democratic": 5324240,
+        "Republican": 846028,
+        "total": 6170268
+    },
+    {
+        "state": "SD",
+        "Democratic": 1511881,
+        "Republican": 427283,
+        "total": 1939164
+    },
+    {
+        "state": "TN",
+        "Democratic": 8919907,
+        "Republican": 2155406,
+        "total": 11075313
+    },
+    {
+        "state": "TX",
+        "Democratic": 16642987,
+        "Republican": 2012186,
+        "total": 18655173
+    },
+    {
+        "state": "UT",
+        "Democratic": 3996978,
+        "Republican": 178209,
+        "total": 4175187
+    },
+    {
+        "state": "VA",
+        "Democratic": 10419897,
+        "Republican": 198778,
+        "total": 10618675
+    },
+    {
+        "state": "VT",
+        "Democratic": 1109588,
+        "Republican": 10393,
+        "total": 1119981
+    },
+    {
+        "state": "WA",
+        "Democratic": 3705818,
+        "Republican": 113017,
+        "total": 3818835
+    },
+    {
+        "state": "WI",
+        "Democratic": 3218005,
+        "Republican": 441541,
+        "total": 3659546
+    },
+    {
+        "state": "WV",
+        "Democratic": 783510,
+        "Republican": 514123,
+        "total": 1297633
+    },
+    {
+        "state": "WY",
+        "Democratic": 8710,
+        "Republican": 443344,
+        "total": 452054
+    }
+]
