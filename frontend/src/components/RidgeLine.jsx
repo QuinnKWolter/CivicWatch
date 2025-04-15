@@ -171,8 +171,12 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
   }
 
   return (
+    <>
+    <h3>Post Frequency Over Time by Topic</h3>
     <div className="flex justify-center items-center w-full h-full">
+      
       <svg ref={svgRef} />
-    </div>
+      </div>
+    </>
   );
 };
