@@ -36,7 +36,7 @@ export const RadarGrid = ({ outerRadius, xScale, axisConfig }) => {
         <text
           x={labelPosition.x}
           y={labelPosition.y}
-          fontSize={5}
+          fontSize={8}
           fill={GRID_COLOR}
           textAnchor={labelPosition.x > 0 ? "start" : "end"}
           dominantBaseline={"middle"}
