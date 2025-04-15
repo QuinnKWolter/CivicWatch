@@ -26,3 +26,24 @@
 .tippy-box[data-theme~='custom'] .prose strong {
   color: hsl(var(--bc) / 1); /* full opacity for headings */
 }
+
+.tab-container {
+  display: flex;
+  justify-content: space-around; /* Distribute space evenly */
+  border-bottom: 1px solid var(--base-300);
+  background-color: var(--base-100);
+}
+
+.tab-btn {
+  flex: 1; /* Allow each tab to take equal space */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.tab-label {
+  transition: max-width 0.3s ease, opacity 0.3s ease;
+  overflow: hidden;
+  white-space: nowrap;
+}

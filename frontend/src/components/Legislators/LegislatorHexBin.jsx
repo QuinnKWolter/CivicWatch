@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import * as d3 from "d3";
 import { hexbin } from "d3-hexbin";
-import { Tooltip, TooltipGroup } from "./Tooltip";
+import { Tooltip, TooltipGroup } from "./LegislatorTooltip";
 import dayjs from "dayjs";
 
 export const LegislatorHex = ({ height, width, startDate, endDate, setLegislatorClicked, legScatterData}) => {

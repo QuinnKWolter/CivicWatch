@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import * as d3 from "d3";
-import { AxisBasic } from "./AxisBasic";
-import { AxisLeft } from "./AxisLeft";
-import { AxisBottom } from "./AxisBottom";
-import { Tooltip } from "./Tooltip";
+import { AxisBasic } from "../AxisBasic";
+import { AxisLeft } from "../AxisLeft";
+import { AxisBottom } from "../AxisBottom";
+import { Tooltip } from "./LegislatorTooltip";
 import dayjs from "dayjs";
 
 const MARGIN = { top: 60, right: 60, bottom: 60, left: 60 };

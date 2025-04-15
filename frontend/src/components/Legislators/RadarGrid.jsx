@@ -2,7 +2,7 @@ import * as d3 from "d3";
 
 export const INNER_RADIUS = 40;
 const GRID_NUMBER = 5;
-const GRID_COLOR = "white";
+const GRID_COLOR = "grey";
 
 export const polarToCartesian = (angle, distance) => {
   const x = distance * Math.cos(angle);
