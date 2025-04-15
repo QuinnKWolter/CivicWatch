@@ -1,5 +1,5 @@
 import { BiData } from "react-icons/bi";
-import "../index.css";
+import "../../index.css";
 
 export const Tooltip = ({ xPos, yPos, name }) => {
   if (!xPos || !yPos || !name) {

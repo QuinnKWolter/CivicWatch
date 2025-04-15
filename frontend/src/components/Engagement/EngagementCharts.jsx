@@ -4,13 +4,13 @@ import Plotly from "plotly.js-dist";
 import tippy from "tippy.js";
 import "tippy.js/dist/tippy.css";
 import "tippy.js/animations/scale-subtle.css";
-import { colorMap } from "./BipartiteFlow";
+import Tippy from '@tippyjs/react';
+import { colorMap, topicIcons } from '../../utils/utils';
 
 function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [splitEngagement, setSplitEngagement] = useState(false); // State for toggle
   const chartRef = useRef();
 
   useEffect(() => {
@@ -66,15 +66,7 @@ function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
             const topicB = b.split(' (')[0];
             return Object.keys(colorMap).indexOf(topicA) - Object.keys(colorMap).indexOf(topicB);
           })
-          .flatMap(topic => {
-            if (splitEngagement) {
-              return [
-                { name: `${topic} Likes` },
-                { name: `${topic} Retweets` }
-              ];
-            }
-            return { name: topic };
-          })
+          .map(topic => ({ name: topic }))
       )
     ];
 
@@ -97,24 +89,11 @@ function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
         })
         .forEach(topicWithParty => {
           const topicData = partyData.topics[topicWithParty];
-          if (splitEngagement) {
-            links.push({
-              source: nodes.findIndex(node => node.name === party),
-              target: nodes.findIndex(node => node.name === `${topicWithParty.split(' ')[0]} Likes`),
-              value: topicData.likes
-            });
-            links.push({
-              source: nodes.findIndex(node => node.name === party),
-              target: nodes.findIndex(node => node.name === `${topicWithParty.split(' ')[0]} Retweets`),
-              value: topicData.retweets
-            });
-          } else {
-            links.push({
-              source: nodes.findIndex(node => node.name === party),
-              target: nodes.findIndex(node => node.name === topicWithParty),
-              value: topicData.engagement
-            });
-          }
+          links.push({
+            source: nodes.findIndex(node => node.name === party),
+            target: nodes.findIndex(node => node.name === topicWithParty),
+            value: topicData.engagement
+          });
         });
     });
 
@@ -165,7 +144,7 @@ function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
     };
 
     Plotly.newPlot(chartRef.current, [plotData], layout, config);
-  }, [data, splitEngagement]);
+  }, [data]);
 
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -194,8 +173,12 @@ function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
 
   const renderTopicList = (party, topics, totalEngagement) => (
     <div className="flex-1 overflow-y-auto max-h-64 p-2">
-      <p className={`text-lg font-bold mb-2 ${party === 'Democratic' ? 'text-blue-500' : 'text-red-500'}`}>
-        {party} Top Topics<br/><span className={'text-sm'}>Total Engagement: {formatNumber(totalEngagement)}</span>
+      <p className="text-lg font-bold mb-2">
+        {party === 'Democratic' ? 'Democrat Top Topics' : 'Republican Top Topics'}
+        <br/>
+        <span className={`text-sm ${party === 'Democratic' ? 'text-blue-500' : 'text-red-500'}`}>
+          Total Engagement: {formatNumber(totalEngagement)}
+        </span>
       </p>
       <ul className="space-y-2">
         {Object.entries(topics)
@@ -204,12 +187,17 @@ function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
             const topicName = topic.split(' ')[0];
             const partyKey = party === 'Democratic' ? 'D' : 'R';
             const color = colorMap[topicName]?.[partyKey] || '#000';
+            const IconComponent = topicIcons[topicName] || FaSpinner;
             return (
               <li key={topic} className="bg-base-100 p-2 rounded shadow-md">
                 <div className="flex justify-between items-center text-sm">
                   <div className="flex items-center">
                     <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: color }}></div>
-                    <span className="font-semibold">{topicName}</span>
+                    <Tippy content={topicName}>
+                      <span className="font-semibold">
+                        <IconComponent className="text-xl" />
+                      </span>
+                    </Tippy>
                   </div>
                   <div className="flex space-x-2">
                     <span className="flex items-center text-accent">
@@ -229,18 +217,6 @@ function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
 
   return (
     <div className="flex flex-col space-y-4 p-2">
-      <div className="flex items-center justify-center mb-4">
-        <label className="label cursor-pointer">
-          <span className="label-text mr-2">Split Engagement</span>
-          <input
-            type="checkbox"
-            className="toggle toggle-primary"
-            checked={splitEngagement}
-            onChange={() => setSplitEngagement(!splitEngagement)}
-          />
-        </label>
-      </div>
-
       <div className="flex space-x-4">
         {renderTopicList('Democratic', data.by_party.Democratic.topics, data.by_party.Democratic.total_engagement)}
         {renderTopicList('Republican', data.by_party.Republican.topics, data.by_party.Republican.total_engagement)}

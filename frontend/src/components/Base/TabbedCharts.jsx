@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Radar } from "./Radar";
-import { LineChart } from "./PostLinechart";
-import OverviewCharts from "./OverviewCharts";
-import EngagementCharts from "./EngagementCharts";
-import GeographyCharts from "./GeographyCharts";
-import LegislatorCharts from "./LegislatorCharts";
+import { Radar } from "../Legislators/Radar";
+import { LineChart } from "../Legislators/PostLineChart";
+import OverviewCharts from "../Overview/OverviewCharts";
+import EngagementCharts from "../Engagement/EngagementCharts";
+import GeographyCharts from "../Geography/GeographyCharts";
+import LegislatorCharts from "../Legislators/LegislatorCharts";
 import { RiDashboardLine } from "react-icons/ri";
 import { BiTrendingUp } from "react-icons/bi";
 import { MdOutlineAccountBox } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
 import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs"
-import AccountabilityInterface from "./AccountabilityInterface";
+import AccountabilityInterface from "../Accountability/AccountabilityInterface";
 
 function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics, selectedMetric }) {
   const [value, setValue] = useState(0);
+  const [hoveredTab, setHoveredTab] = useState(null);
 
   const [monthlyLeg, setMonthlyLeg] = useState([]);
 
@@ -132,20 +133,22 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
 
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden">
-      <div className="flex justify-center space-x-2 border-b border-base-300 bg-base-100">
+      <div className="tab-container">
         {tabs.map((tab) => (
           <button
             key={tab.value}
             className={`tab-btn group py-2 px-4 rounded-t transition-all duration-300 ease-in-out
               ${value === tab.value ? 'bg-primary text-primary-content tab-active' : 'bg-base-300 text-base-content hover:bg-primary/20'}`}
             onClick={() => handleChange(tab.value)}
+            onMouseEnter={() => setHoveredTab(tab.value)}
+            onMouseLeave={() => setHoveredTab(null)}
           >
             <div className="flex items-center space-x-2">
               <span className="text-xl">{tab.icon}</span>
-              <span className={`whitespace-nowrap transition-all duration-300 ${
-                value === tab.value 
+              <span className={`tab-label ${
+                (value === tab.value && hoveredTab === null) || hoveredTab === tab.value
                   ? 'opacity-100 max-w-[100px]' 
-                  : 'opacity-0 max-w-0 group-hover:opacity-100 group-hover:max-w-[100px]'
+                  : 'opacity-0 max-w-0'
               }`}>
                 {tab.label}
               </span>

@@ -7,20 +7,10 @@ import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { FaSpinner } from 'react-icons/fa';
+import { colorMap } from '../../utils/utils';
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
-
-export const colorMap = {
-  abortion: { D: '#1E3A8A', R: '#7F1D1D', M: '#4A1D8A' },
-  blacklivesmatter: { D: '#1D4ED8', R: '#991B1B', M: '#6B2BD8' },
-  capitol: { D: '#2563EB', R: '#B91C1C', M: '#7B2FEB' },
-  climate: { D: '#3B82F6', R: '#DC2626', M: '#8B52F6' },
-  covid: { D: '#60A5FA', R: '#EF4444', M: '#A875FA' },
-  gun: { D: '#93C5FD', R: '#F87171', M: '#C395FD' },
-  immigra: { D: '#BFDBFE', R: '#FCA5A5', M: '#DFB5FE' },
-  rights: { D: '#E2EFFF', R: '#FFD5D5', M: '#F2D5FF' },
-};
 
 function BipartiteFlow({ activeTopics, startDate, endDate, onDateChange, selectedMetric }) {
   const [data, setData] = useState([]);

@@ -1,17 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
 import PropTypes from 'prop-types';
-import { colorMap } from './BipartiteFlow'; // Import colorMap from BipartiteFlow
-import { IoIosArrowUp, IoIosArrowDown } from 'react-icons/io'; // Use different icons from react-icons
-import { FaToggleOn, FaToggleOff, FaQuestionCircle, FaSpinner, FaGlobe } from 'react-icons/fa'; // Use FaGlobe for "all"
+import { IoIosArrowUp, IoIosArrowDown } from 'react-icons/io';
+import { FaToggleOn, FaToggleOff, FaQuestionCircle, FaSpinner } from 'react-icons/fa';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-
-// Import icons for each topic
-import { FaHospitalUser, FaFistRaised, FaLandmark, FaLeaf, FaVirus, FaPlane, FaBalanceScale, FaShieldAlt } from 'react-icons/fa';
+import { topicIcons } from '../../utils/utils'; // Import topicIcons
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -23,21 +20,10 @@ function AccountabilityLineChart({ startDate, endDate }) {
   const [showMisinformation, setShowMisinformation] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const topics = ['all', ...Object.keys(colorMap)]; // Add "all" to the topics list
-
-  const topicIcons = {
-    all: <FaGlobe />, // Use FaGlobe for the "all" topic
-    abortion: <FaHospitalUser />,
-    blacklivesmatter: <FaFistRaised />,
-    capitol: <FaLandmark />,
-    climate: <FaLeaf />,
-    covid: <FaVirus />,
-    gun: <FaShieldAlt />,
-    immigra: <FaPlane />,
-    rights: <FaBalanceScale />
-  };
+  const topics = ['all', ...Object.keys(topicIcons)]; // Add "all" to the topics list
 
   const currentTopic = topics[currentTopicIndex];
+  const CurrentIcon = topicIcons[currentTopic];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -143,7 +129,9 @@ function AccountabilityLineChart({ startDate, endDate }) {
           placement="right"
           arrow={true}
         >
-          <span className="my-2 text-center">{topicIcons[currentTopic]}</span>
+          <span className="my-2 text-center">
+            <CurrentIcon />
+          </span>
         </Tippy>
         <button onClick={handleNext}>
           <IoIosArrowDown size={20} />
@@ -184,14 +172,14 @@ function AccountabilityLineChart({ startDate, endDate }) {
                 <Line
                   type="monotone"
                   dataKey="Democratic"
-                  stroke={colorMap[currentTopic]?.D ?? '#3b82f6'}
+                  stroke={topicIcons[currentTopic]?.D ?? '#3b82f6'}
                   strokeWidth={2}
                   dot={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="Republican"
-                  stroke={colorMap[currentTopic]?.R ?? '#ef4444'}
+                  stroke={topicIcons[currentTopic]?.R ?? '#ef4444'}
                   strokeWidth={2}
                   dot={false}
                 />

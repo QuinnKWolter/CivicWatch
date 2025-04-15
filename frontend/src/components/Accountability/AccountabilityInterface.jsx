@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaSpinner } from 'react-icons/fa';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
-import { colorMap } from './BipartiteFlow';
+import { colorMap } from '../../utils/utils';
 
 function AccountabilityInterface({ startDate, endDate, selectedTopics }) {
   const [data, setData] = useState(null);

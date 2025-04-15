@@ -678,12 +678,12 @@ def post_statistics(request):
 def overview_metrics(request):
     """
     Endpoint providing overview metrics and visualization data for dashboard
-    
+
     Parameters:
     - start_date: ISO format date string (e.g., "2020-01-01")
     - end_date: ISO format date string (e.g., "2021-12-31")
     - topics: Comma-separated list of topic names
-    
+
     Returns structured JSON with summary metrics and visualization data
     """
     start_date = request.GET.get('start_date')
@@ -693,7 +693,7 @@ def overview_metrics(request):
     # Parse topics from comma-separated string to list if provided
     topics = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
     
-    # Build filter conditions
+    # Build filter conditions for Posts
     filters = Q()
     if start_date and end_date:
         start_date_obj = parse_date(start_date)
@@ -704,10 +704,10 @@ def overview_metrics(request):
     if topics:
         filters &= Q(topics__name__in=topics)
     
-    # Get filtered posts
+    # Get filtered posts (using select_related to fetch legislator data efficiently)
     filtered_posts = Post.objects.filter(filters).select_related('legislator').distinct()
     
-    # Calculate summary metrics by party
+    # Calculate basic summary metrics by party
     summary_metrics = filtered_posts.values('party').annotate(
         total_posts=Count('post_id'),
         avg_interaction_score=Avg('interaction_score'),
@@ -715,7 +715,7 @@ def overview_metrics(request):
         total_retweets=Sum('retweet_count')
     ).order_by('party')
     
-    # Structure as dictionary keyed by party
+    # Structure basic summary metrics in a dictionary keyed by party
     summary_metrics_dict = {}
     for item in summary_metrics:
         if item['party'] in ['Democratic', 'Republican']:
@@ -726,7 +726,46 @@ def overview_metrics(request):
                 "totalRetweets": item['total_retweets']
             }
     
-    # Bar chart data (posts, likes, retweets by party)
+    # Compute extended metrics for each party
+    for party in ['Democratic', 'Republican']:
+        # Filter posts further by party
+        party_posts = filtered_posts.filter(party=party)
+        
+        # 1. Number of Legislators: distinct legislator_id
+        num_legislators = party_posts.values('legislator__legislator_id').distinct().count()
+        
+        # 2. Number of Uncivil Posts: assume uncivil if civility_score < 1 (adjust threshold if needed)
+        num_uncivil_posts = party_posts.filter(civility_score__lt=1).count()
+        
+        # 3. Number of Misinformative Posts: assume misinformative if count_misinfo > 0
+        num_misinfo_posts = party_posts.filter(count_misinfo__gt=0).count()
+        
+        # 4. Most Active State: group by state, then pick the one with the largest post count
+        most_active_state_obj = party_posts.values('state').annotate(post_count=Count('post_id')).order_by('-post_count').first()
+        most_active_state = most_active_state_obj['state'] if most_active_state_obj else None
+        
+        # Add these to the summary for the party
+        if party in summary_metrics_dict:
+            summary_metrics_dict[party].update({
+                "numberLegislators": num_legislators,
+                "numUncivilPosts": num_uncivil_posts,
+                "numMisinfoPosts": num_misinfo_posts,
+                "mostActiveState": most_active_state
+            })
+        else:
+            # In case there are no posts for a given party, add default values
+            summary_metrics_dict[party] = {
+                "totalPosts": 0,
+                "avgInteractionScore": 0,
+                "totalLikes": 0,
+                "totalRetweets": 0,
+                "numberLegislators": 0,
+                "numUncivilPosts": 0,
+                "numMisinfoPosts": 0,
+                "mostActiveState": None
+            }
+    
+    # Bar chart data: posts, likes, retweets by party
     bar_chart_party_summary = [
         {
             "party": item['party'],
@@ -753,7 +792,7 @@ def overview_metrics(request):
         } for item in radar_chart_metrics
     ]
     
-    # Compile the final response
+    # Compile the final response data
     response_data = {
         "summaryMetrics": summary_metrics_dict,
         "visualizations": {
@@ -855,9 +894,7 @@ def trend_data(request):
     
     trend_data = filtered_posts.annotate(date=date_trunc).values('date', 'party').annotate(
         total_posts=Count('post_id'),
-        avg_interaction_score=Avg('interaction_score'),
-        total_likes=Sum('like_count'),
-        total_retweets=Sum('retweet_count')
+        total_engagement=Sum('like_count') + Sum('retweet_count')
     ).order_by('date', 'party')
     
     trend_data_dict = {}
@@ -867,9 +904,7 @@ def trend_data(request):
             trend_data_dict[date_str] = {}
         trend_data_dict[date_str][item['party']] = {
             "totalPosts": item['total_posts'],
-            "avgInteractionScore": item['avg_interaction_score'],
-            "totalLikes": item['total_likes'],
-            "totalRetweets": item['total_retweets']
+            "totalEngagement": item['total_engagement']
         }
     
     return JsonResponse(trend_data_dict, safe=False)
@@ -944,3 +979,14 @@ def default_overview_data(request):
         return JsonResponse(data, safe=False)
     except FileNotFoundError:
         return HttpResponse(status=404, content="Default overview data not found.")
+
+def default_trendline_data(request):
+    # Path to the JSON file
+    json_file_path = os.path.join(os.path.dirname(__file__), '../static/data/defaultOverviewTrendline.json')
+    
+    try:
+        with open(json_file_path, 'r') as json_file:
+            data = json.load(json_file)
+        return JsonResponse(data, safe=False)
+    except FileNotFoundError:
+        return HttpResponse(status=404, content="Default trendline data not found.")
