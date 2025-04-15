@@ -108,10 +108,7 @@ export const LegislatorHeatMap = ({ height = 600, width = 500, data, legScatterD
       .attr("transform", `translate(${margin.left},0)`)
       .call(d3.axisLeft(y));
     
-    
-    if (legislatorClicked) {
-      console.log("LEG CLICKED", legislatorClicked[0].name)
-      }
+ 
      
     
     yAxis.selectAll(".tick text")
