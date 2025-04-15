@@ -56,7 +56,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
     const marginTop = 40;
     const marginRight = 30;
     const marginBottom = 30;
-    const marginLeft = 80;
+    const marginLeft = 70;
     const overlap = 4;
 
     // Calculate dates from testData
@@ -112,12 +112,12 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
       .attr("viewBox", [0, 0, width, height])
       .attr("style", "max-width: 100%; height: auto;");
 
-    svg
+    const xAxis = svg
       .append("g")
       .attr("transform", `translate(0, ${height - marginBottom})`)
       .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0));
 
-    svg
+    const yAxis = svg
       .append("g")
       .attr("transform", `translate(${marginLeft}, 0)`)
       .call(d3.axisLeft(y).tickSize(0).tickPadding(5))
@@ -152,6 +152,14 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
         .attr("stroke-width", 1)
         .attr("d", area(filledPosts));
     });
+
+    xAxis.selectAll("text")
+      .style("font-size", "9px");
+
+    // Move the y-axis labels
+    yAxis.selectAll("text")
+      .style("font-size", "9px")
+    
   }, [testData, width, height]);
 
   if (!legislatorClicked || Object.keys(legislatorClicked).length === 0) {

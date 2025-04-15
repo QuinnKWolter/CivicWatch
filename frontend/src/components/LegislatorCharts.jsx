@@ -5,7 +5,8 @@ import { useState } from "react";
 import { LineChart } from "./PostLinechart";
 import { LegislatorHex } from "./LegislatorHexBin";
 import { RidgeLinePlot } from "./RidgeLine";
-import {LegislatorHeatMap} from "./LegislatorHeatMap"
+import { LegislatorHeatMap } from "./LegislatorHeatMap"
+import { FaSpinner } from 'react-icons/fa';
 
 function LegislatorCharts({
   legislatorClicked,
@@ -16,6 +17,7 @@ function LegislatorCharts({
   endDate,
   legScatterData,
   monthlyLeg,
+  loading
 }) {
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
@@ -37,6 +39,8 @@ function LegislatorCharts({
   const [demData, setDemData] = useState([]);
   const [repubData, setRepubData] = useState([]);
 
+    
+
   const handleChange = (newValue) => {
     setCVal(newValue);
   };
@@ -46,10 +50,24 @@ function LegislatorCharts({
   };
 
   useEffect(() => {
-    setDemData(monthlyLeg.legislators.filter((d) => d.party === "D"));
+    if (!loading) {
+      setDemData(monthlyLeg.legislators.filter((d) => d.party === "D"));
     setRepubData(monthlyLeg.legislators.filter((d) => d.party === "R"));
     console.log("repub data", monthlyLeg.legislators.filter((d) => d.party === "R"));
-  }, [monthlyLeg]);
+    }
+    
+  }, [monthlyLeg, loading]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <FaSpinner className="animate-spin text-4xl text-primary mb-4" />
+        <p className="text-lg">Loading legislator data...</p>
+      </div>
+    );
+  }
+
+
 
   return (
     <div className="overflow-y-auto h-full p-2">
@@ -141,7 +159,7 @@ function LegislatorCharts({
         {cVal === 0 && (
           <Radar
             axisConfig={axisConfig}
-            width={400}
+            width={500}
             height={400}
             data={legislatorClicked}
           />
@@ -149,7 +167,7 @@ function LegislatorCharts({
         {cVal === 1 && (
           <Radar
             axisConfig={axisConfigTopics}
-            width={400}
+            width={500}
             height={400}
             data={legislatorClicked}
           />
@@ -162,7 +180,7 @@ function LegislatorCharts({
           // />
           <RidgeLinePlot
             height={400}
-            width={900}
+            width={400}
             legislatorClicked={legislatorClicked}
             startDate={startDate}
             endDate={endDate}

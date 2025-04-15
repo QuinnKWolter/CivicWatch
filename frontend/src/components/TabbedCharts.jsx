@@ -26,6 +26,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
   };
 
   const [legScatterData, setLegScatterData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
@@ -104,14 +105,19 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
       const queryParams = new URLSearchParams(params).toString();
 
       const query = `${url}${queryParams}`;
+      setLoading(true)
       fetch(query)
         .then((response) => response.json())
         .then((data) => {
+          console.log("rec'd monthly data", data)
           setMonthlyLeg(data);
         })
         .catch((error) =>
-          console.error("Error filtering legislator data", error));
-      
+          console.error("Error filtering legislator data", error))
+        .finally(() => {
+          setLoading(false);
+      });
+       
     }
     
   },[startDate, endDate])
@@ -167,6 +173,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
             endDate={endDate}
             legScatterData={legScatterData}
             monthlyLeg={monthlyLeg}
+            loading={loading}
           />
         )}
         {value === 4 && (
