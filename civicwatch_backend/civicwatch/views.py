@@ -421,7 +421,6 @@ def geo_activity_topics(request):
 
     state_party_data = {}
 
-    # Metric Aggregations
     if metric == 'posts':
         base_data = posts.values('state', 'party').annotate(total=Count('post_id'))
         topic_data = posts.values('state', 'party', 'topics__name').annotate(total=Count('post_id'))
@@ -459,7 +458,7 @@ def geo_activity_topics(request):
             })
 
     elif metric == 'engagement':
-        filtered_posts = posts  # already filtered by date, topic
+        filtered_posts = posts
 
         base_data = filtered_posts.values('state', 'party').annotate(
             total=Sum(F('like_count') + F('retweet_count'))
@@ -513,7 +512,6 @@ def geo_activity_topics(request):
                 'legislator_breakdown': {}
             }
 
-        # Initialize topic if not present
         if topic not in state_party_data[state]['topic_breakdown']:
             state_party_data[state]['topic_breakdown'][topic] = {
                 'Democratic': 0,
@@ -524,7 +522,6 @@ def geo_activity_topics(request):
         state_party_data[state]['topic_breakdown'][topic][party] += total
         state_party_data[state]['topic_breakdown'][topic]['total'] += total
 
-        # Initialize topic-wise breakdown for legislators if not present
         if topic not in state_party_data[state]['legislator_breakdown']:
             state_party_data[state]['legislator_breakdown'][topic] = {
                 'Democratic': 0,
