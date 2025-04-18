@@ -236,6 +236,7 @@ function TimelineSlider({
               },
             ],
           }}
+          zIndex={9999}
         >
           <div className="flex items-center justify-center w-5 h-5 rounded-full bg-base-300 border-2 border-primary cursor-pointer hover:bg-base-200 transition-colors" style={{ borderColor: color }}>
             <Icon className="w-3 h-3" style={{ color }} />
@@ -373,6 +374,16 @@ function TimelineSlider({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    // Initialize tooltips on elements with data-tippy-content
+    tippy('[data-tippy-content]', {
+      theme: 'light',
+      placement: 'top',
+      arrow: true,
+      zIndex: 9999 // Ensure tooltips have a high z-index
+    });
+  }, [importantDates]); // Re-run when importantDates changes
 
   return (
     <div ref={containerRef} className="relative w-full">

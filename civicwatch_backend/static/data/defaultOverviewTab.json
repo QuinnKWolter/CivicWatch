@@ -1,46 +1,54 @@
 {
     "summaryMetrics": {
-        "Democratic": {
-            "totalPosts": 228633,
-            "avgInteractionScore": 0.5697866372306869,
-            "totalLikes": 6703170,
-            "totalRetweets": 315886204
-        },
-        "Republican": {
-            "totalPosts": 58824,
-            "avgInteractionScore": 0.5559131685946617,
-            "totalLikes": 1496708,
-            "totalRetweets": 47629249
-        }
+      "Democratic": {
+        "totalPosts": 221236,
+        "avgInteractionScore": 0.573024224038098,
+        "totalLikes": 6502581,
+        "totalRetweets": 309178423,
+        "numberLegislators": 1699,
+        "numUncivilPosts": 0,
+        "numMisinfoPosts": 25,
+        "mostActiveState": "NY"
+      },
+      "Republican": {
+        "totalPosts": 57388,
+        "avgInteractionScore": 0.557092996654839,
+        "totalLikes": 1458946,
+        "totalRetweets": 46300200,
+        "numberLegislators": 1272,
+        "numUncivilPosts": 0,
+        "numMisinfoPosts": 755,
+        "mostActiveState": "TX"
+      }
     },
     "visualizations": {
-        "barChartPartySummary": [
-            {
-                "party": "Democratic",
-                "totalPosts": 228633,
-                "likes": 6703170,
-                "retweets": 315886204
-            },
-            {
-                "party": "Republican",
-                "totalPosts": 58824,
-                "likes": 1496708,
-                "retweets": 47629249
-            }
-        ],
-        "radarChartMetrics": [
-            {
-                "party": "Democratic",
-                "avgCivilityScore": 1,
-                "avgMisinfoScore": 0.00011371936684555598,
-                "avgInteractionScore": 0.5697866372306869
-            },
-            {
-                "party": "Republican",
-                "avgCivilityScore": 1,
-                "avgMisinfoScore": 0.013259893920848633,
-                "avgInteractionScore": 0.5559131685946617
-            }
-        ]
+      "barChartPartySummary": [
+        {
+          "party": "Democratic",
+          "totalPosts": 221236,
+          "likes": 6502581,
+          "retweets": 309178423
+        },
+        {
+          "party": "Republican",
+          "totalPosts": 57388,
+          "likes": 1458946,
+          "retweets": 46300200
+        }
+      ],
+      "radarChartMetrics": [
+        {
+          "party": "Democratic",
+          "avgCivilityScore": 1,
+          "avgMisinfoScore": 0.000113001500659928,
+          "avgInteractionScore": 0.573024224038098
+        },
+        {
+          "party": "Republican",
+          "avgCivilityScore": 1,
+          "avgMisinfoScore": 0.0133128877117167,
+          "avgInteractionScore": 0.557092996654839
+        }
+      ]
     }
-}
+  }

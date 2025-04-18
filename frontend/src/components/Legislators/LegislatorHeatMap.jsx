@@ -1,8 +1,8 @@
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
 
-export const LegislatorHeatMap = ({ height = 600, width = 1000, data, legScatterData, setLegislatorClicked, party }) => {
-  const margin = { top: 50, right: 30, bottom: 50, left: 159 };
+export const LegislatorHeatMap = ({ height = 600, width = 500, data, legScatterData, legislatorClicked, setLegislatorClicked, party }) => {
+  const margin = { top: 50, right: 30, bottom: 50, left: 156 };
   const svgRef = useRef(null);
   const [rowHeight] = useState(20);
   const [totalHeight, setTotalHeight] = useState(height);
@@ -108,12 +108,14 @@ export const LegislatorHeatMap = ({ height = 600, width = 1000, data, legScatter
       .attr("transform", `translate(${margin.left},0)`)
       .call(d3.axisLeft(y));
     
-      
+ 
+     
     
     yAxis.selectAll(".tick text")
       .style("font-size", "12px")
       .style("cursor", "pointer")
       .style("fill", "ffffff")
+      .style("fill", (legislatorName) => legislatorClicked?.[0]?.name === legislatorName ? "yellow" : "ffffff") // Highlight selected name
       .on("click", function (event, legislatorName) {
         setLegislatorClicked(legScatterData.filter((d) => d.name === legislatorName))
       })
@@ -149,7 +151,7 @@ export const LegislatorHeatMap = ({ height = 600, width = 1000, data, legScatter
     console.log("Total cells:", processedData.length * allDates.length);
 
 
-  }, [data, height, width, margin, rowHeight]);
+  }, [data, height, width, margin, rowHeight, legislatorClicked]);
 
   if (!data?.length) {
     return <div className="flex items-center justify-center">No data available</div>;

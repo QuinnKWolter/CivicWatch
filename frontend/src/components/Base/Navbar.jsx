@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import logo from '../images/logo.png'; // Assuming the logo is in the public directory
+import logo from '../../images/logo.png'; // Assuming the logo is in the public directory
 
 function Navbar({ toggleSidebar, toggleAbout, toggleInfo }) {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');

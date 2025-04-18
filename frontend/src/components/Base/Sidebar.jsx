@@ -1,6 +1,6 @@
 import React from 'react';
 import dayjs from 'dayjs'
-import { colorMap } from './BipartiteFlow';
+import { colorMap } from '../../utils/utils';
 
 function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, activeTopics, setActiveTopics, startDate, setStartDate, endDate, setEndDate, sidebarOpen, selectedMetric, setSelectedMetric }) {
   return (

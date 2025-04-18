@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom'
-import BipartiteFlow from './components/BipartiteFlow';
-import Sidebar from './components/Sidebar';
-import SidebarAbout from './components/SidebarAbout';
-import SidebarInfo from './components/SidebarInfo';
-import TabbedCharts from './components/TabbedCharts';
-import Navbar from './components/Navbar';
+import BipartiteFlow from './components/Base/BipartiteFlow';
+import Sidebar from './components/Base/Sidebar';
+import SidebarAbout from './components/Base/SidebarAbout';
+import SidebarInfo from './components/Base/SidebarInfo';
+import TabbedCharts from './components/Base/TabbedCharts';
+import Navbar from './components/Base/Navbar';
 import './App.css'
 import dayjs from 'dayjs'
 
@@ -36,7 +36,7 @@ function App() {
   ]);
   const [startDate, setStartDate] = useState(dayjs('2020-01-01'));
   const [endDate, setEndDate] = useState(dayjs('2021-12-31'));
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState('posts');
