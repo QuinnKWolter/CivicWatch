@@ -26,3 +26,53 @@
 .tippy-box[data-theme~='custom'] .prose strong {
   color: hsl(var(--bc) / 1); /* full opacity for headings */
 }
+
+
+.table-container {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table-container h3 {
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: #9544d6; /* Purple color */
+}
+
+.table {
+  min-width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem 1rem;
+  border: 1px solid #000; /* Black border */
+  text-align: left;
+}
+
+.table th {
+  background-color: #f1f5f9; 
+  color:#3333e4;
+}
+
+.table td.democrat {
+  color:#3c99f6;
+}
+
+.table .republican {
+  color: #fa7e7e; 
+}
+.table td {
+  color: text-black;
+}
+
+/* Tailwind Dark mode */
+@media (prefers-color-scheme: dark) {
+  .table td {
+    color: text-white;
+  }
+}

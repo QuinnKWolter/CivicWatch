@@ -1,6 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import '../App.css';
+import React, { useState, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
+import { FaSpinner } from 'react-icons/fa';
 
 const stateAbbrevToName = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
@@ -15,10 +17,13 @@ const stateAbbrevToName = {
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
-const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => {
+function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
   const svgRef = useRef();
   const [geojson, setGeojson] = useState(null);
   const [engagementData, setEngagementData] = useState([]);
+  const [selectedState, setSelectedState] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetch('./us-states.json')
@@ -31,14 +36,12 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
   }, []);
 
   useEffect(() => {
-    if (!startDate || !endDate || !activeTopics || activeTopics.length === 0) return;
+    if (!startDate || !endDate || !selectedTopics || selectedTopics.length === 0) return;
 
     const formattedStart = startDate.format('YYYY-MM-DD');
     const formattedEnd = endDate.format('YYYY-MM-DD');
-    const topicsParam = `topics=${activeTopics.join(',')}`;
-
+    const topicsParam = `topics=${selectedTopics.join(',')}`;
     const url = `http://127.0.0.1:8000/api/geo/activity/topics/?start_date=${formattedStart}&end_date=${formattedEnd}&${topicsParam}&metric=${selectedMetric}`;
-    console.log('Fetching from:', url);
 
     fetch(url)
       .then(res => res.json())
@@ -48,11 +51,17 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
           republicanTotal: item.Republican || 0,
           democratTotal: item.Democratic || 0,
           total_engagement: item.total || 0,
+          topic_breakdown: item.topic_breakdown || {},
         }));
         setEngagementData(formatted);
+        setLoading(false);
       })
-      .catch(err => console.error('Error fetching engagement data:', err));
-  }, [startDate, endDate, activeTopics, selectedMetric]);
+      .catch(err => {
+        console.error('Error fetching engagement data:', err);
+        setError("Failed to load geography data. Please try again.");
+        setLoading(false);
+      });
+  }, [startDate, endDate, selectedTopics, selectedMetric]);
 
   useEffect(() => {
     if (!geojson || engagementData.length === 0) return;
@@ -66,13 +75,16 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
     const tooltip = d3.select('body').append('div')
       .attr('class', 'tooltip')
       .style('position', 'absolute')
-      .style('padding', '6px')
-      .style('background', '#fff')
-      .style('color', 'black')
-      .style('border-radius', '4px')
       .style('pointer-events', 'none')
+      .style('background', '#e0f7fa')
+      .style('color', 'black')
+      .style('border', '1px solid #ccc')
+      .style('padding', '10px')
       .style('font-size', '14px')
-      .style('opacity', 0);
+      .style('border-radius', '6px')
+      .style('box-shadow', '0 2px 6px rgba(0,0,0,0.15)')
+      .style('opacity', 0)
+      .style('z-index', 9999);
 
     const path = d3.geoPath(d3.geoAlbersUsa().scale(1300).translate([487.5, 305]));
 
@@ -81,11 +93,11 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
 
     const redScale = d3.scaleLinear()
       .domain([0, d3.max(engagementData, d => d.republicanTotal)])
-      .range(['#f4cccc', '#cc0000']); 
+      .range(['#f4cccc', '#cc0000']);
 
     const blueScale = d3.scaleLinear()
       .domain([0, d3.max(engagementData, d => d.democratTotal)])
-      .range(['#add8e6', '#1e3a8a']);  
+      .range(['#add8e6', '#1e3a8a']);
 
     svg.append('g')
       .selectAll('path')
@@ -96,73 +108,116 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
         const stateData = stateEngagementMap.get(d.properties.name);
         if (!stateData) return '#ffffff';
 
-        const republicanTotal = stateData.republicanTotal;
-        const democratTotal = stateData.democratTotal;
-
-        if (republicanTotal > democratTotal) {
-          return redScale(republicanTotal);
-        } else if (democratTotal > republicanTotal) {
-          return blueScale(democratTotal); 
-        }
+        const { republicanTotal, democratTotal } = stateData;
+        if (republicanTotal > democratTotal) return redScale(republicanTotal);
+        if (democratTotal > republicanTotal) return blueScale(democratTotal);
 
         return d3.interpolateRgb(redScale(republicanTotal), blueScale(democratTotal))(0.5);
       })
       .attr('stroke', '#333')
       .attr('stroke-width', 0.5)
-      .on('mouseover', (event, d) => {
+      .on('mousemove', function (event, d) {
+        const [x, y] = d3.pointer(event);
         const stateName = d.properties.name;
+
         const stateData = stateEngagementMap.get(stateName);
-      
-        if (stateData) {
-          tooltip.transition().duration(200).style('opacity', 0.9);
-      
-          const total = stateData.total_engagement; // Total engagement for the selected metric
-          const metricLabel = selectedMetric === 'posts' ? 'posts' :
-                              selectedMetric === 'legislators' ? 'legislators' :
-                              selectedMetric === 'engagement' ? 'engagements' : 'records';
-      
-          const formattedStart = startDate.format('YYYY-MM-DD');
-          const formattedEnd = endDate.format('YYYY-MM-DD');
-          const selectedTopics = selectedMetric === 'posts' ? (activeTopics.join(', ') || 'No topic selected') : '';
-      
-          let tooltipHtml = `<strong>${stateName}</strong><br>`;
-          tooltipHtml += `${total.toLocaleString()} ${metricLabel}`; 
-          tooltipHtml += `<br>from ${formattedStart} to ${formattedEnd}`; 
-          if (selectedTopics) {
-            tooltipHtml += `<br><strong>Topics:</strong> ${selectedTopics}`; 
-          }
-      
-          tooltip.html(tooltipHtml);
-        }
-      })
-      
-      .on('mousemove', event => {
-        tooltip.style('left', `${event.pageX + 10}px`).style('top', `${event.pageY - 28}px`);
+        if (!stateData) return;
+
+        const tooltipHtml = `
+          <strong>${stateName}</strong><br/>
+           <strong>Total:</strong> ${formatNumber(stateData.total_engagement)}<br/>
+          <strong>From date:</strong> ${startDate.format('YYYY-MM-DD')} to ${endDate.format('YYYY-MM-DD')}<br/>
+          <strong>On topics:</strong> ${selectedTopics.join(', ') || 'All topics'}<br/>
+          With <strong>Democrats:</strong> ${formatNumber(stateData.democratTotal)}<br/>
+          And <strong>Republicans:</strong> ${formatNumber(stateData.republicanTotal)}<br/>
+        `;
+
+        tooltip
+          .html(tooltipHtml)
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY + 10}px`)
+          .transition().duration(100)
+          .style("opacity", 0.95);
       })
       .on('mouseout', () => {
         tooltip.transition().duration(300).style('opacity', 0);
+      })
+      .on('click', (event, d) => {
+        const stateName = d.properties.name;
+        const stateData = stateEngagementMap.get(stateName);
+        if (stateData) {
+          setSelectedState({
+            name: stateName,
+            topicBreakdown: stateData.topic_breakdown,
+          });
+        }
       });
 
     return () => tooltip.remove();
   }, [geojson, engagementData, selectedMetric]);
 
+  const formatNumber = (num) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <FaSpinner className="animate-spin text-4xl text-primary mb-4" />
+        <p className="text-lg">Loading geography data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-error shadow-lg">
+        <span>{error}</span>
+      </div>
+    );
+  }
+
   return (
     <>
       <svg ref={svgRef} style={{ width: '100%' }} />
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: '20px', marginTop: '10px', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div style={{ width: '20px', height: '20px', backgroundColor: '#cc0000', marginRight: '6px' }}></div>
+      <div className="flex justify-center gap-6 mt-4">
+        <div className="flex items-center">
+          <div className="w-5 h-5 bg-[#cc0000] mr-2"></div>
           <span>Republican</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div style={{ width: '20px', height: '20px', backgroundColor: '#1e3a8a', marginRight: '6px' }}></div>
+        <div className="flex items-center">
+          <div className="w-5 h-5 bg-[#1e3a8a] mr-2"></div>
           <span>Democrat</span>
         </div>
       </div>
+      {selectedState && (
+        <div className="table-container">
+          <h3>{selectedState.name}</h3>
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Topic</th>
+                <th className="democrat">Democratic</th>
+                <th className="republican">Republican</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(selectedState.topicBreakdown).map(([topic, { Democratic, Republican }]) => (
+                <tr key={topic}>
+                  <td>{topic}</td>
+                  <td className="democrat">{Democratic.toLocaleString()}</td>
+                  <td className="republican">{Republican.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
     </>
   );
-};
+}
 
 export default ChoroplethMap;
-

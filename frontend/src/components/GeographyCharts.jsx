@@ -138,6 +138,9 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
           if (topicsList) {
             tooltipHtml += `<br><strong>Topics:</strong> ${topicsList}`; 
           }
+
+          tooltipHtml += `<br><strong>Democrat:</strong> ${stateData.democratTotal.toLocaleString()}`;
+          tooltipHtml += `<br><strong>Republican:</strong> ${stateData.republicanTotal.toLocaleString()}`;
       
           tooltip.html(tooltipHtml);
         }
