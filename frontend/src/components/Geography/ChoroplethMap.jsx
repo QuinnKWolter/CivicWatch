@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
+import { FaSpinner } from 'react-icons/fa';
 
 const stateAbbrevToName = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
@@ -15,10 +16,12 @@ const stateAbbrevToName = {
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
-const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => {
+function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric }) {
   const svgRef = useRef();
   const [geojson, setGeojson] = useState(null);
   const [engagementData, setEngagementData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetch('./us-states.json')
@@ -31,18 +34,17 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
   }, []);
 
   useEffect(() => {
-    if (!startDate || !endDate || !activeTopics || activeTopics.length === 0) return;
+    if (!startDate || !endDate || !selectedTopics || selectedTopics.length === 0) return;
 
     const formattedStart = startDate.format('YYYY-MM-DD');
     const formattedEnd = endDate.format('YYYY-MM-DD');
-    const topicsParam = `topics=${activeTopics.join(',')}`;
-
+    const topicsParam = `topics=${selectedTopics.join(',')}`;
     const url = `http://127.0.0.1:8000/api/geo/activity/topics/?start_date=${formattedStart}&end_date=${formattedEnd}&${topicsParam}&metric=${selectedMetric}`;
-    console.log('Fetching from:', url);
 
     fetch(url)
       .then(res => res.json())
       .then(data => {
+        console.log(data);
         const formatted = data.map(item => ({
           state: stateAbbrevToName[item.state] ?? item.state,
           republicanTotal: item.Republican || 0,
@@ -50,9 +52,14 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
           total_engagement: item.total || 0,
         }));
         setEngagementData(formatted);
+        setLoading(false);
       })
-      .catch(err => console.error('Error fetching engagement data:', err));
-  }, [startDate, endDate, activeTopics, selectedMetric]);
+      .catch(err => {
+        console.error('Error fetching engagement data:', err);
+        setError("Failed to load geography data. Please try again.");
+        setLoading(false);
+      });
+  }, [startDate, endDate, selectedTopics, selectedMetric]);
 
   useEffect(() => {
     if (!geojson || engagementData.length === 0) return;
@@ -123,14 +130,17 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
       
           const formattedStart = startDate.format('YYYY-MM-DD');
           const formattedEnd = endDate.format('YYYY-MM-DD');
-          const selectedTopics = selectedMetric === 'posts' ? (activeTopics.join(', ') || 'No topic selected') : '';
+          const topicsList = selectedMetric === 'posts' ? (selectedTopics.join(', ') || 'No topic selected') : '';
       
           let tooltipHtml = `<strong>${stateName}</strong><br>`;
           tooltipHtml += `${total.toLocaleString()} ${metricLabel}`; 
           tooltipHtml += `<br>from ${formattedStart} to ${formattedEnd}`; 
-          if (selectedTopics) {
-            tooltipHtml += `<br><strong>Topics:</strong> ${selectedTopics}`; 
+          if (topicsList) {
+            tooltipHtml += `<br><strong>Topics:</strong> ${topicsList}`; 
           }
+
+          tooltipHtml += `<br><strong>Democrat:</strong> ${stateData.democratTotal.toLocaleString()}`;
+          tooltipHtml += `<br><strong>Republican:</strong> ${stateData.republicanTotal.toLocaleString()}`;
       
           tooltip.html(tooltipHtml);
         }
@@ -145,6 +155,23 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
 
     return () => tooltip.remove();
   }, [geojson, engagementData, selectedMetric]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <FaSpinner className="animate-spin text-4xl text-primary mb-4" />
+        <p className="text-lg">Loading geography data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-error shadow-lg">
+        <span>{error}</span>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -162,7 +189,6 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
       </div>
     </>
   );
-};
+}
 
-export default ChoroplethMap;
-
+export default GeographyCharts; 
