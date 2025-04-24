@@ -4,7 +4,7 @@ import {
   PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from "recharts";
 import { FaChartBar, FaChartLine, FaBullseye, FaSpinner, FaNewspaper, FaThumbsUp, FaRetweet, FaExchangeAlt, FaDemocrat, FaRepublican, FaUserFriends, FaExclamationTriangle, FaHandshakeSlash, FaMapMarkerAlt } from "react-icons/fa";
-import tippy from 'tippy.js';
+import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 import TrendLineChart from './TrendLineChart';
@@ -24,15 +24,6 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
     republicanLikes: "#660000",
     republicanRetweets: "#b30000",
   };
-
-  useEffect(() => {
-    // Initialize tooltips on elements with data-tippy-content
-    tippy('[data-tippy-content]', {
-      theme: 'light',
-      placement: 'top',
-      arrow: true
-    });
-  }, [data]); // Re-run when data changes
 
   useEffect(() => {
     const fetchData = async () => {
@@ -152,37 +143,53 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
                 {party === 'Democratic' ? 'Democrats' : 'Republicans'}
               </h2>
               <div className="grid grid-cols-2 gap-2 mt-1">
-                <div className="stat bg-base-100 rounded-box p-2 flex items-center" data-tippy-content="Total number of posts made by legislators in this party">
-                  <span className="stat-value text-primary text-base"><FaNewspaper className="text-xl text-primary" />{formatNumber(metrics.totalPosts)}</span>
-                </div>
+                <Tippy content="Total number of posts made by legislators in this party" animation="scale-subtle" arrow={true}>
+                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
+                    <span className="stat-value text-primary text-base"><FaNewspaper className="text-xl text-primary" />{formatNumber(metrics.totalPosts)}</span>
+                  </div>
+                </Tippy>
                 
-                <div className="stat bg-base-100 rounded-box p-2 flex items-center" data-tippy-content="Average interaction score">
-                  <span className="stat-value text-secondary text-base"><FaExchangeAlt className="text-xl text-secondary" />{metrics.avgInteractionScore?.toFixed(2)}</span>
-                </div>
+                <Tippy content="Average interaction score" animation="scale-subtle" arrow={true}>
+                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
+                    <span className="stat-value text-secondary text-base"><FaExchangeAlt className="text-xl text-secondary" />{metrics.avgInteractionScore?.toFixed(2)}</span>
+                  </div>
+                </Tippy>
                 
-                <div className="stat bg-base-100 rounded-box p-2 flex items-center text-center" data-tippy-content="Total likes for all posts">
-                  <span className="stat-value text-accent text-base"><FaThumbsUp className="text-xl text-accent" />{formatNumber(metrics.totalLikes)}</span>
-                </div>
+                <Tippy content="Total likes for all posts" animation="scale-subtle" arrow={true}>
+                  <div className="stat bg-base-100 rounded-box p-2 flex items-center text-center">
+                    <span className="stat-value text-accent text-base"><FaThumbsUp className="text-xl text-accent" />{formatNumber(metrics.totalLikes)}</span>
+                  </div>
+                </Tippy>
                 
-                <div className="stat bg-base-100 rounded-box p-2 flex items-center" data-tippy-content="Total retweets for all posts">
-                  <span className="stat-value text-info text-base"><FaRetweet className="text-xl text-info" />{formatNumber(metrics.totalRetweets)}</span>
-                </div>
+                <Tippy content="Total retweets for all posts" animation="scale-subtle" arrow={true}>
+                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
+                    <span className="stat-value text-info text-base"><FaRetweet className="text-xl text-info" />{formatNumber(metrics.totalRetweets)}</span>
+                  </div>
+                </Tippy>
 
-                <div className="stat bg-base-100 rounded-box p-2 flex items-center" data-tippy-content="Number of legislators">
-                  <span className="stat-value text-success text-base"><FaUserFriends className="text-xl text-success" />{metrics.numberLegislators}</span>
-                </div>
+                <Tippy content="Number of legislators" animation="scale-subtle" arrow={true}>
+                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
+                    <span className="stat-value text-success text-base"><FaUserFriends className="text-xl text-success" />{metrics.numberLegislators}</span>
+                  </div>
+                </Tippy>
 
-                <div className="stat bg-base-100 rounded-box p-2 flex items-center" data-tippy-content="Most active state">
-                  <span className="stat-value text-warning text-base"><FaMapMarkerAlt className="text-xl text-warning" />{metrics.mostActiveState}</span>
-                </div>
+                <Tippy content="Most active state" animation="scale-subtle" arrow={true}>
+                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
+                    <span className="stat-value text-warning text-base"><FaMapMarkerAlt className="text-xl text-warning" />{metrics.mostActiveState}</span>
+                  </div>
+                </Tippy>
 
-                <div className="stat bg-base-100 rounded-box p-2 flex items-center" data-tippy-content="Number of uncivil posts">
-                  <span className="stat-value text-error text-base"><FaHandshakeSlash className="text-xl text-error" />{metrics.numUncivilPosts}</span>
-                </div>
+                <Tippy content="Number of uncivil posts" animation="scale-subtle" arrow={true}>
+                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
+                    <span className="stat-value text-error text-base"><FaHandshakeSlash className="text-xl text-error" />{metrics.numUncivilPosts}</span>
+                  </div>
+                </Tippy>
 
-                <div className="stat bg-base-100 rounded-box p-2 flex items-center" data-tippy-content="Number of misinformation posts">
-                  <span className="stat-value text-error text-base"><FaExclamationTriangle className="text-xl text-error" />{metrics.numMisinfoPosts}</span>
-                </div>
+                <Tippy content="Number of misinformation posts" animation="scale-subtle" arrow={true}>
+                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
+                    <span className="stat-value text-error text-base"><FaExclamationTriangle className="text-xl text-error" />{metrics.numMisinfoPosts}</span>
+                  </div>
+                </Tippy>
               </div>
             </div>
           </div>

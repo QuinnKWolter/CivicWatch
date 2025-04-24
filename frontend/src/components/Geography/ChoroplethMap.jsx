@@ -152,12 +152,12 @@ const ChoroplethMap = ({ startDate, endDate, activeTopics, selectedMetric }) => 
       {/* Legend */}
       <div style={{ display: 'flex', gap: '20px', marginTop: '10px', justifyContent: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div style={{ width: '20px', height: '20px', backgroundColor: '#cc0000', marginRight: '6px' }}></div>
-          <span>Republican</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
           <div style={{ width: '20px', height: '20px', backgroundColor: '#1e3a8a', marginRight: '6px' }}></div>
           <span>Democrat</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ width: '20px', height: '20px', backgroundColor: '#cc0000', marginRight: '6px' }}></div>
+          <span>Republican</span>
         </div>
       </div>
     </>

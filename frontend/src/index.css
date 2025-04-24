@@ -41,3 +41,9 @@
 .layout-wrapper {
   @apply overflow-x-hidden min-h-screen;
 }
+
+/* Add this to ensure event icons have a lower z-index */
+.glyph-container {
+  position: absolute;
+  z-index: 1; /* Lower than the tooltip's z-index */
+}
