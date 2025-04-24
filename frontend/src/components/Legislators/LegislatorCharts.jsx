@@ -97,7 +97,7 @@ function LegislatorCharts({
       <div className="mt-4 overflow-y-auto min-h-[400px]">
         {dVal === 0 && (
           <LegislatorHeatMap
-            width={400}
+            width={550}
             height={400}
             startDate={startDate}
             endDate={endDate}
@@ -105,12 +105,13 @@ function LegislatorCharts({
             legScatterData={legScatterData}
             setLegislatorClicked={setLegislatorClicked}
             party={1}
+            legislatorClicked={legislatorClicked}
           />
         )}
         {dVal === 1 && (
           
           <LegislatorHeatMap
-            width={400}
+            width={550}
             height={400}
             startDate={startDate}
             endDate={endDate}
@@ -118,6 +119,7 @@ function LegislatorCharts({
             legScatterData={legScatterData}
             setLegislatorClicked={setLegislatorClicked}
             party={2}
+            legislatorClicked={legislatorClicked}
           />
         )}
       </div>
@@ -151,7 +153,7 @@ function LegislatorCharts({
           }`}
           onClick={() => handleChange(2)}
         >
-          LineChart Posts
+          Post Ridgeline Plot
         </button>
       </div>
 

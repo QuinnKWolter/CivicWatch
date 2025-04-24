@@ -12,6 +12,7 @@ import { FaUsers } from "react-icons/fa";
 import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs"
 import AccountabilityInterface from "../Accountability/AccountabilityInterface";
+import ChoroplethMap from "../Geography/ChoroplethMap";
 
 function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics, selectedMetric }) {
   const [value, setValue] = useState(0);
