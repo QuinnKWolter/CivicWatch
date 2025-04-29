@@ -1,3 +1,4 @@
+import '../../App.css';
 import React, { useState, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
@@ -16,10 +17,11 @@ const stateAbbrevToName = {
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
-function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric }) {
+function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
   const svgRef = useRef();
   const [geojson, setGeojson] = useState(null);
   const [engagementData, setEngagementData] = useState([]);
+  const [selectedState, setSelectedState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -44,12 +46,12 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
     fetch(url)
       .then(res => res.json())
       .then(data => {
-        console.log(data);
         const formatted = data.map(item => ({
           state: stateAbbrevToName[item.state] ?? item.state,
           republicanTotal: item.Republican || 0,
           democratTotal: item.Democratic || 0,
           total_engagement: item.total || 0,
+          topic_breakdown: item.topic_breakdown || {},
         }));
         setEngagementData(formatted);
         setLoading(false);
@@ -73,13 +75,16 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
     const tooltip = d3.select('body').append('div')
       .attr('class', 'tooltip')
       .style('position', 'absolute')
-      .style('padding', '6px')
-      .style('background', '#fff')
-      .style('color', 'black')
-      .style('border-radius', '4px')
       .style('pointer-events', 'none')
+      .style('background', '#e0f7fa')
+      .style('color', 'black')
+      .style('border', '1px solid #ccc')
+      .style('padding', '10px')
       .style('font-size', '14px')
-      .style('opacity', 0);
+      .style('border-radius', '6px')
+      .style('box-shadow', '0 2px 6px rgba(0,0,0,0.15)')
+      .style('opacity', 0)
+      .style('z-index', 9999);
 
     const path = d3.geoPath(d3.geoAlbersUsa().scale(1300).translate([487.5, 305]));
 
@@ -88,11 +93,11 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
 
     const redScale = d3.scaleLinear()
       .domain([0, d3.max(engagementData, d => d.republicanTotal)])
-      .range(['#f4cccc', '#cc0000']); 
+      .range(['#f4cccc', '#cc0000']);
 
     const blueScale = d3.scaleLinear()
       .domain([0, d3.max(engagementData, d => d.democratTotal)])
-      .range(['#add8e6', '#1e3a8a']);  
+      .range(['#add8e6', '#1e3a8a']);
 
     svg.append('g')
       .selectAll('path')
@@ -103,58 +108,59 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
         const stateData = stateEngagementMap.get(d.properties.name);
         if (!stateData) return '#ffffff';
 
-        const republicanTotal = stateData.republicanTotal;
-        const democratTotal = stateData.democratTotal;
-
-        if (republicanTotal > democratTotal) {
-          return redScale(republicanTotal);
-        } else if (democratTotal > republicanTotal) {
-          return blueScale(democratTotal); 
-        }
+        const { republicanTotal, democratTotal } = stateData;
+        if (republicanTotal > democratTotal) return redScale(republicanTotal);
+        if (democratTotal > republicanTotal) return blueScale(democratTotal);
 
         return d3.interpolateRgb(redScale(republicanTotal), blueScale(democratTotal))(0.5);
       })
       .attr('stroke', '#333')
       .attr('stroke-width', 0.5)
-      .on('mouseover', (event, d) => {
+      .on('mousemove', function (event, d) {
+        const [x, y] = d3.pointer(event);
         const stateName = d.properties.name;
-        const stateData = stateEngagementMap.get(stateName);
-      
-        if (stateData) {
-          tooltip.transition().duration(200).style('opacity', 0.9);
-      
-          const total = stateData.total_engagement; // Total engagement for the selected metric
-          const metricLabel = selectedMetric === 'posts' ? 'posts' :
-                              selectedMetric === 'legislators' ? 'legislators' :
-                              selectedMetric === 'engagement' ? 'engagements' : 'records';
-      
-          const formattedStart = startDate.format('YYYY-MM-DD');
-          const formattedEnd = endDate.format('YYYY-MM-DD');
-          const topicsList = selectedMetric === 'posts' ? (selectedTopics.join(', ') || 'No topic selected') : '';
-      
-          let tooltipHtml = `<strong>${stateName}</strong><br>`;
-          tooltipHtml += `${total.toLocaleString()} ${metricLabel}`; 
-          tooltipHtml += `<br>from ${formattedStart} to ${formattedEnd}`; 
-          if (topicsList) {
-            tooltipHtml += `<br><strong>Topics:</strong> ${topicsList}`; 
-          }
 
-          tooltipHtml += `<br><strong>Democrat:</strong> ${stateData.democratTotal.toLocaleString()}`;
-          tooltipHtml += `<br><strong>Republican:</strong> ${stateData.republicanTotal.toLocaleString()}`;
-      
-          tooltip.html(tooltipHtml);
-        }
-      })
-      
-      .on('mousemove', event => {
-        tooltip.style('left', `${event.pageX + 10}px`).style('top', `${event.pageY - 28}px`);
+        const stateData = stateEngagementMap.get(stateName);
+        if (!stateData) return;
+
+        const tooltipHtml = `
+          <strong>${stateName}</strong><br/>
+           <strong>Total:</strong> ${formatNumber(stateData.total_engagement)}<br/>
+          <strong>From date:</strong> ${startDate.format('YYYY-MM-DD')} to ${endDate.format('YYYY-MM-DD')}<br/>
+          <strong>On topics:</strong> ${selectedTopics.join(', ') || 'All topics'}<br/>
+          With <strong>Democrats:</strong> ${formatNumber(stateData.democratTotal)}<br/>
+          And <strong>Republicans:</strong> ${formatNumber(stateData.republicanTotal)}<br/>
+        `;
+
+        tooltip
+          .html(tooltipHtml)
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY + 10}px`)
+          .transition().duration(100)
+          .style("opacity", 0.95);
       })
       .on('mouseout', () => {
         tooltip.transition().duration(300).style('opacity', 0);
+      })
+      .on('click', (event, d) => {
+        const stateName = d.properties.name;
+        const stateData = stateEngagementMap.get(stateName);
+        if (stateData) {
+          setSelectedState({
+            name: stateName,
+            topicBreakdown: stateData.topic_breakdown,
+          });
+        }
       });
 
     return () => tooltip.remove();
   }, [geojson, engagementData, selectedMetric]);
+
+  const formatNumber = (num) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+    return num;
+  };
 
   if (loading) {
     return (
@@ -191,4 +197,4 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
   );
 }
 
-export default GeographyCharts; 
+export default ChoroplethMap;
