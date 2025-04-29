@@ -985,10 +985,6 @@ def accountability_interface(request):
 
     # Prepare data for response
     data = {
-        'overall': {
-            'civil_vs_uncivil': f"{posts.filter(civility_score=1).count()}/{posts.count()}",
-            'informative_vs_misinformative': f"{posts.filter(count_misinfo=0).count()}/{posts.count()}"
-        },
         'by_party': {}
     }
 

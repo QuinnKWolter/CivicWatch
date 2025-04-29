@@ -182,40 +182,17 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
   return (
     <>
       <svg ref={svgRef} style={{ width: '100%' }} />
-      <div className="flex justify-center gap-6 mt-4">
-        <div className="flex items-center">
-          <div className="w-5 h-5 bg-[#cc0000] mr-2"></div>
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: '20px', marginTop: '10px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ width: '20px', height: '20px', backgroundColor: '#1e3a8a', marginRight: '6px' }}></div>
           <span>Democrat</span>
         </div>
-        <div className="flex items-center">
-          <div className="w-5 h-5 bg-[#1e3a8a] mr-2"></div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{ width: '20px', height: '20px', backgroundColor: '#cc0000', marginRight: '6px' }}></div>
           <span>Republican</span>
         </div>
       </div>
-      {selectedState && (
-        <div className="table-container">
-          <h3>{selectedState.name}</h3>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Topic</th>
-                <th className="democrat">Democratic</th>
-                <th className="republican">Republican</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(selectedState.topicBreakdown).map(([topic, { Democratic, Republican }]) => (
-                <tr key={topic}>
-                  <td>{topic}</td>
-                  <td className="democrat">{Democratic.toLocaleString()}</td>
-                  <td className="republican">{Republican.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
     </>
   );
 }

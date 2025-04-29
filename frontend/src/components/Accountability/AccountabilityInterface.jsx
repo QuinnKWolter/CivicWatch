@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaSpinner } from 'react-icons/fa';
-import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { colorMap } from '../../utils/utils';
 
 function AccountabilityInterface({ startDate, endDate, selectedTopics }) {
@@ -52,12 +52,12 @@ function AccountabilityInterface({ startDate, endDate, selectedTopics }) {
   }
 
   const renderPieChart = (title, dataKey, metric) => {
-    if (!data || !data[dataKey]) {
+    if (!data) {
       return <p>No data available</p>;
     }
 
     const metricKey = metric === 'civility' ? 'civil_vs_uncivil' : 'informative_vs_misinformative';
-    const values = dataKey === 'overall' ? data.overall[metricKey] : data.by_party[dataKey][metricKey];
+    let values = data.by_party[dataKey][metricKey];
 
     if (!values) {
       return <p>No data available</p>;
@@ -66,60 +66,49 @@ function AccountabilityInterface({ startDate, endDate, selectedTopics }) {
     const [metricValue, totalValue] = values.split('/').map(Number);
 
     return (
-      <PieChart width={200} height={200}>
-        <Pie
-          data={[
-            { name: metric === 'civility' ? 'Civil' : 'Informative', value: metricValue },
-            { name: metric === 'civility' ? 'Uncivil' : 'Misinformative', value: totalValue - metricValue }
-          ]}
-          cx="50%"
-          cy="50%"
-          outerRadius={80}
-          fill="#8884d8"
-          dataKey="value"
-          label
-        >
-          <Cell key="Civil" fill={colorMap.covid[dataKey === 'overall' ? 'M' : dataKey.charAt(0)]} />
-          <Cell key="Uncivil" fill={colorMap.gun[dataKey === 'overall' ? 'M' : dataKey.charAt(0)]} />
-        </Pie>
-        <Tooltip />
-        <Legend />
-      </PieChart>
+      <ResponsiveContainer width="100%" height={200}>
+        <PieChart>
+          <Pie
+            data={[
+              { name: metric === 'civility' ? 'Civil' : 'Informative', value: metricValue },
+              { name: metric === 'civility' ? 'Uncivil' : 'Misinformative', value: totalValue - metricValue }
+            ]}
+            cx="50%"
+            cy="50%"
+            outerRadius="80%"
+            fill="#8884d8"
+            dataKey="value"
+            label
+          >
+            <Cell key="Civil" fill={colorMap.covid[dataKey.charAt(0)]} />
+            <Cell key="Uncivil" fill={colorMap.abortion[dataKey.charAt(0)]} />
+          </Pie>
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
     );
   };
 
   return (
     <div>
-      <h2>Accountability Data</h2>
       <div className="flex flex-col items-center">
-        <div className="flex justify-center mb-4">
-          <div>
-            <h3>Overall Civility</h3>
-            {renderPieChart('Overall Civility', 'overall', 'civility')}
-          </div>
-        </div>
-        <div className="flex justify-between w-full">
-          <div>
+        <div className="flex justify-between w-full space-x-4">
+          <div className="flex-1">
             <h3>Democrat Civility</h3>
             {renderPieChart('Democrat Civility', 'Democratic', 'civility')}
           </div>
-          <div>
+          <div className="flex-1">
             <h3>Republican Civility</h3>
             {renderPieChart('Republican Civility', 'Republican', 'civility')}
           </div>
         </div>
-        <div className="flex justify-center mt-8 mb-4">
-          <div>
-            <h3>Overall Misinformation</h3>
-            {renderPieChart('Overall Misinformation', 'overall', 'informative')}
-          </div>
-        </div>
-        <div className="flex justify-between w-full">
-          <div>
+        <div className="flex justify-between w-full mt-8 space-x-4">
+          <div className="flex-1">
             <h3>Democrat Misinformation</h3>
             {renderPieChart('Democrat Misinformation', 'Democratic', 'informative')}
           </div>
-          <div>
+          <div className="flex-1">
             <h3>Republican Misinformation</h3>
             {renderPieChart('Republican Misinformation', 'Republican', 'informative')}
           </div>

@@ -138,11 +138,15 @@ function AccountabilityLineChart({ startDate, endDate }) {
         </button>
       </div>
       <div className="flex-1 relative">
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center" style={{ zIndex: 1000 }}>
-          <span className="text-lg font-bold transition-all duration-300">{showMisinformation ? "Average Misinformation" : "Average Incivility"}</span>
-          <button onClick={() => setShowMisinformation(!showMisinformation)} className="ml-2">
-            {showMisinformation ? <FaToggleOn size={24} /> : <FaToggleOff size={24} />}
-          </button>
+        <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 flex items-center" style={{ zIndex: 1000 }}>
+          <div className="flex items-center">
+            <button onClick={() => setShowMisinformation(!showMisinformation)} className="mr-2">
+              {showMisinformation ? <FaToggleOn size={24} /> : <FaToggleOff size={24} />}
+            </button>
+            <span className="text-lg font-bold transition-all duration-300 whitespace-nowrap">
+              {showMisinformation ? "Average Misinformation" : "Average Incivility"}
+            </span>
+          </div>
           <Tippy
             content={
               <div className="bg-base-100 text-base-content border border-primary shadow-lg rounded-box p-4 w-[300px] space-y-2">
@@ -163,7 +167,7 @@ function AccountabilityLineChart({ startDate, endDate }) {
         </div>
         {currentData.length > 0 && (
           <div style={{ marginRight: 20, marginLeft: -70, marginTop: 30}}>
-            <ResponsiveContainer width="100%" height={150}>
+            <ResponsiveContainer width="100%" height={130}>
               <LineChart data={applyOffset(currentData, 0.1)}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={false} />

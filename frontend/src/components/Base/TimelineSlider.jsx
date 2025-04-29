@@ -381,7 +381,8 @@ function TimelineSlider({
       theme: 'light',
       placement: 'top',
       arrow: true,
-      zIndex: 9999 // Ensure tooltips have a high z-index
+      zIndex: 99999, // Ensure tooltips have a high z-index
+      appendTo: document.body, // Append tooltips to the body to avoid stacking context issues
     });
   }, [importantDates]); // Re-run when importantDates changes
 
