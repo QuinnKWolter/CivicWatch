@@ -17,7 +17,7 @@ const stateAbbrevToName = {
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
-function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
+function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric }) {
   const svgRef = useRef();
   const [geojson, setGeojson] = useState(null);
   const [engagementData, setEngagementData] = useState([]);
@@ -284,5 +284,5 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
   );
 }
 
-export default ChoroplethMap;
+export default GeographyCharts;
 
