@@ -85,7 +85,8 @@ DATABASES = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-    "http://localhost:4173"
+    "http://localhost:4173",
+    "https://fbad-2600-4041-33-cc00-cca1-35ab-595b-9e6b.ngrok-free.app"
 ]
 
 

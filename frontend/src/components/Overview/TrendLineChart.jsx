@@ -37,13 +37,11 @@ function TrendLineChart({ startDate, endDate, selectedTopics }) {
         }
 
         const data = await response.json();
-        console.log('Fetched trend data:', data);
+        // console.log('Fetched trend data:', data);
         setTrendData(Object.entries(data).map(([date, values]) => ({
           date,
-          DemocraticPosts: values.Democratic?.totalPosts || 0,
-          RepublicanPosts: values.Republican?.totalPosts || 0,
-          DemocraticEngagement: values.Democratic?.totalEngagement || 0,
-          RepublicanEngagement: values.Republican?.totalEngagement || 0,
+          DemocraticAvgEngagement: values.Democratic?.avgEngagementPerPost || 0,
+          RepublicanAvgEngagement: values.Republican?.avgEngagementPerPost || 0,
         })));
         setError(null);
       } catch (err) {
@@ -84,17 +82,22 @@ function TrendLineChart({ startDate, endDate, selectedTopics }) {
           angle={-45}
           textAnchor="end"
         />
-        <YAxis yAxisId="left" label={{ value: 'Posts', angle: -90, position: 'insideLeft' }} tickFormatter={formatNumber} />
-        <YAxis yAxisId="right" orientation="right" label={{ value: 'Engagement', angle: 90, position: 'insideRight' }} tickFormatter={formatNumber} />
+        <YAxis 
+          label={{ 
+            value: 'Avg Engagement/Post', 
+            angle: -90, 
+            position: 'insideLeft', 
+            dy: 70
+          }} 
+          tickFormatter={formatNumber} 
+        />
         <Tooltip 
           formatter={(value) => formatNumber(value)} 
-          contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', border: 'none' }} 
+          contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0)', border: 'none', fontSize: '16px', fontWeight: 'bold' }} 
         />
         <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 50 }} />
-        <Line yAxisId="left" type="monotone" dataKey="DemocraticPosts" stroke="#66b3ff" name="Democratic Posts" dot={false} />
-        <Line yAxisId="left" type="monotone" dataKey="RepublicanPosts" stroke="#ff9999" name="Republican Posts" dot={false} />
-        <Line yAxisId="right" type="monotone" dataKey="DemocraticEngagement" stroke="#005bb5" name="Democratic Engagement" dot={false} />
-        <Line yAxisId="right" type="monotone" dataKey="RepublicanEngagement" stroke="#b30000" name="Republican Engagement" dot={false} />
+        <Line type="monotone" dataKey="DemocraticAvgEngagement" stroke="#005bb5" name="Democratic Avg Engagement/Post" dot={false} />
+        <Line type="monotone" dataKey="RepublicanAvgEngagement" stroke="#b30000" name="Republican Avg Engagement/Post" dot={false} />
       </LineChart>
     </ResponsiveContainer>
   );

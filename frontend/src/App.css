@@ -1,16 +1,27 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+@plugin "daisyui/theme" {
+  name: "light";
+  default: false;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(95% 0 0); /* Slightly darker light grey */
+  --color-base-200: oklch(90% 0 0); /* Darker grey */
+  --color-base-300: oklch(85% 0 0); /* Even darker grey */
+  --color-base-content: oklch(20% 0 0); /* Dark grey for text */
+}
+
 /* Custom theme for Tippy tooltips */
 .tippy-box[data-theme~='custom'] {
-  background-color: hsl(var(--b1) / 1); /* base-100 background */
+  background-color: hsl(var(--color-base-100) / 1); /* base-100 background */
   border: 1px solid hsl(var(--p) / 1); /* primary color */
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  color: hsl(var(--bc) / 1); /* base content color */
+  color: hsl(var(--color-base-content) / 1); /* base content color */
 }
 
 .tippy-box[data-theme~='custom'] .tippy-arrow::before {
-  background-color: hsl(var(--b1) / 1);
+  background-color: hsl(var(--color-base-100) / 1);
   border: 1px solid hsl(var(--p) / 1);
 }
 
@@ -20,18 +31,18 @@
 
 /* Optional: Style the prose content inside tooltips */
 .tippy-box[data-theme~='custom'] .prose {
-  color: hsl(var(--bc) / 0.8); /* slightly muted text */
+  color: hsl(var(--color-base-content) / 0.8); /* slightly muted text */
 }
 
 .tippy-box[data-theme~='custom'] .prose strong {
-  color: hsl(var(--bc) / 1); /* full opacity for headings */
+  color: hsl(var(--color-base-content) / 1); /* full opacity for headings */
 }
 
 .tab-container {
   display: flex;
   justify-content: space-around; /* Distribute space evenly */
-  border-bottom: 1px solid var(--base-300);
-  background-color: var(--base-100);
+  border-bottom: 1px solid var(--color-base-300);
+  background-color: var(--color-base-100);
 }
 
 .tab-btn {
@@ -47,7 +58,6 @@
   overflow: hidden;
   white-space: nowrap;
 }
-
 
 .table-container {
   margin-top: 1.5rem;

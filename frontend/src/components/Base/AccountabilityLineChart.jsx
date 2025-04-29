@@ -8,7 +8,7 @@ import 'tippy.js/dist/tippy.css';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { topicIcons } from '../../utils/utils'; // Import topicIcons
+import { topicIcons, colorMap } from '../../utils/utils'; // Import topicIcons and colorMap
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -176,14 +176,14 @@ function AccountabilityLineChart({ startDate, endDate }) {
                 <Line
                   type="monotone"
                   dataKey="Democratic"
-                  stroke={topicIcons[currentTopic]?.D ?? '#3b82f6'}
+                  stroke={currentTopic === 'all' ? '#3b82f6' : colorMap[currentTopic]?.D}
                   strokeWidth={2}
                   dot={false}
                 />
                 <Line
                   type="monotone"
                   dataKey="Republican"
-                  stroke={topicIcons[currentTopic]?.R ?? '#ef4444'}
+                  stroke={currentTopic === 'all' ? '#ef4444' : colorMap[currentTopic]?.R}
                   strokeWidth={2}
                   dot={false}
                 />

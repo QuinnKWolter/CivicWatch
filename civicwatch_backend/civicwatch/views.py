@@ -28,8 +28,14 @@ def filter_posts(request):
 
 # 🔹 Legislator Data API
 def all_legislators(request):
-    legislators = Legislator.objects.values("legislator_id", "name", "state", "chamber", "party")
-    return JsonResponse(list(legislators), safe=False)
+    try:
+        print("Fetching legislators")
+        legislators = Legislator.objects.values("legislator_id", "name", "state", "party").order_by("state", "name")
+        print("Legislators fetched:", legislators)
+        return JsonResponse(list(legislators), safe=False)
+    except Exception as e:
+        print("Error fetching legislators:", e)
+        return JsonResponse({"error": str(e)}, status=500)
 
 def legislator_detail(request, legislator_id):
     legislator = get_object_or_404(Legislator, pk=legislator_id)
@@ -902,40 +908,9 @@ def overview_metrics(request):
                 "mostActiveState": None
             }
     
-    # Bar chart data: posts, likes, retweets by party
-    bar_chart_party_summary = [
-        {
-            "party": item['party'],
-            "totalPosts": item['total_posts'],
-            "likes": item['total_likes'],
-            "retweets": item['total_retweets']
-        }
-        for item in summary_metrics if item['party'] in ['Democratic', 'Republican']
-    ]
-    
-    # Radar chart metrics (avg. civility, misinfo, interaction per party)
-    radar_chart_metrics = filtered_posts.values('party').annotate(
-        avg_civility_score=Avg('civility_score'),
-        avg_misinfo_score=Avg('count_misinfo'),
-        avg_interaction_score=Avg('interaction_score')
-    ).filter(party__in=['Democratic', 'Republican'])
-    
-    radar_chart_metrics_list = [
-        {
-            "party": item['party'],
-            "avgCivilityScore": item['avg_civility_score'],
-            "avgMisinfoScore": item['avg_misinfo_score'],
-            "avgInteractionScore": item['avg_interaction_score']
-        } for item in radar_chart_metrics
-    ]
-    
     # Compile the final response data
     response_data = {
         "summaryMetrics": summary_metrics_dict,
-        "visualizations": {
-            "barChartPartySummary": bar_chart_party_summary,
-            "radarChartMetrics": radar_chart_metrics_list
-        }
     }
     
     return JsonResponse(response_data)
@@ -1027,7 +1002,11 @@ def trend_data(request):
     
     trend_data = filtered_posts.annotate(date=date_trunc).values('date', 'party').annotate(
         total_posts=Count('post_id'),
-        total_engagement=Sum('like_count') + Sum('retweet_count')
+        avg_engagement_per_post=Case(
+            When(total_posts=0, then=0),
+            default=(Sum('like_count') + Sum('retweet_count')) / Count('post_id'),
+            output_field=IntegerField()
+        )
     ).order_by('date', 'party')
     
     trend_data_dict = {}
@@ -1036,8 +1015,7 @@ def trend_data(request):
         if date_str not in trend_data_dict:
             trend_data_dict[date_str] = {}
         trend_data_dict[date_str][item['party']] = {
-            "totalPosts": item['total_posts'],
-            "totalEngagement": item['total_engagement']
+            "avgEngagementPerPost": item['avg_engagement_per_post']
         }
     
     return JsonResponse(trend_data_dict, safe=False)

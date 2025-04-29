@@ -1,21 +1,16 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import PropTypes from 'prop-types';
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css';
+import { followCursor } from 'tippy.js';
+import { topicIcons, formatNumber } from '../../utils/utils';
 
 function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetric }) {
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-
-  // Function to format large numbers with one decimal place
-  const formatNumber = (num) => {
-    if (num >= 1000000) {
-      return new Intl.NumberFormat('en-US', { style: 'decimal', maximumFractionDigits: 1 }).format(num / 1000000) + 'M';
-    }
-    if (num >= 1000) {
-      return new Intl.NumberFormat('en-US', { style: 'decimal', maximumFractionDigits: 1 }).format(num / 1000) + 'K';
-    }
-    return num.toString();
-  };
+  const [tooltipContent, setTooltipContent] = useState('');
+  const [tooltipVisible, setTooltipVisible] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -47,14 +42,14 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
     const chartWidth = dimensions.width - margin.left - margin.right;
     const chartHeight = dimensions.height - margin.top - margin.bottom;
 
-    const svg = d3.select(containerRef.current).select('svg');
-    svg.selectAll("*").remove();
+    const svg = d3.select(containerRef.current)
+      .select('svg')
+      .attr('width', dimensions.width)
+      .attr('height', dimensions.height);
 
-    const svgElement = svg.append("svg")
-      .attr("width", dimensions.width)
-      .attr("height", dimensions.height);
+    svg.selectAll("*").remove(); // Clear previous content
 
-    const g = svgElement.append("g")
+    const g = svg.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
     const parseDate = d3.timeParse("%Y-%m-%d");
@@ -63,23 +58,9 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
     // Sort data by date
     parsedData.sort((a, b) => a.date - b.date);
 
-    const x = d3.scalePoint()
-      .domain(parsedData.map(d => d.date))
-      .range([0, chartWidth])
-      .padding(0);
-
-    const y = d3.scaleLinear()
-      .domain([0, d3.max(parsedData, d =>
-        d3.sum(activeTopics.map(topic => {
-          const value = d[topic]?.[inverted ? 'R' : 'D'];
-          if (selectedMetric === 'engagement') {
-            return (value?.likes || 0) + (value?.shares || 0);
-          }
-          return value?.[selectedMetric] || 0;
-        }))
-      )])
-      .nice()
-      .range(inverted ? [0, chartHeight] : [chartHeight, 0]);
+    const x = d3.scaleTime()
+      .domain(d3.extent(parsedData, d => d.date))
+      .range([0, chartWidth]);
 
     const stack = d3.stack()
       .keys(activeTopics)
@@ -95,6 +76,13 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
 
     const layers = stack(parsedData);
 
+    // Use a power scale for the Y-axis
+    const maxSum = d3.max(layers, layer => d3.max(layer, d => d[1]));
+    const y = d3.scalePow()
+      .exponent(0.5) // Square root scale
+      .domain([0, maxSum])
+      .range(inverted ? [0, chartHeight] : [chartHeight, 0]);
+
     const area = d3.area()
       .curve(d3.curveMonotoneX)
       .x(d => x(d.data.date))
@@ -106,7 +94,42 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
       .enter().append("path")
       .attr("class", "layer")
       .attr("d", area)
-      .style("fill", d => colorMap[d.key]?.[inverted ? 'R' : 'D']);
+      .style("fill", d => colorMap[d.key]?.[inverted ? 'R' : 'D'])
+      .on('mouseover', (event, d) => {
+        const totalValue = d3.sum(d, point => point[1] - point[0]);
+        const formattedValue = formatNumber(totalValue);
+        const IconComponent = topicIcons[d.key];
+        const color = colorMap[d.key]?.[inverted ? 'R' : 'D'];
+        
+        setTooltipContent(
+          <div style={{ 
+            color, 
+            borderRadius: '8px', 
+            padding: '10px', 
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            height: '100%',
+            width: '100%',
+          }}>
+            <div style={{ display: 'flex', marginBottom: '5px' }}>
+              <IconComponent style={{ marginRight: '5px', fontSize: '2em' }} />
+            </div>
+            <div>
+              <strong style={{ fontSize: '1.1em', color: 'white' }}>Topic: {d.key}</strong>
+            </div>
+            <div>
+              <strong style={{ fontSize: '1.1em', color: 'white' }}>Value: {formattedValue}</strong> 
+            </div>
+          </div>
+        );
+        setTooltipVisible(true);
+      })
+      .on('mouseout', () => {
+        setTooltipVisible(false);
+      });
 
     const xAxisDates = parsedData.filter((d, i, arr) => {
       const date = d.date;
@@ -130,9 +153,10 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
     g.selectAll(".axis--x line")
       .style("stroke-opacity", 0.2);
 
+    // Draw Y-axis with power scale
     g.append("g")
       .attr("class", "axis axis--y")
-      .call(d3.axisLeft(y).tickSize(-chartWidth).tickPadding(10).tickFormat(formatNumber))
+      .call(d3.axisLeft(y).ticks(6, "~s").tickSize(-chartWidth).tickPadding(10))
       .selectAll("line")
       .style("stroke-opacity", 0.2);
 
@@ -140,7 +164,17 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
 
   return (
     <div ref={containerRef} className="w-full h-full">
-      <svg width="100%" height="100%" />
+      <Tippy
+        content={tooltipContent}
+        visible={tooltipVisible}
+        arrow={false}
+        placement="top"
+        followCursor={true}
+        appendTo={() => document.body}
+        plugins={[followCursor]}
+      >
+        <svg width="100%" height="100%" />
+      </Tippy>
     </div>
   );
 }

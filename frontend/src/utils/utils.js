@@ -5,26 +5,26 @@ import { GiCapitol, GiBrickWall, GiPistolGun } from 'react-icons/gi';
 // Export topic icons as components
 export const topicIcons = {
   all: FaGlobe,
+  capitol: GiCapitol,
+  immigra: GiBrickWall,
   abortion: FaHospitalUser,
   blacklivesmatter: FaFistRaised,
-  capitol: GiCapitol,
   climate: FaLeaf,
-  covid: FaVirus,
   gun: GiPistolGun,
-  immigra: GiBrickWall,
-  rights: FaBalanceScale
+  rights: FaBalanceScale,
+  covid: FaVirus
 };
 
-// Export color map
+// Export color map with new color scheme
 export const colorMap = {
-  abortion: { D: '#1E3A8A', R: '#7F1D1D', M: '#4A1D8A' },
-  blacklivesmatter: { D: '#1D4ED8', R: '#991B1B', M: '#6B2BD8' },
-  capitol: { D: '#2563EB', R: '#B91C1C', M: '#7B2FEB' },
-  climate: { D: '#3B82F6', R: '#DC2626', M: '#8B52F6' },
-  covid: { D: '#60A5FA', R: '#EF4444', M: '#A875FA' },
-  gun: { D: '#93C5FD', R: '#F87171', M: '#C395FD' },
-  immigra: { D: '#BFDBFE', R: '#FCA5A5', M: '#DFB5FE' },
-  rights: { D: '#E2EFFF', R: '#FFD5D5', M: '#F2D5FF' },
+  capitol:          { D: '#b2ebf2', R: '#ffe0b2' }, // very light
+  immigra:          { D: '#81deea', R: '#ffcc80' },
+  abortion:         { D: '#4dd0e1', R: '#ffb74d' },
+  blacklivesmatter: { D: '#26c6da', R: '#ffa726' },
+  climate:          { D: '#00acc1', R: '#ff9800' },
+  gun:              { D: '#00838f', R: '#fb8c00' },
+  rights:           { D: '#006064', R: '#ef6c00' },
+  covid:            { D: '#004d40', R: '#e65100' }  // darkest
 };
 
 // Function to format numbers with optional decimal truncation

@@ -2,13 +2,16 @@ import { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { FaCalendarAlt, FaVirus, FaVoteYea, FaGavel, FaUserSlash, FaStore } from 'react-icons/fa';
-import { GiCapitol } from 'react-icons/gi';
+import { FaCalendarAlt, FaVirus, FaVoteYea, FaGavel, FaUserSlash, FaStore, FaSkullCrossbones, FaVideo } from 'react-icons/fa';
+import { GiCapitol, GiMegaphone } from 'react-icons/gi';
+import { WiThermometer } from 'react-icons/wi';
+import { TbPodium } from 'react-icons/tb';
 import ReactDOM from 'react-dom/client';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import tippy from 'tippy.js';
 import 'tippy.js/animations/scale-subtle.css';
+import { colorMap } from '../../utils/utils';
 
 function TimelineSlider({ 
   startDate = null,
@@ -54,58 +57,86 @@ function TimelineSlider({
       label: 'COVID Emergency Declaration',
       icon: FaVirus,
       notes: "President Trump declared a national emergency concerning the COVID-19 outbreak, freeing up $50 billion in federal funding and establishing public-private partnerships to expand testing capabilities.",
-      position: 'above',
-      color: '#0000FF' // Blue
+      color: colorMap.covid
+    },
+    {
+      date: '2020-05-27',
+      label: 'US Reaches 100,000 COVID Deaths',
+      icon: FaSkullCrossbones,
+      notes: "On May 27, 2020, the United States reached 100,000 deaths due to the COVID-19 pandemic. Less than a year later, by May 16, 2022, the nation would surpass the 1,000,000 deaths milestone, highlighting the devastating and rapid spread of the virus.",
+      color: colorMap.covid
     },
     { 
       date: '2020-05-25', 
-      label: 'George Floyd Murder',
+      label: "George Floyd's Death",
       icon: FaUserSlash,
       notes: "George Floyd, a black man, died while being arrested in Minneapolis, Minnesota. Floyd's death inspired months of protest against police brutality and racism and motivated ongoing discussions about racial justice and the role of race in American society.",
-      position: 'above',
-      color: '#0000FF' // Blue
+      color: colorMap.blacklivesmatter
     },
     { 
       date: '2020-11-03', 
       label: 'US Presidential Election',
       icon: FaVoteYea,
       notes: "The 2020 United States presidential election took place against the backdrop of a global pandemic. Joe Biden defeated incumbent Donald Trump in what became one of the most contested elections in US history.",
-      position: 'above',
-      color: '#0000FF' // Blue
+      color: colorMap.capitol
     },
     { 
       date: '2021-01-06', 
-      label: 'Capitol Riot',
+      label: 'January 6th Capitol Attack',
       icon: GiCapitol,
       notes: "Supporters of President Trump stormed the United States Capitol in an attempt to overturn his defeat in the 2020 presidential election, leading to multiple deaths and widespread concern about the state of American democracy.",
-      position: 'above',
-      color: '#0000FF' // Blue
-    },
-    { 
-      date: '2021-01-06', 
-      label: 'Stop the Steal Rally',
-      icon: FaGavel,
-      notes: "A rally held in Washington, D.C., to protest the results of the 2020 presidential election, coinciding with the Capitol Riot.",
-      position: 'below',
-      color: '#FF0000' // Red
+      color: colorMap.capitol
     },
     { 
       date: '2021-03-22', 
       label: 'Boulder Shooting',
       icon: FaStore,
       notes: "A mass shooting occurred at a King Soopers supermarket in Boulder, Colorado. Ten people were killed, including a local on-duty police officer.",
-      position: 'above',
-      color: '#0000FF' // Blue
+      color: colorMap.gun
     },
     { 
       date: '2021-09-01', 
       label: 'Texas SB 8',
       icon: FaGavel,
       notes: "Texas Senate Bill 8 (SB 8) banned abortions after approximately six weeks of pregnancy. It was unique in its enforcement mechanism, allowing private citizens to sue abortion providers or anyone who 'aids or abets' an abortion, rather than relying on state officials. This created a system where people could file lawsuits with the potential for financial rewards, leading to widespread concern and debate.",
-      position: 'above',
-      color: '#0000FF' // Blue
+      color: colorMap.abortion
+    },
+    {
+      date: '2020-09-29',
+      label: 'First Presidential Debate',
+      icon: TbPodium,
+      notes: "The first presidential debate was marked by frequent interruptions and a chaotic atmosphere. Trump repeatedly interrupted Biden, leading to contentious exchanges. Biden criticized Trump's COVID-19 response and handling of the economy. Trump defended his record and attacked Biden's family. Discussions on healthcare, climate change, and racial justice were often overshadowed by the candidates' combative interactions.",
+      color: colorMap.capitol
+    },
+    {
+      date: '2020-10-22',
+      label: 'Final Presidential Debate',
+      icon: TbPodium,
+      notes: `Biden critiqued Trump's COVID-19 response and advocated for progressive stances on immigration, abortion, racial justice, climate change, and gun control. Trump defended his pandemic handling, border security, anti-abortion stance, law enforcement, and Second Amendment rights, while raising voter fraud concerns. Overall, the debate featured more focused policy discussions than the first, with clear contrasts between the candidates' positions.`,
+      color: colorMap.capitol
+    },
+    {
+      date: '2020-09-01',
+      label: 'August/September 2020 US Heatwave',
+      icon: WiThermometer,
+      notes: "August and September 2020 saw a significant and widespread heatwave across parts of the United States, particularly impacting the West Coast. This event contributed to already dangerous conditions fueled by historic wildfires in states like California, Oregon, and Washington. The intense heatwave served as a stark reminder of the increasing frequency and intensity of extreme weather events linked to climate change.",
+      color: colorMap.climate
+    },
+    {
+      date: '2021-04-15',
+      label: 'Release of Adam Toledo Shooting Footage',
+      icon: FaVideo,
+      notes: "On April 15, 2021, body camera footage was released depicting the fatal shooting of 13-year-old Adam Toledo by a Chicago police officer on March 29, 2021. The footage revealed Toledo had his hands raised and was unarmed, contradicting initial police accounts and sparking widespread protests and calls for police accountability, further fueling BLM activism online.",
+      color: colorMap.blacklivesmatter
+    },
+    {
+      date: '2021-04-20',
+      label: 'Derek Chauvin Guilty Verdict',
+      icon: FaGavel,
+      notes: "On April 20, 2021, Derek Chauvin, the former Minneapolis police officer, was found guilty on all three charges in the murder of George Floyd. The verdict, delivered after weeks of testimony and months of anticipation, sparked widespread reactions on social media, with many expressing relief and a renewed call for systemic change, while others voiced concerns about the future of policing and justice.",
+      color: colorMap.blacklivesmatter
     }
-  ];
+  ].filter(event => event.color !== colorMap.capitol.R);
 
   const [selectedGlyph] = useState(null);
   const [pendingStartDate, setPendingStartDate] = useState(localStartDate);
@@ -173,23 +204,24 @@ function TimelineSlider({
     };
 
     // Updated glyph rendering
-    importantDates.forEach(({ date, label, notes, icon: Icon, position, color }) => {
+    importantDates.forEach(({ date, label, notes, icon: Icon, color }) => {
       // Create a container div for Tippy
       const container = document.createElement('div');
       container.className = `glyph-container-${date}`;
       container.style.position = 'absolute';
       container.style.left = `${timeScale(new Date(date)) + margin.left}px`;
-      container.style.top = position === 'above' ? '6px' : '34px'; // Adjusted to sit just above or below timeline
+      container.style.top = '34px'; // Set all to below
       container.style.transform = 'translate(-50%, -50%)';
       containerRef.current.appendChild(container);
 
       // Create the tooltip content with HTML
       const tooltipContent = (
-        <div className="bg-base-100 text-base-content border border-primary shadow-lg rounded-box p-4 w-[450px] space-y-2">
+        <div className="p-4 w-[450px] space-y-2">
           <div className="flex items-center gap-2">
-            <Icon className="w-5 h-5" style={{ color }} />
+            <Icon className="w-5 h-5" style={{ color: `linear-gradient(to right, ${color.D}, ${color.R})` }} />
             <h3 className="font-bold text-lg">{label}</h3>
           </div>
+          <div className="text-sm text-gray-500">{dayjs(date).format('MMM D, YYYY')}</div>
           <ul className="text-sm list-disc list-inside">
             {notes.split('. ').map((note, index) => (
               <li key={index}>
@@ -209,37 +241,31 @@ function TimelineSlider({
           trigger="click"
           interactive={true}
           allowHTML={true}
-          maxWidth={400}
+          maxWidth={450} // Ensure this matches the content width
           placement="top"
-          onShow={(instance) => {
-            document.querySelectorAll('[data-tippy-root]').forEach(tooltip => {
-              const tippyInstance = tooltip._tippy;
-              if (tippyInstance && tippyInstance !== instance) {
-                tippyInstance.hide();
-              }
-            });
-          }}
+          appendTo={() => document.body}
           popperOptions={{
+            strategy: 'fixed',
             modifiers: [
               {
                 name: 'preventOverflow',
                 options: {
-                  padding: 8, // how far from the edge of the screen
-                  boundary: 'viewport', // default, but can also be 'clippingParents'
+                  padding: 8,
+                  boundary: 'viewport',
                 },
               },
               {
                 name: 'flip',
                 options: {
-                  fallbackPlacements: ['bottom', 'right', 'left'], // or just ['bottom']
+                  fallbackPlacements: ['bottom', 'right', 'left'],
                 },
               },
             ],
           }}
-          zIndex={9999}
+          zIndex={99999}
         >
-          <div className="flex items-center justify-center w-5 h-5 rounded-full bg-base-300 border-2 border-primary cursor-pointer hover:bg-base-200 transition-colors" style={{ borderColor: color }}>
-            <Icon className="w-3 h-3" style={{ color }} />
+          <div className="flex items-center justify-center w-5 h-5 rounded-full bg-base-300 border-2 border-primary cursor-pointer hover:bg-base-200 transition-colors" style={{ borderColor: `linear-gradient(to right, ${color.D}, ${color.R})` }}>
+            <Icon className="w-3 h-3" style={{ color: `linear-gradient(to right, ${color.D}, ${color.R})` }} />
           </div>
         </Tippy>
       );
@@ -259,6 +285,9 @@ function TimelineSlider({
             content: dayjs(date).format('MMM D, YYYY'),
             placement: 'top',
             showOnCreate: true,
+            appendTo: document.body,
+            popperOptions: { strategy: 'fixed' },
+            zIndex: 99999,
           });
         }
       })
@@ -275,13 +304,13 @@ function TimelineSlider({
         if (isStart) {
           if (newDate >= minDate && newDate < localEndDate) {
             handle.attr("cx", clampedX);
-            setPendingStartDate(newDate); // ✅ live update while dragging
+            setPendingStartDate(newDate);
             this._tippy?.setContent(newDate.format('MMM D, YYYY'));
           }
         } else {
           if (newDate <= maxDate && newDate > localStartDate) {
             handle.attr("cx", clampedX);
-            setPendingEndDate(newDate); // ✅ live update while dragging
+            setPendingEndDate(newDate);
             this._tippy?.setContent(newDate.format('MMM D, YYYY'));
           }
         }
@@ -398,7 +427,7 @@ function TimelineSlider({
       {/* Callout for selected glyph */}
       {selectedGlyph && dimensions.width && (
         <div 
-          className="absolute z-50 w-[450px] bg-base-200 shadow-lg rounded-lg p-4 border border-primary"
+          className="absolute w-[450px] bg-base-200 shadow-lg rounded-lg p-4 border border-primary"
           style={{
             left: `${d3.scaleTime()
               .domain([minDate.toDate(), maxDate.toDate()])

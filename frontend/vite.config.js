@@ -9,5 +9,6 @@ export default defineConfig({
     watch: {
       ignored: ['**/node_modules/**', '**/.git/**'],
     },
+    allowedHosts: ['fbad-2600-4041-33-cc00-cca1-35ab-595b-9e6b.ngrok-free.app']
   },
 })
