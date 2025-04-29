@@ -96,7 +96,7 @@ function BipartiteFlow({ activeTopics, startDate, endDate, onDateChange, selecte
           selectedMetric={selectedMetric}
         />
       </div>
-      <div className="w-full h-[4%]">
+      <div className="w-full h-[4%]" style={{ marginTop: '10px' }}>
         <TimelineSlider 
           startDate={startDate}
           endDate={endDate}

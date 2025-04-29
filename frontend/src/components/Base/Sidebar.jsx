@@ -60,8 +60,8 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
   );
 
   const flashpoints = [
-    { label: 'January 6th Insurrection', dateRange: ['2021-01-06', '2021-01-07'] },
-    { label: 'Death of George Floyd', dateRange: ['2020-05-25', '2020-05-26'] },
+  { label: 'January 6th Insurrection', dateRange: ['2021-01-06', '2021-01-31'] },
+    { label: '2020 BLM Protests', dateRange: ['2020-05-25', '2020-07-31'] },
     // Add more flashpoints as needed
   ];
 

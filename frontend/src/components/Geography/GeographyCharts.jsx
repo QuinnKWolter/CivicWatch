@@ -1,8 +1,10 @@
 import '../../App.css';
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import { FaSpinner } from 'react-icons/fa';
+import ChoroplethMap from './ChoroplethMap';
+import PropTypes from 'prop-types';
 
 const stateAbbrevToName = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
@@ -18,25 +20,15 @@ const stateAbbrevToName = {
 };
 
 function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric }) {
-  const svgRef = useRef();
   const [geojson, setGeojson] = useState(null);
-  const [engagementData, setEngagementData] = useState([]);
+  const [geoData, setGeoData] = useState([]);
   const [selectedState, setSelectedState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const legendWidth = 200;
   const legendHeight = 10;
-  const legendMargin = 20;
 
-  const redScale = d3.scaleLinear()
-      .domain([0, 1])  
-      .range(['#f4cccc', '#cc0000']);
-  
-    const blueScale = d3.scaleLinear()
-      .domain([0, 1])  
-      .range(['#add8e6', '#1e3a8a']);
-
+  // Load GeoJSON data
   useEffect(() => {
     fetch('./us-states.json')
       .then(res => res.json())
@@ -44,9 +36,13 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
         const states = topojson.feature(data, data.objects.states);
         setGeojson(states);
       })
-      .catch(err => console.error('Error loading GeoJSON:', err));
+      .catch(err => {
+        console.error('Error loading GeoJSON:', err);
+        setError("Failed to load geography data. Please try again.");
+      });
   }, []);
 
+  // Fetch state data based on selected filters
   useEffect(() => {
     if (!startDate || !endDate || !selectedTopics || selectedTopics.length === 0) return;
 
@@ -55,6 +51,7 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
     const topicsParam = `topics=${selectedTopics.join(',')}`;
     const url = `http://127.0.0.1:8000/api/geo/activity/topics/?start_date=${formattedStart}&end_date=${formattedEnd}&${topicsParam}&metric=${selectedMetric}`;
 
+    setLoading(true);
     fetch(url)
       .then(res => res.json())
       .then(data => {
@@ -65,123 +62,22 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
           total_engagement: item.total || 0,
           topic_breakdown: item.topic_breakdown || {},
         }));
-
-        const maxRepublican = d3.max(formatted, d => d.republicanTotal);
-        const maxDemocrat = d3.max(formatted, d => d.democratTotal);
-        const maxEngagement = d3.max(formatted, d => d.total_engagement);
-
-        const normalizedData = formatted.map(d => ({
-          ...d,
-          republicanTotalNorm: maxRepublican ? d.republicanTotal / maxRepublican : 0,
-          democratTotalNorm: maxDemocrat ? d.democratTotal / maxDemocrat : 0,
-          totalEngagementNorm: maxEngagement ? d.total_engagement / maxEngagement : 0,
-        }));
-
-        setEngagementData(normalizedData);
+        setGeoData(formatted);
         setLoading(false);
       })
       .catch(err => {
-        console.error('Error fetching engagement data:', err);
+        console.error('Error fetching geo data:', err);
         setError("Failed to load geography data. Please try again.");
         setLoading(false);
       });
   }, [startDate, endDate, selectedTopics, selectedMetric]);
 
+  // Update selected state when metric changes
   useEffect(() => {
-    if (!geojson || engagementData.length === 0) return;
-  
-    const svg = d3.select(svgRef.current)
-      .attr('viewBox', '0 0 960 600')
-      .attr('preserveAspectRatio', 'xMidYMid meet');
-  
-    svg.selectAll('*').remove();
-  
-    const tooltip = d3.select('body').append('div')
-      .attr('class', 'tooltip')
-      .style('position', 'absolute')
-      .style('pointer-events', 'none')
-      .style('background', '#e0f7fa')
-      .style('color', 'black')
-      .style('border', '1px solid #ccc')
-      .style('padding', '10px')
-      .style('font-size', '14px')
-      .style('border-radius', '6px')
-      .style('box-shadow', '0 2px 6px rgba(0,0,0,0.15)')
-      .style('opacity', 0)
-      .style('z-index', 9999);
-  
-    const path = d3.geoPath(d3.geoAlbersUsa().scale(1300).translate([487.5, 305]));
-  
-    const stateEngagementMap = new Map();
-    engagementData.forEach(d => stateEngagementMap.set(d.state, d));
-  
-    svg.append('g')
-      .selectAll('path')
-      .data(geojson.features)
-      .join('path')
-      .attr('d', path)
-      .attr('fill', d => {
-        const stateData = stateEngagementMap.get(d.properties.name);
-        if (!stateData) return '#ffffff';
-      
-        const { republicanTotal, democratTotal, republicanTotalNorm, democratTotalNorm } = stateData;
-        
-        if (republicanTotal > democratTotal) {
-          return redScale(republicanTotalNorm); 
-        }
-        if (democratTotal > republicanTotal) {
-          return blueScale(democratTotalNorm); 
-        }
-      
-        return d3.interpolateRgb(redScale(republicanTotalNorm), blueScale(democratTotalNorm))(0.5);
-      })      
-      .attr('stroke', '#333')
-      .attr('stroke-width', 0.5)
-      .on('mousemove', function (event, d) {
-        const [x, y] = d3.pointer(event);
-        const stateName = d.properties.name;
-  
-        const stateData = stateEngagementMap.get(stateName);
-        if (!stateData) return;
-  
-        const tooltipHtml = `
-          <strong>${stateName}</strong><br/>
-           <strong>Total Engagement:</strong> ${formatNumber(stateData.total_engagement)}<br/>
-          <strong>From date:</strong> ${startDate.format('YYYY-MM-DD')} to ${endDate.format('YYYY-MM-DD')}<br/>
-          <strong>On topics:</strong> ${selectedTopics.join(', ') || 'All topics'}<br/>
-          With <strong>Democrats:</strong> ${formatNumber(stateData.democratTotal)}<br/>
-          And <strong>Republicans:</strong> ${formatNumber(stateData.republicanTotal)}<br/>
-        `;
-  
-        tooltip
-          .html(tooltipHtml)
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY + 10}px`)
-          .transition().duration(100)
-          .style("opacity", 0.95);
-      })
-      .on('mouseout', () => {
-        tooltip.transition().duration(300).style('opacity', 0);
-      })
-      .on('click', (event, d) => {
-        const stateName = d.properties.name;
-        const stateData = stateEngagementMap.get(stateName);
-        if (stateData) {
-          setSelectedState({
-            name: stateName,
-            topicBreakdown: stateData.topic_breakdown,
-          });
-        }
-      });
-  
-    return () => tooltip.remove();
-  }, [geojson, engagementData, selectedMetric]);
-
-
-  useEffect(() => {
-    if (!selectedState || engagementData.length === 0) return;
-  
-    const updatedStateData = engagementData.find(d => d.state === selectedState.name);
+    if (!selectedState || !geoData.length) return;
+    
+    // Find the updated data for the currently selected state
+    const updatedStateData = geoData.find(d => d.state === selectedState.name);
     
     if (updatedStateData) {
       setSelectedState({
@@ -189,14 +85,37 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
         topicBreakdown: updatedStateData.topic_breakdown,
       });
     }
-  }, [engagementData, selectedState?.name]);
-  
-  
+  }, [geoData, selectedState?.name, selectedMetric]);
+
+  // Calculate min/max values for both parties
+  const demMin = d3.min(geoData, d => d.democratTotal) || 0;
+  const demMax = d3.max(geoData, d => d.democratTotal) || 0;
+  const repMin = d3.min(geoData, d => d.republicanTotal) || 0;
+  const repMax = d3.max(geoData, d => d.republicanTotal) || 0;
+
+  // Update the scales to use the actual data range
+  const blueScale = d3.scaleLinear()
+    .domain([demMin, demMax])
+    .range(['#add8e6', '#1e3a8a']);
+
+  const redScale = d3.scaleLinear()
+    .domain([repMin, repMax])
+    .range(['#f4cccc', '#cc0000']);
 
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num;
+  };
+
+  // Format metric name for display
+  const getMetricDisplayName = (metric) => {
+    switch(metric) {
+      case 'posts': return 'Posts';
+      case 'legislators': return 'Legislators';
+      case 'engagement': return 'Engagement';
+      default: return 'Activity';
+    }
   };
 
   if (loading) {
@@ -218,71 +137,98 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
 
   return (
     <>
-      <svg ref={svgRef} style={{ width: '100%' }} />
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-        <svg width={legendWidth} height={legendHeight * 3}>
-          <g transform="translate(0, 0)">
-    
-            <text x={legendWidth * 0.1} y={12} style={{ fontSize: '12px' }}>Democrat</text>
-
-            <g transform={`translate(${legendWidth * 0.05}, 20)`}>
+      <ChoroplethMap 
+        geojson={geojson}
+        geoData={geoData}
+        selectedMetric={selectedMetric}
+        startDate={startDate}
+        endDate={endDate}
+        selectedTopics={selectedTopics}
+        onStateSelected={setSelectedState}
+        showLegend={false}
+        blueScale={blueScale}
+        redScale={redScale}
+      />
+      
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '30px', marginBottom: '20px' }}>
+        <svg width={legendWidth * 3} height={legendHeight * 4} className="text-base-content">
+          <g transform="translate(30, 0)">
+            <text x={0} y={12} style={{ fontSize: '14px', fontWeight: 'bold' }} className="fill-current">Democrat</text>
+            
+            <g transform={`translate(20, 20)`}>
+              <text x={-25} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(demMin)}</text>
+              
               {blueScale.range().map((d, i) => (
                 <rect
                   key={`blue-rect-${i}`}
-                  x={i * ((legendWidth * 0.4) / blueScale.range().length)}
+                  x={i * ((legendWidth * 0.7) / blueScale.range().length)}
                   y={0}
-                  width={(legendWidth * 0.4) / blueScale.range().length}
+                  width={(legendWidth * 0.7) / blueScale.range().length}
                   height={legendHeight}
                   style={{ fill: d }}
                 />
               ))}
+              
+              <text x={(legendWidth * 0.7) + 5} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(demMax)}</text>
             </g>
 
-            <text x={legendWidth * 0.6} y={12} style={{ fontSize: '12px' }}>Republican</text>
-
-            <g transform={`translate(${legendWidth * 0.55}, 20)`}>
+            <text x={legendWidth * 1.5} y={12} style={{ fontSize: '14px', fontWeight: 'bold' }} className="fill-current">Republican</text>
+            
+            <g transform={`translate(${legendWidth * 1.5 + 20}, 20)`}>
+              <text x={-25} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(repMin)}</text>
+              
               {redScale.range().map((d, i) => (
                 <rect
                   key={`red-rect-${i}`}
-                  x={i * ((legendWidth * 0.4) / redScale.range().length)}
+                  x={i * ((legendWidth * 0.7) / redScale.range().length)}
                   y={0}
-                  width={(legendWidth * 0.4) / redScale.range().length}
+                  width={(legendWidth * 0.7) / redScale.range().length}
                   height={legendHeight}
                   style={{ fill: d }}
                 />
               ))}
+              
+              <text x={(legendWidth * 0.7) + 5} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(repMax)}</text>
             </g>
-
           </g>
         </svg>
       </div>
 
       {selectedState && (
-        <div className="table-container">
-          <h3>{selectedState.name}</h3>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Topic</th>
-                <th className="democrat">Democratic</th>
-                <th className="republican">Republican</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(selectedState.topicBreakdown).map(([topic, { Democratic, Republican }]) => (
-                <tr key={topic}>
-                  <td>{topic}</td>
-                  <td className="democrat">{Democratic.toLocaleString()}</td>
-                  <td className="republican">{Republican.toLocaleString()}</td>
+        <div className="mt-6 px-4">
+          <h3 className="text-base-content text-xl font-bold mb-3">{selectedState.name} {getMetricDisplayName(selectedMetric)} Breakdown</h3>
+          <div className="overflow-x-auto">
+            <table className="table table-zebra w-full">
+              <thead>
+                <tr className="!bg-base-200">
+                  <th className="text-base-content !bg-base-200 border-b-base-300">Topic</th>
+                  <th className="!bg-base-200 text-blue-600 border-b-base-300">Democratic</th>
+                  <th className="!bg-base-200 text-red-600 border-b-base-300">Republican</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {Object.entries(selectedState.topicBreakdown).map(([topic, { Democratic, Republican }]) => (
+                  <tr key={topic} className="hover">
+                    <td className="font-medium">{topic}</td>
+                    <td className="text-blue-600">{formatNumber(Democratic)}</td>
+                    <td className="text-red-600">{formatNumber(Republican)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </>
   );
 }
+
+GeographyCharts.propTypes = {
+  startDate: PropTypes.object,
+  endDate: PropTypes.object,
+  selectedTopics: PropTypes.array,
+  selectedMetric: PropTypes.string
+};
 
 export default GeographyCharts;
 
