@@ -66,7 +66,6 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
           topic_breakdown: item.topic_breakdown || {},
         }));
 
-        // Normalize data
         const maxRepublican = d3.max(formatted, d => d.republicanTotal);
         const maxDemocrat = d3.max(formatted, d => d.democratTotal);
         const maxEngagement = d3.max(formatted, d => d.total_engagement);
@@ -124,13 +123,18 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
       .attr('fill', d => {
         const stateData = stateEngagementMap.get(d.properties.name);
         if (!stateData) return '#ffffff';
-  
-        const { republicanTotalNorm, democratTotalNorm } = stateData;
-        if (republicanTotalNorm > democratTotalNorm) return redScale(republicanTotalNorm);
-        if (democratTotalNorm > republicanTotalNorm) return blueScale(democratTotalNorm);
-  
+      
+        const { republicanTotal, democratTotal, republicanTotalNorm, democratTotalNorm } = stateData;
+        
+        if (republicanTotal > democratTotal) {
+          return redScale(republicanTotalNorm); 
+        }
+        if (democratTotal > republicanTotal) {
+          return blueScale(democratTotalNorm); 
+        }
+      
         return d3.interpolateRgb(redScale(republicanTotalNorm), blueScale(democratTotalNorm))(0.5);
-      })
+      })      
       .attr('stroke', '#333')
       .attr('stroke-width', 0.5)
       .on('mousemove', function (event, d) {
