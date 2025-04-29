@@ -25,6 +25,18 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const legendWidth = 200;
+  const legendHeight = 10;
+  const legendMargin = 20;
+
+  const redScale = d3.scaleLinear()
+      .domain([0, 1])  
+      .range(['#f4cccc', '#cc0000']);
+  
+    const blueScale = d3.scaleLinear()
+      .domain([0, 1])  
+      .range(['#add8e6', '#1e3a8a']);
+
   useEffect(() => {
     fetch('./us-states.json')
       .then(res => res.json())
@@ -53,7 +65,20 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
           total_engagement: item.total || 0,
           topic_breakdown: item.topic_breakdown || {},
         }));
-        setEngagementData(formatted);
+
+        // Normalize data
+        const maxRepublican = d3.max(formatted, d => d.republicanTotal);
+        const maxDemocrat = d3.max(formatted, d => d.democratTotal);
+        const maxEngagement = d3.max(formatted, d => d.total_engagement);
+
+        const normalizedData = formatted.map(d => ({
+          ...d,
+          republicanTotalNorm: maxRepublican ? d.republicanTotal / maxRepublican : 0,
+          democratTotalNorm: maxDemocrat ? d.democratTotal / maxDemocrat : 0,
+          totalEngagementNorm: maxEngagement ? d.total_engagement / maxEngagement : 0,
+        }));
+
+        setEngagementData(normalizedData);
         setLoading(false);
       })
       .catch(err => {
@@ -65,13 +90,13 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
 
   useEffect(() => {
     if (!geojson || engagementData.length === 0) return;
-
+  
     const svg = d3.select(svgRef.current)
       .attr('viewBox', '0 0 960 600')
       .attr('preserveAspectRatio', 'xMidYMid meet');
-
+  
     svg.selectAll('*').remove();
-
+  
     const tooltip = d3.select('body').append('div')
       .attr('class', 'tooltip')
       .style('position', 'absolute')
@@ -85,20 +110,12 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
       .style('box-shadow', '0 2px 6px rgba(0,0,0,0.15)')
       .style('opacity', 0)
       .style('z-index', 9999);
-
+  
     const path = d3.geoPath(d3.geoAlbersUsa().scale(1300).translate([487.5, 305]));
-
+  
     const stateEngagementMap = new Map();
     engagementData.forEach(d => stateEngagementMap.set(d.state, d));
-
-    const redScale = d3.scaleLinear()
-      .domain([0, d3.max(engagementData, d => d.republicanTotal)])
-      .range(['#f4cccc', '#cc0000']);
-
-    const blueScale = d3.scaleLinear()
-      .domain([0, d3.max(engagementData, d => d.democratTotal)])
-      .range(['#add8e6', '#1e3a8a']);
-
+  
     svg.append('g')
       .selectAll('path')
       .data(geojson.features)
@@ -107,31 +124,31 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
       .attr('fill', d => {
         const stateData = stateEngagementMap.get(d.properties.name);
         if (!stateData) return '#ffffff';
-
-        const { republicanTotal, democratTotal } = stateData;
-        if (republicanTotal > democratTotal) return redScale(republicanTotal);
-        if (democratTotal > republicanTotal) return blueScale(democratTotal);
-
-        return d3.interpolateRgb(redScale(republicanTotal), blueScale(democratTotal))(0.5);
+  
+        const { republicanTotalNorm, democratTotalNorm } = stateData;
+        if (republicanTotalNorm > democratTotalNorm) return redScale(republicanTotalNorm);
+        if (democratTotalNorm > republicanTotalNorm) return blueScale(democratTotalNorm);
+  
+        return d3.interpolateRgb(redScale(republicanTotalNorm), blueScale(democratTotalNorm))(0.5);
       })
       .attr('stroke', '#333')
       .attr('stroke-width', 0.5)
       .on('mousemove', function (event, d) {
         const [x, y] = d3.pointer(event);
         const stateName = d.properties.name;
-
+  
         const stateData = stateEngagementMap.get(stateName);
         if (!stateData) return;
-
+  
         const tooltipHtml = `
           <strong>${stateName}</strong><br/>
-           <strong>Total:</strong> ${formatNumber(stateData.total_engagement)}<br/>
+           <strong>Total Engagement:</strong> ${formatNumber(stateData.total_engagement)}<br/>
           <strong>From date:</strong> ${startDate.format('YYYY-MM-DD')} to ${endDate.format('YYYY-MM-DD')}<br/>
           <strong>On topics:</strong> ${selectedTopics.join(', ') || 'All topics'}<br/>
           With <strong>Democrats:</strong> ${formatNumber(stateData.democratTotal)}<br/>
           And <strong>Republicans:</strong> ${formatNumber(stateData.republicanTotal)}<br/>
         `;
-
+  
         tooltip
           .html(tooltipHtml)
           .style("left", `${event.pageX + 10}px`)
@@ -152,9 +169,25 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
           });
         }
       });
-
+  
     return () => tooltip.remove();
   }, [geojson, engagementData, selectedMetric]);
+
+
+  useEffect(() => {
+    if (!selectedState || engagementData.length === 0) return;
+  
+    const updatedStateData = engagementData.find(d => d.state === selectedState.name);
+    
+    if (updatedStateData) {
+      setSelectedState({
+        name: selectedState.name,
+        topicBreakdown: updatedStateData.topic_breakdown,
+      });
+    }
+  }, [engagementData, selectedState?.name]);
+  
+  
 
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -182,16 +215,44 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
   return (
     <>
       <svg ref={svgRef} style={{ width: '100%' }} />
-      <div className="flex justify-center gap-6 mt-4">
-        <div className="flex items-center">
-          <div className="w-5 h-5 bg-[#cc0000] mr-2"></div>
-          <span>Republican</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-5 h-5 bg-[#1e3a8a] mr-2"></div>
-          <span>Democrat</span>
-        </div>
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+        <svg width={legendWidth} height={legendHeight * 3}>
+          <g transform="translate(0, 0)">
+    
+            <text x={legendWidth * 0.1} y={12} style={{ fontSize: '12px' }}>Democrat</text>
+
+            <g transform={`translate(${legendWidth * 0.05}, 20)`}>
+              {blueScale.range().map((d, i) => (
+                <rect
+                  key={`blue-rect-${i}`}
+                  x={i * ((legendWidth * 0.4) / blueScale.range().length)}
+                  y={0}
+                  width={(legendWidth * 0.4) / blueScale.range().length}
+                  height={legendHeight}
+                  style={{ fill: d }}
+                />
+              ))}
+            </g>
+
+            <text x={legendWidth * 0.6} y={12} style={{ fontSize: '12px' }}>Republican</text>
+
+            <g transform={`translate(${legendWidth * 0.55}, 20)`}>
+              {redScale.range().map((d, i) => (
+                <rect
+                  key={`red-rect-${i}`}
+                  x={i * ((legendWidth * 0.4) / redScale.range().length)}
+                  y={0}
+                  width={(legendWidth * 0.4) / redScale.range().length}
+                  height={legendHeight}
+                  style={{ fill: d }}
+                />
+              ))}
+            </g>
+
+          </g>
+        </svg>
       </div>
+
       {selectedState && (
         <div className="table-container">
           <h3>{selectedState.name}</h3>
@@ -215,9 +276,9 @@ function ChoroplethMap({ startDate, endDate, selectedTopics, selectedMetric }) {
           </table>
         </div>
       )}
-
     </>
   );
 }
 
 export default ChoroplethMap;
+
