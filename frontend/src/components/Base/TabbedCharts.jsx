@@ -40,17 +40,61 @@ function TabbedCharts({
   const [legScatterData, setLegScatterData] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // useEffect(() => {
+  //   // Determine whether to use default data or fetch from the server
+  //   fetch("http://localhost:8000/api/legislators/scatter/")
+  //     .then((response) => response.json())
+  //     .then((data) => {
+  //       setLegScatterData(data);
+  //     })
+  //     .catch((error) =>
+  //       console.error("Error fetching legislator data:", error)
+  //     );
+  // }, []);
+
   useEffect(() => {
-    // Determine whether to use default data or fetch from the server
     fetch("http://localhost:8000/api/legislators/scatter/")
       .then((response) => response.json())
       .then((data) => {
-        setLegScatterData(data);
+        const keys = [
+          "abortion", "blacklivesmatter", "capitol", "civility_score_tw", "climate", "covid", "gun", "immigra",
+          "interaction_score_tw", "overperformiong_score_tw", "rights", "total_interactions_tw", "total_likes_tw",
+          "total_misinfo_count_tw", "total_posts_tw_count", "total_retweets_tw"
+        ];
+  
+        // Compute global min and max for each numeric metric
+        const minMax = {};
+        keys.forEach((key) => {
+          const numericValues = data
+            .map(d => parseFloat(d[key]))
+            .filter(v => Number.isFinite(v));
+  
+          minMax[key] = {
+            min: Math.min(...numericValues),
+            max: Math.max(...numericValues),
+          };
+        });
+  
+        // Normalize the data
+        const normalizedData = data.map(d => {
+          let normalized = { ...d }; // keep all original fields
+          keys.forEach(key => {
+            const value = parseFloat(d[key]);
+            const { min, max } = minMax[key];
+            if (Number.isFinite(value) && Number.isFinite(min) && Number.isFinite(max)) {
+              normalized[key] = (value - min) / (max - min || 1);
+            }
+            // Otherwise, leave the original value as-is
+          });
+          return normalized;
+        });
+        setLegScatterData(normalizedData);
       })
       .catch((error) =>
         console.error("Error fetching legislator data:", error)
       );
   }, []);
+  
 
   useEffect(() => {
     if (startDate && endDate) {
