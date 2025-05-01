@@ -29,14 +29,17 @@ function LegislatorCharts({
   
     return [
       {
+        display_name: "Low Credibility",
         name: "total_misinfo_count_tw",
         max: Math.max(...legScatterData.map(d => d.total_misinfo_count_tw).filter(Number.isFinite)),
       },
       {
+        display_name: "Interactions",
         name: "total_interactions_tw",
         max: Math.max(...legScatterData.map(d => d.total_interactions_tw).filter(Number.isFinite)),
       },
       {
+        display_name: "Virality",
         name: "overperforming_score_tw",
         max: Math.max(...legScatterData.map(d => d.overperforming_score_tw).filter(Number.isFinite)),
       },
@@ -53,26 +56,32 @@ function LegislatorCharts({
 
     return [
       {
+        display_name: "Capitol",
         name: "capitol",
         max: Math.max(...legScatterData.map(d => d.capitol).filter(Number.isFinite))
       },
       {
+        display_name: "Climate",
         name: "climate",
         max: Math.max(...legScatterData.map(d => d.climate).filter(Number.isFinite))
       },
       {
+        display_name: "Capitol",
         name: "covid",
         max: Math.max(...legScatterData.map(d=>d.covid).filter(Number.isFinite))
       },
       {
+        display_name: "Gun",
         name: "gun",
         max: Math.max(...legScatterData.map(d=>d.gun).filter(Number.isFinite))
       },
       {
+        display_name: "Immigration",
         name: "immigra",
         max: Math.max(...legScatterData.map(d => d.immigra).filter(Number.isFinite))
       },
       {
+        display_name: "Rights",
         name: "rights",
         max: Math.max(...legScatterData.map(d => d.rights).filter(Number.isFinite))
       }

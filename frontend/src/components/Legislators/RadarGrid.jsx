@@ -27,7 +27,7 @@ export const RadarGrid = ({ outerRadius, xScale, axisConfig }) => {
 
     const labelPosition = polarToCartesian(
       angle - Math.PI / 2,
-      outerRadius + 10
+      outerRadius - 10
     );
 
     return (
@@ -36,12 +36,12 @@ export const RadarGrid = ({ outerRadius, xScale, axisConfig }) => {
         <text
           x={labelPosition.x}
           y={labelPosition.y}
-          fontSize={7.5}
+          fontSize={17}
           fill={GRID_COLOR}
           textAnchor={labelPosition.x > 0 ? "start" : "end"}
           dominantBaseline={"middle"}
         >
-          {axis.name}
+          {axis.display_name}
         </text>
       </g>
     );
