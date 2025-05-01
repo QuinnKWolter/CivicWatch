@@ -16,7 +16,7 @@ export const LegislatorHeatMap = ({
   const [totalHeight, setTotalHeight] = useState(height);
 
   const handleClick = (name) => {
-    setLegislatorClicked((legScatterData.filter((d) => d.name === name)));
+    setLegislatorClicked(legScatterData.filter((d) => d.name === name));
   };
 
   useEffect(() => {
@@ -173,6 +173,76 @@ export const LegislatorHeatMap = ({
       .attr("fill", (d) => color(d.count))
       .append("title")
       .text((d) => `${d.name}: ${d.count} posts in ${d.monthStr}`);
+
+    // Legend setup
+    const legendWidth = 200;
+    const legendHeight = 10;
+    const legendX = width - legendWidth - 20; // adjust to position
+    const legendY = neededHeight - margin.bottom + 15;
+
+    // Create a defs element and define a linear gradient
+    const defs = svg.append("defs");
+    const gradientId = "legendGradient";
+
+    const gradient = defs
+      .append("linearGradient")
+      .attr("id", gradientId)
+      .attr("x1", "0%")
+      .attr("y1", "0%")
+      .attr("x2", "100%")
+      .attr("y2", "0%");
+
+    const numStops = 10;
+    const legendColorInterpolator =
+      party === 1 ? d3.interpolateBlues : d3.interpolateReds;
+
+    for (let i = 0; i <= numStops; i++) {
+      const t = i / numStops;
+      gradient
+        .append("stop")
+        .attr("offset", `${t * 100}%`)
+        .attr("stop-color", legendColorInterpolator(t));
+    }
+
+    // Legend scale and axis
+    const legendScale = d3
+      .scaleLinear()
+      .domain([0, q95])
+      .range([0, legendWidth]);
+
+    const legendAxis = d3
+      .axisBottom(legendScale)
+      .ticks(4)
+      .tickFormat(d3.format(".0f"));
+
+    // Add legend group
+    const legendGroup = g
+      .append("g")
+      .attr("class", "legend")
+      .attr("transform", `translate(${legendX}, ${legendY})`);
+
+    legendGroup
+      .append("rect")
+      .attr("width", legendWidth)
+      .attr("height", legendHeight)
+      .style("fill", `url(#${gradientId})`);
+
+    legendGroup
+      .append("g")
+      .attr("transform", `translate(0, ${legendHeight})`)
+      .call(legendAxis)
+      .selectAll("text")
+      .style("font-size", "10px")
+      .style("fill", "white");
+
+    legendGroup
+      .append("text")
+      .attr("x", legendWidth / 2)
+      .attr("y", -8)
+      .attr("text-anchor", "middle")
+      .style("font-size", "12px")
+      .style("fill", "white")
+      .text("Monthly Post Count");
 
     console.log("Total cells:", processedData.length * allDates.length);
   }, [data, height, width, margin, rowHeight, legislatorClicked]);

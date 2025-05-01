@@ -58,7 +58,7 @@ function TabbedCharts({
       .then((data) => {
         const keys = [
           "abortion", "blacklivesmatter", "capitol", "civility_score_tw", "climate", "covid", "gun", "immigra",
-          "interaction_score_tw", "overperformiong_score_tw", "rights", "total_interactions_tw", "total_likes_tw",
+          "interaction_score_tw", "overperforming_score_tw", "rights", "total_interactions_tw", "total_likes_tw",
           "total_misinfo_count_tw", "total_posts_tw_count", "total_retweets_tw"
         ];
   
