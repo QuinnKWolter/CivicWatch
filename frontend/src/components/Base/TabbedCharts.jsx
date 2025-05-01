@@ -10,17 +10,30 @@ import { BiTrendingUp } from "react-icons/bi";
 import { MdOutlineAccountBox } from "react-icons/md";
 import { FaUsers } from "react-icons/fa";
 import { IoEarthOutline } from "react-icons/io5";
-import dayjs from "dayjs"
+import dayjs from "dayjs";
 import AccountabilityInterface from "../Accountability/AccountabilityInterface";
 
-function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics, selectedMetric }) {
+function TabbedCharts({
+  legislatorClicked,
+  postData,
+  setLegislatorClicked,
+  setPostData,
+  startDate,
+  endDate,
+  selectedTopics,
+  selectedMetric,
+}) {
   const [value, setValue] = useState(0);
   const [hoveredTab, setHoveredTab] = useState(null);
 
   const [monthlyLeg, setMonthlyLeg] = useState([]);
+  const [semanticData, setSemanticData] = useState([])
 
   // Memoize selectedTopics to prevent unnecessary re-renders
-  const memoizedSelectedTopics = useMemo(() => selectedTopics, [selectedTopics]);
+  const memoizedSelectedTopics = useMemo(
+    () => selectedTopics,
+    [selectedTopics]
+  );
 
   const handleChange = (newValue) => {
     setValue(newValue);
@@ -42,7 +55,6 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
     { name: "gun", max: 427 },
     { name: "immigra", max: 384 },
     { name: "rights", max: 327 },
-    
   ];
 
   const legislators = [
@@ -57,71 +69,97 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
   ];
 
   useEffect(() => {
-      // Determine whether to use default data or fetch from the server
-      fetch("http://localhost:8000/api/legislators/scatter/")
+    // Determine whether to use default data or fetch from the server
+    fetch("http://localhost:8000/api/legislators/scatter/")
+      .then((response) => response.json())
+      .then((data) => {
+        setLegScatterData(data);
+      })
+      .catch((error) =>
+        console.error("Error fetching legislator data:", error)
+      );
+  }, []);
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      const url = "http://localhost:8000/api/legislators/scatter/?";
+      const params = {
+        startDate: startDate.format("DD-MM-YYYY"),
+        endDate: endDate.format("DD-MM-YYYY"),
+      };
+      const queryParams = new URLSearchParams(params).toString();
+
+      const query = `${url}${queryParams}`;
+      fetch(query)
         .then((response) => response.json())
         .then((data) => {
           setLegScatterData(data);
         })
         .catch((error) =>
-          console.error("Error fetching legislator data:", error)
+          console.error("Error filtering legislator data: ", error)
         );
-  }, []);
-  
-  useEffect(() => {
-      if (startDate && endDate) {
-        const url = "http://localhost:8000/api/legislators/scatter/?";
-        const params = {
-          startDate: startDate.format("DD-MM-YYYY"),
-          endDate: endDate.format("DD-MM-YYYY"),
-        };
-        const queryParams = new URLSearchParams(params).toString();
-  
-        const query = `${url}${queryParams}`;
-        fetch(query)
-          .then((response) => response.json())
-          .then((data) => {
-            setLegScatterData(data);
-          })
-          .catch((error) =>
-            console.error("Error filtering legislator data: ", error)
-          );
-        const filteredData = legScatterData.filter((item) => {
-          const itemDate = dayjs(item.date);
-          return (
-            itemDate.isSameOrAfter(startDate) && itemDate.isSameOrBefore(endDate)
-          );
-        });
-        setLegScatterData(filteredData);
-      }
+      const filteredData = legScatterData.filter((item) => {
+        const itemDate = dayjs(item.date);
+        return (
+          itemDate.isSameOrAfter(startDate) && itemDate.isSameOrBefore(endDate)
+        );
+      });
+      setLegScatterData(filteredData);
+    }
   }, [startDate, endDate]);
-  
+
   useEffect(() => {
     if (startDate && endDate) {
-      const url = "http://localhost:8000/api/legislators/legislator_posts_by_month_top_50/?"
+      const url =
+        "http://localhost:8000/api/legislators/legislator_posts_by_month_top_50/?";
       const params = {
         start_date: startDate.format("YYYY-MM-DD"),
-        end_date: endDate.format("YYYY-MM-DD")
-      }
+        end_date: endDate.format("YYYY-MM-DD"),
+      };
       const queryParams = new URLSearchParams(params).toString();
 
       const query = `${url}${queryParams}`;
-      setLoading(true)
+      setLoading(true);
       fetch(query)
         .then((response) => response.json())
         .then((data) => {
-          console.log("rec'd monthly data", data)
+          console.log("rec'd monthly data", data);
           setMonthlyLeg(data);
         })
         .catch((error) =>
-          console.error("Error filtering legislator data", error))
+          console.error("Error filtering legislator data", error)
+        )
         .finally(() => {
           setLoading(false);
-      });
-       
+        });
     }
-    
-  },[startDate, endDate])
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    if (startDate && endDate) {
+      const url = "http://localhost:8000/api/posts/post_semantic_similarity/?";
+      const params = {
+        start_date: startDate.format("YYYY-MM-DD"),
+        end_date: endDate.format("YYYY-MM-DD"),
+      };
+      const queryParams = new URLSearchParams(params).toString();
+
+      const query = `${url}${queryParams}`;
+      setLoading(true);
+      fetch(query)
+        .then((response) => response.json())
+        .then((data) => {
+          setSemanticData(data);
+          console.log("rec'd semantic data", data);
+        })
+        .catch((error) =>
+          console.error("Error filtering legislator data", error)
+        )
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [startDate, endDate]);
 
   const tabs = [
     { icon: <RiDashboardLine />, label: "Overview", value: 0 },
@@ -138,18 +176,25 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
           <button
             key={tab.value}
             className={`tab-btn group py-2 px-4 rounded-t transition-all duration-300 ease-in-out
-              ${value === tab.value ? 'bg-primary text-primary-content tab-active' : 'bg-base-300 text-base-content hover:bg-primary/20'}`}
+              ${
+                value === tab.value
+                  ? "bg-primary text-primary-content tab-active"
+                  : "bg-base-300 text-base-content hover:bg-primary/20"
+              }`}
             onClick={() => handleChange(tab.value)}
             onMouseEnter={() => setHoveredTab(tab.value)}
             onMouseLeave={() => setHoveredTab(null)}
           >
             <div className="flex items-center space-x-2">
               <span className="text-xl">{tab.icon}</span>
-              <span className={`tab-label ${
-                (value === tab.value && hoveredTab === null) || hoveredTab === tab.value
-                  ? 'opacity-100 max-w-[100px]' 
-                  : 'opacity-0 max-w-0'
-              }`}>
+              <span
+                className={`tab-label ${
+                  (value === tab.value && hoveredTab === null) ||
+                  hoveredTab === tab.value
+                    ? "opacity-100 max-w-[100px]"
+                    : "opacity-0 max-w-0"
+                }`}
+              >
                 {tab.label}
               </span>
             </div>
@@ -157,12 +202,24 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
         ))}
       </div>
       <div className="mt-4 transition-opacity duration-500 ease-in-out">
-        {value === 0 && <OverviewCharts startDate={startDate} endDate={endDate} selectedTopics={memoizedSelectedTopics} />}
-        {value === 1 && <EngagementCharts startDate={startDate} endDate={endDate} selectedTopics={memoizedSelectedTopics} />}
+        {value === 0 && (
+          <OverviewCharts
+            startDate={startDate}
+            endDate={endDate}
+            selectedTopics={memoizedSelectedTopics}
+          />
+        )}
+        {value === 1 && (
+          <EngagementCharts
+            startDate={startDate}
+            endDate={endDate}
+            selectedTopics={memoizedSelectedTopics}
+          />
+        )}
         {value === 2 && (
-          <AccountabilityInterface 
-            startDate={startDate} 
-            endDate={endDate} 
+          <AccountabilityInterface
+            startDate={startDate}
+            endDate={endDate}
             selectedTopics={memoizedSelectedTopics}
           />
         )}
@@ -177,12 +234,13 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
             legScatterData={legScatterData}
             monthlyLeg={monthlyLeg}
             loading={loading}
+            semanticData={semanticData}
           />
         )}
         {value === 4 && (
-          <GeographyCharts 
-            startDate={startDate} 
-            endDate={endDate} 
+          <GeographyCharts
+            startDate={startDate}
+            endDate={endDate}
             selectedTopics={memoizedSelectedTopics}
             selectedMetric={selectedMetric}
           />

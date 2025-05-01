@@ -2,15 +2,15 @@ import { BiData } from "react-icons/bi";
 import "../../index.css";
 
 export const Tooltip = ({ xPos, yPos, name }) => {
+  console.log(xPos, yPos, name)
   if (!xPos || !yPos || !name) {
+    console.log("returned null")
     return null;
   }
 
   return (
     <div
       className="tooltip"
-      onMouseEnter={(e) => e.stopPropagation()}
-      onMouseLeave={onLeave}
       style={{
         position: "absolute",
         left: xPos,
@@ -23,7 +23,7 @@ export const Tooltip = ({ xPos, yPos, name }) => {
         padding: "5px",
       }}
     >
-      {name}
+      {name.text}
     </div>
   );
 };

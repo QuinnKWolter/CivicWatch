@@ -7,6 +7,7 @@ import { LegislatorHex } from "./LegislatorHexBin";
 import { RidgeLinePlot } from "./RidgeLine";
 import { LegislatorHeatMap } from "./LegislatorHeatMap"
 import { FaSpinner } from 'react-icons/fa';
+import  SemanticScatterPlot  from '../SemanticSimilarity'
 
 function LegislatorCharts({
   legislatorClicked,
@@ -17,7 +18,8 @@ function LegislatorCharts({
   endDate,
   legScatterData,
   monthlyLeg,
-  loading
+  loading,
+  semanticData
 }) {
   const axisConfig = [
     { name: "total_misinfo_count_tw", max: 2735 },
@@ -107,6 +109,7 @@ function LegislatorCharts({
             party={1}
             legislatorClicked={legislatorClicked}
           />
+        //  <SemanticScatterPlot width={400} height={400} data={semanticData.slice(0,100)} />
         )}
         {dVal === 1 && (
           
