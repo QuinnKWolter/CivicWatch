@@ -174,13 +174,12 @@ export const LegislatorHeatMap = ({
       .append("title")
       .text((d) => `${d.name}: ${d.count} posts in ${d.monthStr}`);
 
-    // Legend setup
     const legendWidth = 200;
     const legendHeight = 10;
-    const legendX = width - legendWidth - 100; // adjust to position
+    const legendX = width - legendWidth - 130; 
     const legendY = neededHeight - margin.bottom + 15;
 
-    // Create a defs element and define a linear gradient
+
     const defs = svg.append("defs");
     const gradientId = "legendGradient";
 
@@ -204,7 +203,6 @@ export const LegislatorHeatMap = ({
         .attr("stop-color", legendColorInterpolator(t));
     }
 
-    // Legend scale and axis
     const legendScale = d3
       .scaleLinear()
       .domain([0, q95])
@@ -215,7 +213,7 @@ export const LegislatorHeatMap = ({
       .ticks(4)
       .tickFormat(d3.format(".0f"));
 
-    // Add legend group
+
     const legendGroup = g
       .append("g")
       .attr("class", "legend")
