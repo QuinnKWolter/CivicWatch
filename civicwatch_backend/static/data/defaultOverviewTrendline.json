@@ -1,1052 +1,842 @@
 {
     "2019-12-30": {
         "Democratic": {
-            "totalPosts": 228,
-            "totalEngagement": 96050
+            "avgEngagementPerPost": 421
         },
         "Republican": {
-            "totalPosts": 99,
-            "totalEngagement": 94651
+            "avgEngagementPerPost": 956
         }
     },
     "2020-01-06": {
         "Democratic": {
-            "totalPosts": 498,
-            "totalEngagement": 521902
+            "avgEngagementPerPost": 1047
         },
         "Republican": {
-            "totalPosts": 173,
-            "totalEngagement": 339196
+            "avgEngagementPerPost": 1960
         }
     },
     "2020-01-13": {
         "Democratic": {
-            "totalPosts": 748,
-            "totalEngagement": 137220
+            "avgEngagementPerPost": 183
         },
         "Republican": {
-            "totalPosts": 168,
-            "totalEngagement": 79359
+            "avgEngagementPerPost": 472
         }
     },
     "2020-01-20": {
         "Democratic": {
-            "totalPosts": 894,
-            "totalEngagement": 645319
+            "avgEngagementPerPost": 721
         },
         "Republican": {
-            "totalPosts": 278,
-            "totalEngagement": 279173
+            "avgEngagementPerPost": 1004
         }
     },
     "2020-01-27": {
         "Democratic": {
-            "totalPosts": 875,
-            "totalEngagement": 231698
+            "avgEngagementPerPost": 264
         },
         "Republican": {
-            "totalPosts": 166,
-            "totalEngagement": 59851
+            "avgEngagementPerPost": 360
         }
     },
     "2020-02-03": {
         "Democratic": {
-            "totalPosts": 653,
-            "totalEngagement": 534084
+            "avgEngagementPerPost": 817
         },
         "Republican": {
-            "totalPosts": 157,
-            "totalEngagement": 95137
+            "avgEngagementPerPost": 605
         }
     },
     "2020-02-10": {
         "Democratic": {
-            "totalPosts": 635,
-            "totalEngagement": 195653
+            "avgEngagementPerPost": 308
         },
         "Republican": {
-            "totalPosts": 187,
-            "totalEngagement": 113552
+            "avgEngagementPerPost": 607
         }
     },
     "2020-02-17": {
         "Democratic": {
-            "totalPosts": 595,
-            "totalEngagement": 123961
+            "avgEngagementPerPost": 208
         },
         "Republican": {
-            "totalPosts": 219,
-            "totalEngagement": 177696
+            "avgEngagementPerPost": 811
         }
     },
     "2020-02-24": {
         "Democratic": {
-            "totalPosts": 850,
-            "totalEngagement": 735400
+            "avgEngagementPerPost": 865
         },
         "Republican": {
-            "totalPosts": 230,
-            "totalEngagement": 170608
+            "avgEngagementPerPost": 741
         }
     },
     "2020-03-02": {
         "Democratic": {
-            "totalPosts": 1054,
-            "totalEngagement": 1549855
+            "avgEngagementPerPost": 1470
         },
         "Republican": {
-            "totalPosts": 343,
-            "totalEngagement": 379398
+            "avgEngagementPerPost": 1106
         }
     },
     "2020-03-09": {
         "Democratic": {
-            "totalPosts": 4582,
-            "totalEngagement": 8035054
+            "avgEngagementPerPost": 1753
         },
         "Republican": {
-            "totalPosts": 1213,
-            "totalEngagement": 1535732
+            "avgEngagementPerPost": 1266
         }
     },
     "2020-03-16": {
         "Democratic": {
-            "totalPosts": 8286,
-            "totalEngagement": 14824502
+            "avgEngagementPerPost": 1789
         },
         "Republican": {
-            "totalPosts": 2810,
-            "totalEngagement": 3738283
+            "avgEngagementPerPost": 1330
         }
     },
     "2020-03-23": {
         "Democratic": {
-            "totalPosts": 6956,
-            "totalEngagement": 7869006
+            "avgEngagementPerPost": 1131
         },
         "Republican": {
-            "totalPosts": 2697,
-            "totalEngagement": 2071728
+            "avgEngagementPerPost": 768
         }
     },
     "2020-03-30": {
         "Democratic": {
-            "totalPosts": 5759,
-            "totalEngagement": 5076912
+            "avgEngagementPerPost": 881
         },
         "Republican": {
-            "totalPosts": 2143,
-            "totalEngagement": 1393716
+            "avgEngagementPerPost": 650
         }
     },
     "2020-04-06": {
         "Democratic": {
-            "totalPosts": 4980,
-            "totalEngagement": 2907141
+            "avgEngagementPerPost": 583
         },
         "Republican": {
-            "totalPosts": 1722,
-            "totalEngagement": 427273
+            "avgEngagementPerPost": 248
         }
     },
     "2020-04-13": {
         "Democratic": {
-            "totalPosts": 4663,
-            "totalEngagement": 2324998
+            "avgEngagementPerPost": 498
         },
         "Republican": {
-            "totalPosts": 1546,
-            "totalEngagement": 232322
+            "avgEngagementPerPost": 150
         }
     },
     "2020-04-20": {
         "Democratic": {
-            "totalPosts": 4525,
-            "totalEngagement": 2729840
+            "avgEngagementPerPost": 603
         },
         "Republican": {
-            "totalPosts": 1570,
-            "totalEngagement": 484141
+            "avgEngagementPerPost": 308
         }
     },
     "2020-04-27": {
         "Democratic": {
-            "totalPosts": 3966,
-            "totalEngagement": 1620410
+            "avgEngagementPerPost": 408
         },
         "Republican": {
-            "totalPosts": 1320,
-            "totalEngagement": 253095
+            "avgEngagementPerPost": 191
         }
     },
     "2020-05-04": {
         "Democratic": {
-            "totalPosts": 3787,
-            "totalEngagement": 1944724
+            "avgEngagementPerPost": 513
         },
         "Republican": {
-            "totalPosts": 1130,
-            "totalEngagement": 375585
+            "avgEngagementPerPost": 332
         }
     },
     "2020-05-11": {
         "Democratic": {
-            "totalPosts": 3406,
-            "totalEngagement": 2871535
+            "avgEngagementPerPost": 843
         },
         "Republican": {
-            "totalPosts": 1003,
-            "totalEngagement": 272376
+            "avgEngagementPerPost": 271
         }
     },
     "2020-05-18": {
         "Democratic": {
-            "totalPosts": 3299,
-            "totalEngagement": 2273139
+            "avgEngagementPerPost": 689
         },
         "Republican": {
-            "totalPosts": 1029,
-            "totalEngagement": 723961
+            "avgEngagementPerPost": 703
         }
     },
     "2020-05-25": {
         "Democratic": {
-            "totalPosts": 4197,
-            "totalEngagement": 37963523
+            "avgEngagementPerPost": 9045
         },
         "Republican": {
-            "totalPosts": 1116,
-            "totalEngagement": 1960328
+            "avgEngagementPerPost": 1756
         }
     },
     "2020-06-01": {
         "Democratic": {
-            "totalPosts": 4291,
-            "totalEngagement": 22895732
+            "avgEngagementPerPost": 5335
         },
         "Republican": {
-            "totalPosts": 923,
-            "totalEngagement": 3176471
+            "avgEngagementPerPost": 3441
         }
     },
     "2020-06-08": {
         "Democratic": {
-            "totalPosts": 2996,
-            "totalEngagement": 3750444
+            "avgEngagementPerPost": 1251
         },
         "Republican": {
-            "totalPosts": 616,
-            "totalEngagement": 888228
+            "avgEngagementPerPost": 1441
         }
     },
     "2020-06-15": {
         "Democratic": {
-            "totalPosts": 3195,
-            "totalEngagement": 4486074
+            "avgEngagementPerPost": 1404
         },
         "Republican": {
-            "totalPosts": 551,
-            "totalEngagement": 812652
+            "avgEngagementPerPost": 1474
         }
     },
     "2020-06-22": {
         "Democratic": {
-            "totalPosts": 3363,
-            "totalEngagement": 5842794
+            "avgEngagementPerPost": 1737
         },
         "Republican": {
-            "totalPosts": 606,
-            "totalEngagement": 816407
+            "avgEngagementPerPost": 1347
         }
     },
     "2020-06-29": {
         "Democratic": {
-            "totalPosts": 3094,
-            "totalEngagement": 4923007
+            "avgEngagementPerPost": 1591
         },
         "Republican": {
-            "totalPosts": 702,
-            "totalEngagement": 765540
+            "avgEngagementPerPost": 1090
         }
     },
     "2020-07-06": {
         "Democratic": {
-            "totalPosts": 3104,
-            "totalEngagement": 4994011
+            "avgEngagementPerPost": 1608
         },
         "Republican": {
-            "totalPosts": 590,
-            "totalEngagement": 442651
+            "avgEngagementPerPost": 750
         }
     },
     "2020-07-13": {
         "Democratic": {
-            "totalPosts": 3474,
-            "totalEngagement": 5620267
+            "avgEngagementPerPost": 1617
         },
         "Republican": {
-            "totalPosts": 735,
-            "totalEngagement": 783896
+            "avgEngagementPerPost": 1066
         }
     },
     "2020-07-20": {
         "Democratic": {
-            "totalPosts": 2763,
-            "totalEngagement": 3407881
+            "avgEngagementPerPost": 1233
         },
         "Republican": {
-            "totalPosts": 700,
-            "totalEngagement": 343482
+            "avgEngagementPerPost": 490
         }
     },
     "2020-07-27": {
         "Democratic": {
-            "totalPosts": 2917,
-            "totalEngagement": 3690320
+            "avgEngagementPerPost": 1265
         },
         "Republican": {
-            "totalPosts": 713,
-            "totalEngagement": 593860
+            "avgEngagementPerPost": 832
         }
     },
     "2020-08-03": {
         "Democratic": {
-            "totalPosts": 2653,
-            "totalEngagement": 3512852
+            "avgEngagementPerPost": 1324
         },
         "Republican": {
-            "totalPosts": 661,
-            "totalEngagement": 317863
+            "avgEngagementPerPost": 480
         }
     },
     "2020-08-10": {
         "Democratic": {
-            "totalPosts": 2337,
-            "totalEngagement": 2346231
+            "avgEngagementPerPost": 1003
         },
         "Republican": {
-            "totalPosts": 692,
-            "totalEngagement": 537428
+            "avgEngagementPerPost": 776
         }
     },
     "2020-08-17": {
         "Democratic": {
-            "totalPosts": 2201,
-            "totalEngagement": 1935985
+            "avgEngagementPerPost": 879
         },
         "Republican": {
-            "totalPosts": 632,
-            "totalEngagement": 408009
+            "avgEngagementPerPost": 645
         }
     },
     "2020-08-24": {
         "Democratic": {
-            "totalPosts": 2696,
-            "totalEngagement": 5078167
+            "avgEngagementPerPost": 1883
         },
         "Republican": {
-            "totalPosts": 770,
-            "totalEngagement": 858116
+            "avgEngagementPerPost": 1114
         }
     },
     "2020-08-31": {
         "Democratic": {
-            "totalPosts": 2227,
-            "totalEngagement": 5268745
+            "avgEngagementPerPost": 2365
         },
         "Republican": {
-            "totalPosts": 549,
-            "totalEngagement": 450027
+            "avgEngagementPerPost": 819
         }
     },
     "2020-09-07": {
         "Democratic": {
-            "totalPosts": 2320,
-            "totalEngagement": 6631618
+            "avgEngagementPerPost": 2858
         },
         "Republican": {
-            "totalPosts": 463,
-            "totalEngagement": 296622
+            "avgEngagementPerPost": 640
         }
     },
     "2020-09-14": {
         "Democratic": {
-            "totalPosts": 2188,
-            "totalEngagement": 3623014
+            "avgEngagementPerPost": 1655
         },
         "Republican": {
-            "totalPosts": 562,
-            "totalEngagement": 297623
+            "avgEngagementPerPost": 529
         }
     },
     "2020-09-21": {
         "Democratic": {
-            "totalPosts": 2024,
-            "totalEngagement": 3346484
+            "avgEngagementPerPost": 1653
         },
         "Republican": {
-            "totalPosts": 503,
-            "totalEngagement": 780452
+            "avgEngagementPerPost": 1551
         }
     },
     "2020-09-28": {
         "Democratic": {
-            "totalPosts": 2537,
-            "totalEngagement": 12376223
+            "avgEngagementPerPost": 4878
         },
         "Republican": {
-            "totalPosts": 532,
-            "totalEngagement": 3776357
+            "avgEngagementPerPost": 7098
         }
     },
     "2020-10-05": {
         "Democratic": {
-            "totalPosts": 2967,
-            "totalEngagement": 12869640
+            "avgEngagementPerPost": 4337
         },
         "Republican": {
-            "totalPosts": 532,
-            "totalEngagement": 859232
+            "avgEngagementPerPost": 1615
         }
     },
     "2020-10-12": {
         "Democratic": {
-            "totalPosts": 2200,
-            "totalEngagement": 5589996
+            "avgEngagementPerPost": 2540
         },
         "Republican": {
-            "totalPosts": 535,
-            "totalEngagement": 791243
+            "avgEngagementPerPost": 1478
         }
     },
     "2020-10-19": {
         "Democratic": {
-            "totalPosts": 2333,
-            "totalEngagement": 2360430
+            "avgEngagementPerPost": 1011
         },
         "Republican": {
-            "totalPosts": 511,
-            "totalEngagement": 330305
+            "avgEngagementPerPost": 646
         }
     },
     "2020-10-26": {
         "Democratic": {
-            "totalPosts": 2209,
-            "totalEngagement": 1753578
+            "avgEngagementPerPost": 793
         },
         "Republican": {
-            "totalPosts": 428,
-            "totalEngagement": 190115
+            "avgEngagementPerPost": 444
         }
     },
     "2020-11-02": {
         "Democratic": {
-            "totalPosts": 1596,
-            "totalEngagement": 3088765
+            "avgEngagementPerPost": 1935
         },
         "Republican": {
-            "totalPosts": 308,
-            "totalEngagement": 180289
+            "avgEngagementPerPost": 585
         }
     },
     "2020-11-09": {
         "Democratic": {
-            "totalPosts": 2303,
-            "totalEngagement": 2043478
+            "avgEngagementPerPost": 887
         },
         "Republican": {
-            "totalPosts": 389,
-            "totalEngagement": 239180
+            "avgEngagementPerPost": 614
         }
     },
     "2020-11-16": {
         "Democratic": {
-            "totalPosts": 2573,
-            "totalEngagement": 2308400
+            "avgEngagementPerPost": 897
         },
         "Republican": {
-            "totalPosts": 528,
-            "totalEngagement": 291475
+            "avgEngagementPerPost": 552
         }
     },
     "2020-11-23": {
         "Democratic": {
-            "totalPosts": 1525,
-            "totalEngagement": 1200083
+            "avgEngagementPerPost": 786
         },
         "Republican": {
-            "totalPosts": 420,
-            "totalEngagement": 318668
+            "avgEngagementPerPost": 758
         }
     },
     "2020-11-30": {
         "Democratic": {
-            "totalPosts": 2302,
-            "totalEngagement": 1497783
+            "avgEngagementPerPost": 650
         },
         "Republican": {
-            "totalPosts": 443,
-            "totalEngagement": 267824
+            "avgEngagementPerPost": 604
         }
     },
     "2020-12-07": {
         "Democratic": {
-            "totalPosts": 2463,
-            "totalEngagement": 1464851
+            "avgEngagementPerPost": 594
         },
         "Republican": {
-            "totalPosts": 494,
-            "totalEngagement": 573502
+            "avgEngagementPerPost": 1160
         }
     },
     "2020-12-14": {
         "Democratic": {
-            "totalPosts": 2617,
-            "totalEngagement": 2045817
+            "avgEngagementPerPost": 781
         },
         "Republican": {
-            "totalPosts": 547,
-            "totalEngagement": 290040
+            "avgEngagementPerPost": 530
         }
     },
     "2020-12-21": {
         "Democratic": {
-            "totalPosts": 1533,
-            "totalEngagement": 1953062
+            "avgEngagementPerPost": 1274
         },
         "Republican": {
-            "totalPosts": 409,
-            "totalEngagement": 382988
+            "avgEngagementPerPost": 936
         }
     },
     "2020-12-28": {
         "Democratic": {
-            "totalPosts": 1353,
-            "totalEngagement": 884649
+            "avgEngagementPerPost": 653
         },
         "Republican": {
-            "totalPosts": 286,
-            "totalEngagement": 236756
+            "avgEngagementPerPost": 827
         }
     },
     "2021-01-04": {
         "Democratic": {
-            "totalPosts": 2873,
-            "totalEngagement": 23819884
+            "avgEngagementPerPost": 8290
         },
         "Republican": {
-            "totalPosts": 553,
-            "totalEngagement": 1288007
+            "avgEngagementPerPost": 2329
         }
     },
     "2021-01-11": {
         "Democratic": {
-            "totalPosts": 2150,
-            "totalEngagement": 6938128
+            "avgEngagementPerPost": 3227
         },
         "Republican": {
-            "totalPosts": 376,
-            "totalEngagement": 684996
+            "avgEngagementPerPost": 1821
         }
     },
     "2021-01-18": {
         "Democratic": {
-            "totalPosts": 1793,
-            "totalEngagement": 3583567
+            "avgEngagementPerPost": 1998
         },
         "Republican": {
-            "totalPosts": 356,
-            "totalEngagement": 508454
+            "avgEngagementPerPost": 1428
         }
     },
     "2021-01-25": {
         "Democratic": {
-            "totalPosts": 634,
-            "totalEngagement": 684684
+            "avgEngagementPerPost": 1079
         },
         "Republican": {
-            "totalPosts": 177,
-            "totalEngagement": 138133
+            "avgEngagementPerPost": 780
         }
     },
     "2021-02-01": {
         "Democratic": {
-            "totalPosts": 1194,
-            "totalEngagement": 1195863
+            "avgEngagementPerPost": 1001
         },
         "Republican": {
-            "totalPosts": 321,
-            "totalEngagement": 109697
+            "avgEngagementPerPost": 341
         }
     },
     "2021-02-08": {
         "Democratic": {
-            "totalPosts": 2446,
-            "totalEngagement": 1652709
+            "avgEngagementPerPost": 675
         },
         "Republican": {
-            "totalPosts": 630,
-            "totalEngagement": 176742
+            "avgEngagementPerPost": 280
         }
     },
     "2021-02-15": {
         "Democratic": {
-            "totalPosts": 2289,
-            "totalEngagement": 2103732
+            "avgEngagementPerPost": 919
         },
         "Republican": {
-            "totalPosts": 552,
-            "totalEngagement": 198778
+            "avgEngagementPerPost": 360
         }
     },
     "2021-02-22": {
         "Democratic": {
-            "totalPosts": 2863,
-            "totalEngagement": 1670846
+            "avgEngagementPerPost": 583
         },
         "Republican": {
-            "totalPosts": 729,
-            "totalEngagement": 500936
+            "avgEngagementPerPost": 687
         }
     },
     "2021-03-01": {
         "Democratic": {
-            "totalPosts": 2650,
-            "totalEngagement": 2087165
+            "avgEngagementPerPost": 787
         },
         "Republican": {
-            "totalPosts": 802,
-            "totalEngagement": 351315
+            "avgEngagementPerPost": 438
         }
     },
     "2021-03-08": {
         "Democratic": {
-            "totalPosts": 2606,
-            "totalEngagement": 1946957
+            "avgEngagementPerPost": 747
         },
         "Republican": {
-            "totalPosts": 669,
-            "totalEngagement": 294615
+            "avgEngagementPerPost": 440
         }
     },
     "2021-03-15": {
         "Democratic": {
-            "totalPosts": 2517,
-            "totalEngagement": 2017582
+            "avgEngagementPerPost": 801
         },
         "Republican": {
-            "totalPosts": 597,
-            "totalEngagement": 475073
+            "avgEngagementPerPost": 795
         }
     },
     "2021-03-22": {
         "Democratic": {
-            "totalPosts": 2847,
-            "totalEngagement": 2622403
+            "avgEngagementPerPost": 921
         },
         "Republican": {
-            "totalPosts": 683,
-            "totalEngagement": 348718
+            "avgEngagementPerPost": 510
         }
     },
     "2021-03-29": {
         "Democratic": {
-            "totalPosts": 2437,
-            "totalEngagement": 1756962
+            "avgEngagementPerPost": 720
         },
         "Republican": {
-            "totalPosts": 614,
-            "totalEngagement": 401275
+            "avgEngagementPerPost": 653
         }
     },
     "2021-04-05": {
         "Democratic": {
-            "totalPosts": 2308,
-            "totalEngagement": 1532792
+            "avgEngagementPerPost": 664
         },
         "Republican": {
-            "totalPosts": 589,
-            "totalEngagement": 326157
+            "avgEngagementPerPost": 553
         }
     },
     "2021-04-12": {
         "Democratic": {
-            "totalPosts": 2286,
-            "totalEngagement": 1635995
+            "avgEngagementPerPost": 715
         },
         "Republican": {
-            "totalPosts": 526,
-            "totalEngagement": 246195
+            "avgEngagementPerPost": 468
         }
     },
     "2021-04-19": {
         "Democratic": {
-            "totalPosts": 2807,
-            "totalEngagement": 2381050
+            "avgEngagementPerPost": 848
         },
         "Republican": {
-            "totalPosts": 458,
-            "totalEngagement": 194568
+            "avgEngagementPerPost": 424
         }
     },
     "2021-04-26": {
         "Democratic": {
-            "totalPosts": 1887,
-            "totalEngagement": 647711
+            "avgEngagementPerPost": 343
         },
         "Republican": {
-            "totalPosts": 454,
-            "totalEngagement": 138548
+            "avgEngagementPerPost": 305
         }
     },
     "2021-05-03": {
         "Democratic": {
-            "totalPosts": 1746,
-            "totalEngagement": 692191
+            "avgEngagementPerPost": 396
         },
         "Republican": {
-            "totalPosts": 432,
-            "totalEngagement": 165290
+            "avgEngagementPerPost": 382
         }
     },
     "2021-05-10": {
         "Democratic": {
-            "totalPosts": 1627,
-            "totalEngagement": 720842
+            "avgEngagementPerPost": 443
         },
         "Republican": {
-            "totalPosts": 495,
-            "totalEngagement": 170055
+            "avgEngagementPerPost": 343
         }
     },
     "2021-05-17": {
         "Democratic": {
-            "totalPosts": 1509,
-            "totalEngagement": 1121771
+            "avgEngagementPerPost": 743
         },
         "Republican": {
-            "totalPosts": 494,
-            "totalEngagement": 261222
+            "avgEngagementPerPost": 528
         }
     },
     "2021-05-24": {
         "Democratic": {
-            "totalPosts": 1790,
-            "totalEngagement": 819399
+            "avgEngagementPerPost": 457
         },
         "Republican": {
-            "totalPosts": 464,
-            "totalEngagement": 173467
+            "avgEngagementPerPost": 373
         }
     },
     "2021-05-31": {
         "Democratic": {
-            "totalPosts": 1625,
-            "totalEngagement": 476936
+            "avgEngagementPerPost": 293
         },
         "Republican": {
-            "totalPosts": 341,
-            "totalEngagement": 126813
+            "avgEngagementPerPost": 371
         }
     },
     "2021-06-07": {
         "Democratic": {
-            "totalPosts": 1420,
-            "totalEngagement": 785177
+            "avgEngagementPerPost": 552
         },
         "Republican": {
-            "totalPosts": 496,
-            "totalEngagement": 228709
+            "avgEngagementPerPost": 461
         }
     },
     "2021-06-14": {
         "Democratic": {
-            "totalPosts": 1449,
-            "totalEngagement": 472367
+            "avgEngagementPerPost": 325
         },
         "Republican": {
-            "totalPosts": 475,
-            "totalEngagement": 165584
+            "avgEngagementPerPost": 348
         }
     },
     "2021-06-21": {
         "Democratic": {
-            "totalPosts": 1541,
-            "totalEngagement": 501549
+            "avgEngagementPerPost": 325
         },
         "Republican": {
-            "totalPosts": 415,
-            "totalEngagement": 137892
+            "avgEngagementPerPost": 332
         }
     },
     "2021-06-28": {
         "Democratic": {
-            "totalPosts": 823,
-            "totalEngagement": 239512
+            "avgEngagementPerPost": 291
         },
         "Republican": {
-            "totalPosts": 267,
-            "totalEngagement": 51904
+            "avgEngagementPerPost": 194
         }
     },
     "2021-07-05": {
         "Democratic": {
-            "totalPosts": 512,
-            "totalEngagement": 205498
+            "avgEngagementPerPost": 401
         },
         "Republican": {
-            "totalPosts": 136,
-            "totalEngagement": 42755
+            "avgEngagementPerPost": 314
         }
     },
     "2021-07-12": {
         "Democratic": {
-            "totalPosts": 961,
-            "totalEngagement": 430753
+            "avgEngagementPerPost": 448
         },
         "Republican": {
-            "totalPosts": 215,
-            "totalEngagement": 73105
+            "avgEngagementPerPost": 340
         }
     },
     "2021-07-19": {
         "Democratic": {
-            "totalPosts": 1118,
-            "totalEngagement": 680809
+            "avgEngagementPerPost": 608
         },
         "Republican": {
-            "totalPosts": 302,
-            "totalEngagement": 129075
+            "avgEngagementPerPost": 427
         }
     },
     "2021-07-26": {
         "Democratic": {
-            "totalPosts": 1886,
-            "totalEngagement": 769088
+            "avgEngagementPerPost": 407
         },
         "Republican": {
-            "totalPosts": 433,
-            "totalEngagement": 238993
+            "avgEngagementPerPost": 551
         }
     },
     "2021-08-02": {
         "Democratic": {
-            "totalPosts": 2295,
-            "totalEngagement": 1561909
+            "avgEngagementPerPost": 680
         },
         "Republican": {
-            "totalPosts": 534,
-            "totalEngagement": 344029
+            "avgEngagementPerPost": 644
         }
     },
     "2021-08-09": {
         "Democratic": {
-            "totalPosts": 2117,
-            "totalEngagement": 1389392
+            "avgEngagementPerPost": 656
         },
         "Republican": {
-            "totalPosts": 463,
-            "totalEngagement": 272822
+            "avgEngagementPerPost": 589
         }
     },
     "2021-08-16": {
         "Democratic": {
-            "totalPosts": 1913,
-            "totalEngagement": 808620
+            "avgEngagementPerPost": 422
         },
         "Republican": {
-            "totalPosts": 382,
-            "totalEngagement": 204964
+            "avgEngagementPerPost": 536
         }
     },
     "2021-08-23": {
         "Democratic": {
-            "totalPosts": 2097,
-            "totalEngagement": 1656093
+            "avgEngagementPerPost": 789
         },
         "Republican": {
-            "totalPosts": 382,
-            "totalEngagement": 569337
+            "avgEngagementPerPost": 1490
         }
     },
     "2021-08-30": {
         "Democratic": {
-            "totalPosts": 2853,
-            "totalEngagement": 3384084
+            "avgEngagementPerPost": 1186
         },
         "Republican": {
-            "totalPosts": 461,
-            "totalEngagement": 239774
+            "avgEngagementPerPost": 520
         }
     },
     "2021-09-06": {
         "Democratic": {
-            "totalPosts": 1749,
-            "totalEngagement": 1197977
+            "avgEngagementPerPost": 684
         },
         "Republican": {
-            "totalPosts": 379,
-            "totalEngagement": 251010
+            "avgEngagementPerPost": 662
         }
     },
     "2021-09-13": {
         "Democratic": {
-            "totalPosts": 1795,
-            "totalEngagement": 1192132
+            "avgEngagementPerPost": 664
         },
         "Republican": {
-            "totalPosts": 355,
-            "totalEngagement": 267006
+            "avgEngagementPerPost": 752
         }
     },
     "2021-09-20": {
         "Democratic": {
-            "totalPosts": 1740,
-            "totalEngagement": 726319
+            "avgEngagementPerPost": 417
         },
         "Republican": {
-            "totalPosts": 352,
-            "totalEngagement": 277889
+            "avgEngagementPerPost": 789
         }
     },
     "2021-09-27": {
         "Democratic": {
-            "totalPosts": 330,
-            "totalEngagement": 118233
+            "avgEngagementPerPost": 358
         },
         "Republican": {
-            "totalPosts": 62,
-            "totalEngagement": 96116
+            "avgEngagementPerPost": 1550
         }
     },
     "2021-10-04": {
         "Democratic": {
-            "totalPosts": 1019,
-            "totalEngagement": 510659
+            "avgEngagementPerPost": 501
         },
         "Republican": {
-            "totalPosts": 240,
-            "totalEngagement": 145007
+            "avgEngagementPerPost": 604
         }
     },
     "2021-10-11": {
         "Democratic": {
-            "totalPosts": 749,
-            "totalEngagement": 407646
+            "avgEngagementPerPost": 544
         },
         "Republican": {
-            "totalPosts": 246,
-            "totalEngagement": 202185
+            "avgEngagementPerPost": 821
         }
     },
     "2021-10-18": {
         "Democratic": {
-            "totalPosts": 870,
-            "totalEngagement": 534419
+            "avgEngagementPerPost": 614
         },
         "Republican": {
-            "totalPosts": 215,
-            "totalEngagement": 133951
+            "avgEngagementPerPost": 623
         }
     },
     "2021-10-25": {
         "Democratic": {
-            "totalPosts": 916,
-            "totalEngagement": 341962
+            "avgEngagementPerPost": 373
         },
         "Republican": {
-            "totalPosts": 211,
-            "totalEngagement": 181851
+            "avgEngagementPerPost": 861
         }
     },
     "2021-11-01": {
         "Democratic": {
-            "totalPosts": 1006,
-            "totalEngagement": 538810
+            "avgEngagementPerPost": 535
         },
         "Republican": {
-            "totalPosts": 237,
-            "totalEngagement": 99672
+            "avgEngagementPerPost": 420
         }
     },
     "2021-11-08": {
         "Democratic": {
-            "totalPosts": 826,
-            "totalEngagement": 514875
+            "avgEngagementPerPost": 623
         },
         "Republican": {
-            "totalPosts": 200,
-            "totalEngagement": 94140
+            "avgEngagementPerPost": 470
         }
     },
     "2021-11-15": {
         "Democratic": {
-            "totalPosts": 847,
-            "totalEngagement": 385876
+            "avgEngagementPerPost": 455
         },
         "Republican": {
-            "totalPosts": 183,
-            "totalEngagement": 72340
+            "avgEngagementPerPost": 395
         }
     },
     "2021-11-22": {
         "Democratic": {
-            "totalPosts": 516,
-            "totalEngagement": 288751
+            "avgEngagementPerPost": 559
         },
         "Republican": {
-            "totalPosts": 148,
-            "totalEngagement": 161127
+            "avgEngagementPerPost": 1088
         }
     },
     "2021-11-29": {
         "Democratic": {
-            "totalPosts": 1108,
-            "totalEngagement": 737289
+            "avgEngagementPerPost": 665
         },
         "Republican": {
-            "totalPosts": 236,
-            "totalEngagement": 101312
+            "avgEngagementPerPost": 429
         }
     },
     "2021-12-06": {
         "Democratic": {
-            "totalPosts": 892,
-            "totalEngagement": 316582
+            "avgEngagementPerPost": 354
         },
         "Republican": {
-            "totalPosts": 175,
-            "totalEngagement": 93557
+            "avgEngagementPerPost": 534
         }
     },
     "2021-12-13": {
         "Democratic": {
-            "totalPosts": 1028,
-            "totalEngagement": 588323
+            "avgEngagementPerPost": 572
         },
         "Republican": {
-            "totalPosts": 261,
-            "totalEngagement": 146206
+            "avgEngagementPerPost": 560
         }
     },
     "2021-12-20": {
         "Democratic": {
-            "totalPosts": 794,
-            "totalEngagement": 546984
+            "avgEngagementPerPost": 688
         },
         "Republican": {
-            "totalPosts": 205,
-            "totalEngagement": 102981
+            "avgEngagementPerPost": 502
         }
     },
     "2021-12-27": {
         "Democratic": {
-            "totalPosts": 789,
-            "totalEngagement": 646210
+            "avgEngagementPerPost": 819
         },
         "Republican": {
-            "totalPosts": 197,
-            "totalEngagement": 167148
+            "avgEngagementPerPost": 848
         }
     }
 }

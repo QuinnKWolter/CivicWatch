@@ -25,14 +25,14 @@ function App() {
     metrics: true
   });
   const [activeTopics, setActiveTopics] = useState([
-    'abortion', 
-    'blacklivesmatter', 
-    'capitol',
-    'climate', 
-    'covid', 
-    'gun', 
+    'capitol', 
     'immigra', 
-    'rights'
+    'abortion',
+    'blacklivesmatter', 
+    'climate', 
+    'gun', 
+    'rights', 
+    'covid'
   ]);
   const [startDate, setStartDate] = useState(dayjs('2020-01-01'));
   const [endDate, setEndDate] = useState(dayjs('2021-12-31'));
@@ -40,6 +40,7 @@ function App() {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState('posts');
+  const [keyword, setKeyword] = useState('');
 
   const [legislatorClicked, setLegislatorClicked] = useState([]);
   const [postData, setPostData] = useState([]);
@@ -90,8 +91,6 @@ function App() {
     document.documentElement.setAttribute('data-theme', theme);
   }, []);
 
-  console.log('setLegislatorClicked from props:', setLegislatorClicked);
-
   const handleDateChange = (newStart, newEnd) => {
     setStartDate(newStart);
     setEndDate(newEnd);
@@ -127,6 +126,8 @@ function App() {
                 sidebarOpen={sidebarOpen}
                 selectedMetric={selectedMetric}
                 setSelectedMetric={setSelectedMetric}
+                keyword={keyword}
+                setKeyword={setKeyword}
               />
             </div>
 

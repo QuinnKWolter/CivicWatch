@@ -1,6 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Radar } from "../Legislators/Radar";
-import { LineChart } from "../Legislators/PostLineChart";
+import { useState, useEffect, useMemo } from "react";
 import OverviewCharts from "../Overview/OverviewCharts";
 import EngagementCharts from "../Engagement/EngagementCharts";
 import GeographyCharts from "../Geography/GeographyCharts";
@@ -41,32 +39,6 @@ function TabbedCharts({
 
   const [legScatterData, setLegScatterData] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const axisConfig = [
-    { name: "total_misinfo_count_tw", max: 2735 },
-    { name: "total_interactions_tw", max: 93472549 },
-    { name: "overperforming_score_tw", max: 1.296785754 },
-  ];
-
-  const axisConfigTopics = [
-    { name: "capitol", max: 244 },
-    { name: "climate", max: 418 },
-    { name: "covid", max: 2515 },
-    { name: "gun", max: 427 },
-    { name: "immigra", max: 384 },
-    { name: "rights", max: 327 },
-  ];
-
-  const legislators = [
-    {
-      name: "John Smith",
-      overperforming_score: 20,
-      civility_score: 85,
-      count_misinfo: 40,
-    },
-
-    // Add more legislators as needed
-  ];
 
   useEffect(() => {
     // Determine whether to use default data or fetch from the server

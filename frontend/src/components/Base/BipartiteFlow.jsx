@@ -21,7 +21,6 @@ function BipartiteFlow({ activeTopics, startDate, endDate, onDateChange, selecte
     const fetchData = async () => {
       setLoading(true);
       try {
-        const topicsParam = activeTopics.join(',');
         const response = await fetch(`http://localhost:8000/api/flow/bipartite_data/`);
         
         if (!response.ok) {
@@ -41,6 +40,21 @@ function BipartiteFlow({ activeTopics, startDate, endDate, onDateChange, selecte
 
     fetchData();
   }, []);
+
+  // Calculate total content for each topic
+  const topicTotals = activeTopics.map(topic => {
+    return {
+      topic,
+      total: data.reduce((sum, item) => {
+        const valueD = item[topic]?.D?.[selectedMetric] || 0;
+        const valueR = item[topic]?.R?.[selectedMetric] || 0;
+        return sum + valueD + valueR;
+      }, 0)
+    };
+  });
+
+  // Sort topics by total content from lowest to highest
+  const sortedTopics = topicTotals.sort((a, b) => a.total - b.total).map(item => item.topic);
 
   // Filter data based on startDate and endDate
   const filteredData = data.filter(item => {
@@ -76,13 +90,13 @@ function BipartiteFlow({ activeTopics, startDate, endDate, onDateChange, selecte
       <div className="w-full h-[36%]">
         <StackedAreaChart 
           data={filteredData} 
-          activeTopics={activeTopics} 
+          activeTopics={sortedTopics} 
           colorMap={colorMap} 
           inverted={false}
           selectedMetric={selectedMetric}
         />
       </div>
-      <div className="w-full h-[4%]">
+      <div className="w-full h-[4%]" style={{ marginTop: '10px' }}>
         <TimelineSlider 
           startDate={startDate}
           endDate={endDate}
@@ -92,7 +106,7 @@ function BipartiteFlow({ activeTopics, startDate, endDate, onDateChange, selecte
       <div className="w-full h-[36%]">
         <StackedAreaChart 
           data={filteredData} 
-          activeTopics={activeTopics} 
+          activeTopics={sortedTopics} 
           colorMap={colorMap} 
           inverted={true}
           selectedMetric={selectedMetric}

@@ -39,7 +39,7 @@ urlpatterns = [
     # Geographic Data APIs
     path("api/geo/activity/", views.geo_activity, name="geo_activity"),
     path('api/geo/activity/topics/', views.geo_activity_topics, name='geo_activity_topics'),
-
+    
     # Post Exploration APIs
     path("api/posts/", views.all_posts, name="all_posts"),
     path("api/posts/top/", views.top_posts, name="top_posts"),
@@ -56,5 +56,6 @@ urlpatterns = [
     path('api/accountability_interface/', views.accountability_interface, name='accountability_interface'),
     path('api/legislators/legislator_posts_by_month_top_50/', views.legislator_posts_by_month_top_50, name='posts_per_month_50'),
     path('api/default_trendline_data/', views.default_trendline_data, name='default_trendline_data'),
+    path("api/legislators/", views.all_legislators, name="all_legislators"),
     path('api/posts/post_semantic_similarity/', views.post_semantic_similarity, name="semantic_similarity")
 ]
