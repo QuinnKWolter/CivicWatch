@@ -177,7 +177,7 @@ export const LegislatorHeatMap = ({
     // Legend setup
     const legendWidth = 200;
     const legendHeight = 10;
-    const legendX = width - legendWidth - 20; // adjust to position
+    const legendX = width - legendWidth - 100; // adjust to position
     const legendY = neededHeight - margin.bottom + 15;
 
     // Create a defs element and define a linear gradient
