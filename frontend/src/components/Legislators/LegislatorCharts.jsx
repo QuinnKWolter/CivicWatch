@@ -246,8 +246,8 @@ function LegislatorCharts({
           //   height={300}
           // />
           <RidgeLinePlot
-            height={400}
-            width={400}
+            height={800}
+            width={500}
             legislatorClicked={legislatorClicked}
             startDate={startDate}
             endDate={endDate}

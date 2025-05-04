@@ -174,7 +174,7 @@ export const LegislatorHeatMap = ({
       .append("title")
       .text((d) => `${d.name}: ${d.count} posts in ${d.monthStr}`);
 
-    const legendWidth = 200;
+    const legendWidth = 300;
     const legendHeight = 10;
     const legendX = width - legendWidth - 130; 
     const legendY = neededHeight - margin.bottom + 15;

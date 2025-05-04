@@ -103,14 +103,25 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
 
     const colorScale = d3.scaleOrdinal(d3.schemeCategory10).domain(topics);
 
+    console.log("ColorScale:", d3.schemeCategory10)
+
+    console.log("topics", topics)
+    
+
+    const updatedColorScale = [{ "abortion": "#1f77b4" ,  "blacklivesmatter": "#ff7f0e" ,  "capitol": "#2ca02c" ,  "climate": "#2ca02c" ,  "covid": "#d62728" ,  "gun": "#9467bd" ,  "immigra": "#8c564b" ,  "rights": "#e377c2" }]
+    
+    console.log("dtw", updatedColorScale)
+    
+  
+
     d3.select(svgRef.current).selectAll("*").remove();
 
     const svg = d3
       .select(svgRef.current)
-      .attr("width", width)
-      .attr("height", height)
+      // .attr("width", width)
+      // .attr("height", height)
       .attr("viewBox", [0, 0, width, height])
-      .attr("style", "max-width: 100%; height: auto;");
+      .attr("preserveAspectRatio", "xMidYMid meet")
 
     const xAxis = svg
       .append("g")
@@ -146,9 +157,9 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
 
       d3.select(this)
         .append("path")
-        .attr("fill", colorScale(topic))
+        .attr("fill", updatedColorScale[0][topic])
         .attr("fill-opacity", 0.3)
-        .attr("stroke", colorScale(topic))
+        .attr("stroke", updatedColorScale[0][topic])
         .attr("stroke-width", 1)
         .attr("d", area(filledPosts));
     });
@@ -172,11 +183,15 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
 
   return (
     <>
-    <h3>Post Frequency Over Time by Topic</h3>
-    <div className="flex justify-center items-center w-full h-full">
-      
-      <svg ref={svgRef} />
+      <h3 className="text-center mb-2">Post Frequency Over Time by Topic</h3>
+      <div className="w-full" style={{ height: '500px' }}>
+        <svg
+          ref={svgRef}
+          className="w-full h-full"
+        />
       </div>
     </>
   );
+  
+  
 };
