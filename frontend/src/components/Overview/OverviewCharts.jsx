@@ -6,7 +6,7 @@ import 'tippy.js/themes/light.css';
 import TrendLineChart from './TrendLineChart';
 import { colorMap, formatNumber } from '../../utils/utils';
 
-function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
+function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword, legislator }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,21 +17,28 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
       try {
         const defaultStartDate = '2020-01-01';
         const defaultEndDate = '2021-12-31';
-        const defaultTopics = Object.keys(colorMap); // Use colorMap to determine defaultTopics
+        const defaultTopics = Object.keys(colorMap);
 
         let response;
         if (
           startDate.format('YYYY-MM-DD') === defaultStartDate &&
           endDate.format('YYYY-MM-DD') === defaultEndDate &&
           selectedTopics.length === defaultTopics.length &&
-          selectedTopics.every(topic => defaultTopics.includes(topic))
+          selectedTopics.every(topic => defaultTopics.includes(topic)) &&
+          keyword === '' &&
+          legislator === null
         ) {
           // Fetch default data
-          response = await fetch('http://localhost:8000/api/default_overview_data/');
+          console.log("Fetching default data");
+          response = await fetch('/api/default_overview_data/');
         } else {
           // Fetch regular data
+          console.log("keyword", keyword)
+          console.log("legislator", legislator)
           const topicsParam = selectedTopics.join(',');
-          response = await fetch(`http://localhost:8000/api/overview_metrics/?start_date=${startDate.format('YYYY-MM-DD')}&end_date=${endDate.format('YYYY-MM-DD')}&topics=${topicsParam}`);
+          const keywordParam = keyword ? `&keyword=${encodeURIComponent(keyword)}` : '';
+          const legislatorParam = legislator ? `&legislator=${encodeURIComponent(legislator.name)}` : '';
+          response = await fetch(`/api/overview_metrics/?start_date=${startDate.format('YYYY-MM-DD')}&end_date=${endDate.format('YYYY-MM-DD')}&topics=${topicsParam}${keywordParam}${legislatorParam}`);
         }
 
         if (!response.ok) throw new Error('Network response was not ok');
@@ -48,7 +55,7 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [] }) {
     };
 
     fetchData();
-  }, [startDate, endDate, selectedTopics]);
+  }, [startDate, endDate, selectedTopics, keyword, legislator]);
 
   if (loading) {
     return (

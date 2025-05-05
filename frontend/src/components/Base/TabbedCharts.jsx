@@ -11,7 +11,7 @@ import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs"
 import AccountabilityInterface from "../Accountability/AccountabilityInterface";
 
-function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics, selectedMetric }) {
+function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPostData, startDate, endDate, selectedTopics, selectedMetric, keyword, legislator }) {
   const [value, setValue] = useState(0);
   const [hoveredTab, setHoveredTab] = useState(null);
 
@@ -29,7 +29,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
 
   useEffect(() => {
       // Determine whether to use default data or fetch from the server
-      fetch("http://localhost:8000/api/legislators/scatter/")
+      fetch("/api/legislators/scatter/")
         .then((response) => response.json())
         .then((data) => {
           setLegScatterData(data);
@@ -41,7 +41,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
   
   useEffect(() => {
       if (startDate && endDate) {
-        const url = "http://localhost:8000/api/legislators/scatter/?";
+        const url = "/api/legislators/scatter/?";
         const params = {
           startDate: startDate.format("DD-MM-YYYY"),
           endDate: endDate.format("DD-MM-YYYY"),
@@ -69,7 +69,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
   
   useEffect(() => {
     if (startDate && endDate) {
-      const url = "http://localhost:8000/api/legislators/legislator_posts_by_month_top_50/?"
+      const url = "/api/legislators/legislator_posts_by_month_top_50/?"
       const params = {
         start_date: startDate.format("YYYY-MM-DD"),
         end_date: endDate.format("YYYY-MM-DD")
@@ -128,7 +128,7 @@ function TabbedCharts({ legislatorClicked, postData, setLegislatorClicked, setPo
         ))}
       </div>
       <div className="mt-4 transition-opacity duration-500 ease-in-out">
-        {value === 0 && <OverviewCharts startDate={startDate} endDate={endDate} selectedTopics={memoizedSelectedTopics} />}
+        {value === 0 && <OverviewCharts startDate={startDate} endDate={endDate} selectedTopics={memoizedSelectedTopics} keyword={keyword} legislator={legislator} />}
         {value === 1 && <EngagementCharts startDate={startDate} endDate={endDate} selectedTopics={memoizedSelectedTopics} />}
         {value === 2 && (
           <AccountabilityInterface 

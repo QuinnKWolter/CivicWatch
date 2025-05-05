@@ -31,18 +31,9 @@ urlpatterns = [
     # Bipartite Temporal Flow Diagram APIs
     path("api/flow/bipartite/", views.bipartite_flow_data, name="bipartite_flow_data"),
 
-    # Chord Diagram APIs (Legislator Interactions)
-    path("api/chord/interactions/", views.chord_interactions, name="chord_interactions"),
-    path("api/chord/network/", views.chord_interactions, name="chord_network"),
-    path("api/chord/top_legislators/", views.chord_top_legislators, name="chord_top_legislators"),
-
     # Geographic Data APIs
     path("api/geo/activity/", views.geo_activity, name="geo_activity"),
     path('api/geo/activity/topics/', views.geo_activity_topics, name='geo_activity_topics'),
-    
-    # Post Exploration APIs
-    path("api/posts/", views.all_posts, name="all_posts"),
-    path("api/posts/top/", views.top_posts, name="top_posts"),
 
     path("api/legislators/scatter/", views.legislators_scatter_data, name="legislators_scatter"),
     path("api/legislator_posts/", views.legislator_posts_line_chart, name="legislator_posts"),

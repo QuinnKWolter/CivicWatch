@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-!32@2e5%iw7t&rijs7lcjo=1s#v(-hp&6gryixi4r2$h2x-s-h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # Allow all hosts, including dynamic NGROK URLs
 
 
 # Application definition
@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "civicwatch",
     'corsheaders',
+    'csp',
 ]
 
 MIDDLEWARE = [
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     'corsheaders.middleware.CorsMiddleware',
+    'csp.middleware.CSPMiddleware',
 ]
 
 ROOT_URLCONF = "civicwatch_backend.urls"
@@ -83,11 +85,19 @@ DATABASES = {
     }
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:4173",
-    "https://fbad-2600-4041-33-cc00-cca1-35ab-595b-9e6b.ngrok-free.app"
-]
+# Add this to allow all origins during development
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Updated CSP settings
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'default-src': ("'self'", 'https://*.ngrok-free.app', "'unsafe-inline'", "'unsafe-eval'"),
+        'font-src': ("'self'", 'https://*.ngrok-free.app', 'data:'),
+        'img-src': ("'self'", 'data:', 'https://*.ngrok-free.app'),
+        'script-src': ("'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://*.ngrok-free.app'),
+        'style-src': ("'self'", "'unsafe-inline'", 'https://*.ngrok-free.app'),
+    }
+}
 
 
 # Password validation

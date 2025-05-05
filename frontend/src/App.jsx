@@ -41,6 +41,7 @@ function App() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState('posts');
   const [keyword, setKeyword] = useState('');
+  const [legislator, setLegislator] = useState(null);
 
   const [legislatorClicked, setLegislatorClicked] = useState([]);
   const [postData, setPostData] = useState([]);
@@ -128,6 +129,8 @@ function App() {
                 setSelectedMetric={setSelectedMetric}
                 keyword={keyword}
                 setKeyword={setKeyword}
+                legislator={legislator}
+                setLegislator={setLegislator}
               />
             </div>
 
@@ -149,6 +152,8 @@ function App() {
                     endDate={endDate}
                     selectedTopics={activeTopics}
                     selectedMetric={selectedMetric}
+                    keyword={keyword}
+                    legislator={legislator}
                   />
                 </div>
                 <div className="col-span-3 bg-base-200 rounded-lg shadow-lg overflow-hidden">

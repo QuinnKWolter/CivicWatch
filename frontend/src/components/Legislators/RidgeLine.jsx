@@ -12,7 +12,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
   useEffect(() => {
     
 
-    const url = "http://localhost:8000/api/legislator_posts/?"
+    const url = "/api/legislator_posts/?"
 
     const params = {
       start_date: startDate.format("YYYY-MM-DD"),
