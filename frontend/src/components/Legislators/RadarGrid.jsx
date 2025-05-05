@@ -2,7 +2,7 @@ import * as d3 from "d3";
 
 export const INNER_RADIUS = 40;
 const GRID_NUMBER = 5;
-const GRID_COLOR = "grey";
+const GRID_COLOR = "white";
 
 export const polarToCartesian = (angle, distance) => {
   const x = distance * Math.cos(angle);
@@ -27,7 +27,7 @@ export const RadarGrid = ({ outerRadius, xScale, axisConfig }) => {
 
     const labelPosition = polarToCartesian(
       angle - Math.PI / 2,
-      outerRadius + 10
+      outerRadius - 10
     );
 
     return (
@@ -36,12 +36,12 @@ export const RadarGrid = ({ outerRadius, xScale, axisConfig }) => {
         <text
           x={labelPosition.x}
           y={labelPosition.y}
-          fontSize={7.5}
+          fontSize={17}
           fill={GRID_COLOR}
           textAnchor={labelPosition.x > 0 ? "start" : "end"}
           dominantBaseline={"middle"}
         >
-          {axis.name}
+          {axis.display_name}
         </text>
       </g>
     );
