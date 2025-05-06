@@ -1,8 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import { Tooltip, TooltipGroup } from "./Legislators/LegislatorTooltip";
+import {
+  Tooltip,
+  TooltipGroup,
+  TextTip,
+} from "../Legislators/LegislatorTooltip";
+import { SemanticTooltip } from "../Legislators/SemanticTooltip";
 
-const SemanticScatterPlot = ({ data, width = 800, height = 600 }) => {
+export const SemanticScatterPlot = ({
+  data,
+  width = 800,
+  height = 600,
+  hoveredSemanticDataRef,
+}) => {
   const svgRef = useRef(null);
   const tooltipRef = useRef(null);
   const margin = { top: 40, right: 40, bottom: 50, left: 60 };
@@ -124,6 +134,8 @@ const SemanticScatterPlot = ({ data, width = 800, height = 600 }) => {
         point.x = xScale(d.pca_x);
         point.y = yScale(d.pca_y);
 
+        console.log("point.x, point.y", point.x, point.y);
+
         const screenCTM = svg.getScreenCTM();
         const screenPoint = point.matrixTransform(screenCTM);
         const containerRect = svg.parentNode.getBoundingClientRect();
@@ -132,7 +144,31 @@ const SemanticScatterPlot = ({ data, width = 800, height = 600 }) => {
         const yPos = screenPoint.y - containerRect.top;
 
         setHoverData({ xPos, yPos, d });
-        console.log("set hover data", xPos, yPos, d)
+        console.log("set hover data", xPos, yPos, d);
+      })
+      .on("mouseover", function (event, d) {
+        event.stopPropagation();
+
+        const svg = svgRef.current;
+        const chartArea = svg.querySelector("g"); // get <g transform="translate(...)">
+
+        const point = svg.createSVGPoint();
+        point.x = xScale(d.pca_x);
+        point.y = yScale(d.pca_y);
+
+        const screenPoint = point.matrixTransform(chartArea.getScreenCTM());
+        const containerRect = svg.getBoundingClientRect();
+
+        const xPos = screenPoint.x - containerRect.left;
+        const yPos = screenPoint.y - containerRect.top;
+
+        hoveredSemanticDataRef.current = { xPos, yPos, d };
+      })
+
+      .on("mouseleave", function (event, d) {
+        event.stopPropagation();
+
+        hoveredSemanticDataRef.current = null;
       });
 
     // --- Zoom ---
@@ -169,17 +205,50 @@ const SemanticScatterPlot = ({ data, width = 800, height = 600 }) => {
       .call(zoom);
   }, [data, width, height]); // Rerun effect if these change
 
+  const [tooltipData, setTooltipData] = useState(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (hoveredSemanticDataRef.current !== tooltipData) {
+        console.log("updated tooltip bc we zoomed or smth");
+        setTooltipData(hoveredSemanticDataRef.current);
+      }
+    }, 1);
+    return () => clearInterval(interval);
+  }, [hoveredSemanticDataRef, tooltipData]);
+
   return (
     <div style={{ position: "relative" }}>
       <svg ref={svgRef} width={width} height={height}></svg>
-      {hoverData && (
-        <Tooltip
-          xPos={hoverData.xPos}
+      {/* { && (
+        // <Tooltip
+        //   xPos={hoverData.xPos}
+        //   yPos={hoverData.yPos}
+        //   name={hoverData.d} />
+        <TextTip xPos={hoverData.xPos}
           yPos={hoverData.yPos}
-          name={hoverData.d} />
+          />
+      )} */}
+      { /* <SemanticTooltip width={width} height={height} data={tooltipData}  /> */}
+      {tooltipData === null ? (
+        <div>
+          <span className="font-bold text-xs">Topic:</span> <br></br>
+          <span className="font-bold text-xs">Party:</span> <br></br>
+          <span className="font-bold text-xs ">Date:</span> <br></br>
+          <span className="font-bold text-xs">Likes: </span> <br></br>
+          <span className="font-bold text-xs">Reposts: </span> <br></br>
+        </div>
+      ) : (
+        <div>
+          <span className="font-bold text-xs">Topic:</span>  <span className="text-xs"> {tooltipData.d.topics__name} </span> <br></br>
+            <span className="font-bold text-xs">Party:</span> <span className="text-xs"> {tooltipData.d.party} </span> <br></br>
+            <span className="font-bold text-xs ">Date:</span> <span className="text-xs"> {tooltipData.d.created_at.split("T")[0]}</span> <br></br>
+            <span className="font-bold text-xs">Likes: </span> <span className="text-xs"> {tooltipData.d.like_count} </span> <br></br>
+            <span className="font-bold text-xs">Reposts: </span> <span className="text-xs"> {tooltipData.d.retweet_count} </span> <br></br>
+        </div>
       )}
     </div>
   );
 };
 
-export default SemanticScatterPlot;
+

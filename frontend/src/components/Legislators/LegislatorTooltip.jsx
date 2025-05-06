@@ -73,3 +73,29 @@ export const TooltipGroup = ({ xPos, yPos, data, setLegislatorClicked }) => {
     </div>
   );
 };
+
+export const TextTip = ({ xPos, yPos, postText }) => {
+
+  console.log("TextTip Data", xPos, yPos, postText)
+
+  
+
+  return (
+    <div className="tooltip"
+      style={{
+        position: "absolute",
+        left: xPos,
+        top: yPos,
+        pointerEvents: "auto",
+        backgroundColor: "rgba(0,0,0,0.8)",
+        borderRadius: "4px",
+        fontSize: "12px",
+        padding: "5px",
+        maxHeight: "500px",
+        overflowY: "auto",
+        width: "200px"
+          }}>
+      this is a text tip
+    </div>
+  )
+}
