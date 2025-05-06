@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import OverviewCharts from "../Overview/OverviewCharts";
 import EngagementCharts from "../Engagement/EngagementCharts";
 import GeographyCharts from "../Geography/GeographyCharts";
@@ -10,6 +10,8 @@ import { FaUsers } from "react-icons/fa";
 import { IoEarthOutline } from "react-icons/io5";
 import dayjs from "dayjs";
 import AccountabilityInterface from "../Accountability/AccountabilityInterface";
+import { BsFilePost } from "react-icons/bs";
+import { PostCharts } from "../Posts/PostsCharts";
 
 function TabbedCharts({
   legislatorClicked,
@@ -27,6 +29,8 @@ function TabbedCharts({
   const [monthlyLeg, setMonthlyLeg] = useState([]);
   const [semanticData, setSemanticData] = useState([])
 
+  const hoveredSemanticDataRef = useRef(null);
+
   // Memoize selectedTopics to prevent unnecessary re-renders
   const memoizedSelectedTopics = useMemo(
     () => selectedTopics,
@@ -39,6 +43,7 @@ function TabbedCharts({
 
   const [legScatterData, setLegScatterData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [semanticLoading, setSemanticLoading] = useState(false);
 
   // useEffect(() => {
   //   // Determine whether to use default data or fetch from the server
@@ -161,7 +166,7 @@ function TabbedCharts({
       const queryParams = new URLSearchParams(params).toString();
 
       const query = `${url}${queryParams}`;
-      setLoading(true);
+      setSemanticLoading(true);
       fetch(query)
         .then((response) => response.json())
         .then((data) => {
@@ -172,7 +177,7 @@ function TabbedCharts({
           console.error("Error filtering legislator data", error)
         )
         .finally(() => {
-          setLoading(false);
+          setSemanticLoading(false);
         });
     }
   }, [startDate, endDate]);
@@ -180,9 +185,11 @@ function TabbedCharts({
   const tabs = [
     { icon: <RiDashboardLine />, label: "Overview", value: 0 },
     { icon: <BiTrendingUp />, label: "Engagement", value: 1 },
-    { icon: <MdOutlineAccountBox />, label: "Accountability", value: 2 },
+    // { icon: <MdOutlineAccountBox />, label: "Accountability", value: 5 },
     { icon: <FaUsers />, label: "Legislators", value: 3 },
     { icon: <IoEarthOutline />, label: "Geography", value: 4 },
+    {icon: <BsFilePost />, label: "Posts", value: 2}
+  
   ];
 
   return (
@@ -207,7 +214,7 @@ function TabbedCharts({
                 className={`tab-label ${
                   (value === tab.value && hoveredTab === null) ||
                   hoveredTab === tab.value
-                    ? "opacity-100 max-w-[100px]"
+                    ? "opacity-100 max-w-[70px]" // 100px
                     : "opacity-0 max-w-0"
                 }`}
               >
@@ -232,7 +239,7 @@ function TabbedCharts({
             selectedTopics={memoizedSelectedTopics}
           />
         )}
-        {value === 2 && (
+        {value === 5 && (
           <AccountabilityInterface
             startDate={startDate}
             endDate={endDate}
@@ -260,6 +267,9 @@ function TabbedCharts({
             selectedTopics={memoizedSelectedTopics}
             selectedMetric={selectedMetric}
           />
+        )}
+        {value === 2 && (
+          <PostCharts startDate={startDate} endDate={endDate} semanticData={semanticData} semanticLoading={semanticLoading} hoveredSemanticDataRef={hoveredSemanticDataRef} />
         )}
       </div>
     </div>
