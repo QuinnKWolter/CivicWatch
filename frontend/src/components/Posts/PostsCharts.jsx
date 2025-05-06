@@ -1,4 +1,5 @@
-import {SemanticScatterPlot} from "./SemanticSimilarity";
+import { SemanticScatterPlot } from "./SemanticSimilarity";
+import { FaSpinner } from 'react-icons/fa';
 
 
 export const PostCharts = ({ startDate, endDate, semanticData, semanticLoading, hoveredSemanticDataRef}) => {

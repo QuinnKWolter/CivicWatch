@@ -18,6 +18,18 @@ export const SemanticScatterPlot = ({
   const margin = { top: 40, right: 40, bottom: 50, left: 60 };
   const [hoverData, setHoverData] = useState([]);
   const [clickedTooltip, setClickedTooltip] = useState(false);
+  const updatedColorScale = [
+    {
+      abortion: "#1f77b4",
+      blacklivesmatter: "#ff7f0e",
+      capitol: "#2ca02c",
+      climate: "#2ca02c",
+      covid: "#d62728",
+      gun: "#9467bd",
+      immigra: "#8c564b",
+      rights: "#e377c2",
+    },
+  ];
 
   useEffect(() => {
     if (!data || data.length === 0) return;
@@ -111,7 +123,7 @@ export const SemanticScatterPlot = ({
       .attr("cx", (d) => xScale(d.pca_x))
       .attr("cy", (d) => yScale(d.pca_y))
       .attr("r", 5) // Radius of points
-      .attr("fill", (d) => colorScale(d.party))
+      .attr("fill", (d) => updatedColorScale[0][d.topics__name])
       .attr("fill-opacity", 0.7)
       .style("cursor", "pointer")
       .on("click", function (event, d) {
@@ -229,7 +241,7 @@ export const SemanticScatterPlot = ({
           yPos={hoverData.yPos}
           />
       )} */}
-      { /* <SemanticTooltip width={width} height={height} data={tooltipData}  /> */}
+      {/* <SemanticTooltip width={width} height={height} data={tooltipData}  /> */}
       {tooltipData === null ? (
         <div>
           <span className="font-bold text-xs">Topic:</span> <br></br>
@@ -240,15 +252,25 @@ export const SemanticScatterPlot = ({
         </div>
       ) : (
         <div>
-          <span className="font-bold text-xs">Topic:</span>  <span className="text-xs"> {tooltipData.d.topics__name} </span> <br></br>
-            <span className="font-bold text-xs">Party:</span> <span className="text-xs"> {tooltipData.d.party} </span> <br></br>
-            <span className="font-bold text-xs ">Date:</span> <span className="text-xs"> {tooltipData.d.created_at.split("T")[0]}</span> <br></br>
-            <span className="font-bold text-xs">Likes: </span> <span className="text-xs"> {tooltipData.d.like_count} </span> <br></br>
-            <span className="font-bold text-xs">Reposts: </span> <span className="text-xs"> {tooltipData.d.retweet_count} </span> <br></br>
+          <span className="font-bold text-xs">Topic:</span>{" "}
+          <span className="text-xs"> {tooltipData.d.topics__name} </span>{" "}
+          <br></br>
+          <span className="font-bold text-xs">Party:</span>{" "}
+          <span className="text-xs"> {tooltipData.d.party} </span> <br></br>
+          <span className="font-bold text-xs ">Date:</span>{" "}
+          <span className="text-xs">
+            {" "}
+            {tooltipData.d.created_at.split("T")[0]}
+          </span>{" "}
+          <br></br>
+          <span className="font-bold text-xs">Likes: </span>{" "}
+          <span className="text-xs"> {tooltipData.d.like_count} </span>{" "}
+          <br></br>
+          <span className="font-bold text-xs">Reposts: </span>{" "}
+          <span className="text-xs"> {tooltipData.d.retweet_count} </span>{" "}
+          <br></br>
         </div>
       )}
     </div>
   );
 };
-
-
