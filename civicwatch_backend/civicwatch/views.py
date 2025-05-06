@@ -433,6 +433,12 @@ def geo_activity_topics(request):
         state_party_data[state]['legislator_breakdown'][topic]['total'] += total
 
     return JsonResponse(list(state_party_data.values()), safe=False)
+def post_semantic_similarity(request):
+    posts_query = filter_posts(request)
+    posts_list = posts_query.values("post_id", "topics__name", "name", "party", "text", "created_at", "like_count", "retweet_count", "civility_score", "count_misinfo", "pca_x", "pca_y")
+    return JsonResponse(list(posts_list), safe=False)
+
+
 
 def legislators_scatter_data(request):
     start_date = request.GET.get('start_date')

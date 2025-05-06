@@ -82,7 +82,7 @@ export const Radar = ({ width, height, data, axisConfig }) => {
                 newData.party === "R"
                   ? "#FF0000"
                   : newData.party === "D"
-                  ? "#0000FF"
+                  ? "#69a5ff"
                   : "#cb1dd1"
               }
               strokeWidth={3}
@@ -90,7 +90,7 @@ export const Radar = ({ width, height, data, axisConfig }) => {
                 newData.party === "R"
                   ? "#FF0000"
                   : newData.party === "D"
-                  ? "#0000FF"
+                  ? "#69a5ff"
                   : "#cb1dd1"
               }
               fillOpacity={0.1}

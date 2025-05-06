@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Radar } from "./Radar";
 // import { SummaryLegislatorScatter } from "./SummaryLegislatorScatter";
 import { useState } from "react";
@@ -7,6 +7,7 @@ import { LegislatorHex } from "./LegislatorHexBin";
 import { RidgeLinePlot } from "./RidgeLine";
 import { LegislatorHeatMap } from "./LegislatorHeatMap"
 import { FaSpinner } from 'react-icons/fa';
+import  SemanticScatterPlot  from '../SemanticSimilarity'
 
 function LegislatorCharts({
   legislatorClicked,
@@ -17,22 +18,84 @@ function LegislatorCharts({
   endDate,
   legScatterData,
   monthlyLeg,
-  loading
+  loading,
+  semanticData
 }) {
-  const axisConfig = [
-    { name: "total_misinfo_count_tw", max: 2735 },
-    { name: "total_interactions_tw", max: 93472549 },
-    { name: "overperforming_score_tw", max: 1.296785754 },
-  ];
 
-  const axisConfigTopics = [
-    { name: "capitol", max: 244 },
-    { name: "climate", max: 418 },
-    { name: "covid", max: 2515 },
-    { name: "gun", max: 427 },
-    { name: "immigra", max: 384 },
-    { name: "rights", max: 327 },
-  ];
+  
+
+  const axisConfig = useMemo(() => {
+    if (!legScatterData || legScatterData.length === 0) return [];
+  
+    return [
+      {
+        display_name: "Low Credibility",
+        name: "total_misinfo_count_tw",
+        max: Math.max(...legScatterData.map(d => d.total_misinfo_count_tw).filter(Number.isFinite)),
+      },
+      {
+        display_name: "Interactions",
+        name: "total_interactions_tw",
+        max: Math.max(...legScatterData.map(d => d.total_interactions_tw).filter(Number.isFinite)),
+      },
+      {
+        display_name: "Virality",
+        name: "overperforming_score_tw",
+        max: Math.max(...legScatterData.map(d => d.overperforming_score_tw).filter(Number.isFinite)),
+      },
+    ];
+  }, [legScatterData]);
+  
+  useEffect(() => {
+    console.log("does this work", legScatterData);
+  },[legScatterData])
+ 
+
+  const axisConfigTopics = useMemo(() => {
+    if (!legScatterData || legScatterData.length === 0) return [];
+
+    return [
+      {
+        display_name: "Capitol",
+        name: "capitol",
+        max: Math.max(...legScatterData.map(d => d.capitol).filter(Number.isFinite))
+      },
+      {
+        display_name: "Climate",
+        name: "climate",
+        max: Math.max(...legScatterData.map(d => d.climate).filter(Number.isFinite))
+      },
+      {
+        display_name: "Capitol",
+        name: "covid",
+        max: Math.max(...legScatterData.map(d=>d.covid).filter(Number.isFinite))
+      },
+      {
+        display_name: "Gun",
+        name: "gun",
+        max: Math.max(...legScatterData.map(d=>d.gun).filter(Number.isFinite))
+      },
+      {
+        display_name: "Immigration",
+        name: "immigra",
+        max: Math.max(...legScatterData.map(d => d.immigra).filter(Number.isFinite))
+      },
+      {
+        display_name: "Rights",
+        name: "rights",
+        max: Math.max(...legScatterData.map(d => d.rights).filter(Number.isFinite))
+      }
+    ]
+    
+     })
+   // [
+  //   { name: "capitol", max: 244 },
+  //   { name: "climate", max: 418 },
+  //   { name: "covid", max: 2515 },
+  //   { name: "gun", max: 427 },
+  //   { name: "immigra", max: 384 },
+  //   { name: "rights", max: 327 },
+  // ];
 
   const [cVal, setCVal] = useState(0);
   const [dVal, setDVal] = useState(0);
@@ -51,6 +114,7 @@ function LegislatorCharts({
 
   useEffect(() => {
     if (!loading) {
+      console.log("DATAAAA", monthlyLeg);
       setDemData(monthlyLeg.legislators.filter((d) => d.party === "D"));
     setRepubData(monthlyLeg.legislators.filter((d) => d.party === "R"));
     console.log("repub data", monthlyLeg.legislators.filter((d) => d.party === "R"));
@@ -107,6 +171,7 @@ function LegislatorCharts({
             party={1}
             legislatorClicked={legislatorClicked}
           />
+        //  <SemanticScatterPlot width={400} height={400} data={semanticData.slice(0,100)} />
         )}
         {dVal === 1 && (
           
@@ -181,8 +246,8 @@ function LegislatorCharts({
           //   height={300}
           // />
           <RidgeLinePlot
-            height={400}
-            width={400}
+            height={800}
+            width={500}
             legislatorClicked={legislatorClicked}
             startDate={startDate}
             endDate={endDate}
