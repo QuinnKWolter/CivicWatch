@@ -20,6 +20,8 @@ function TabbedCharts({
   endDate,
   selectedTopics,
   selectedMetric,
+  keyword,
+  legislator,
 }) {
   const [value, setValue] = useState(0);
   const [hoveredTab, setHoveredTab] = useState(null);
@@ -39,18 +41,6 @@ function TabbedCharts({
 
   const [legScatterData, setLegScatterData] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // useEffect(() => {
-  //   // Determine whether to use default data or fetch from the server
-  //   fetch("http://localhost:8000/api/legislators/scatter/")
-  //     .then((response) => response.json())
-  //     .then((data) => {
-  //       setLegScatterData(data);
-  //     })
-  //     .catch((error) =>
-  //       console.error("Error fetching legislator data:", error)
-  //     );
-  // }, []);
 
   useEffect(() => {
     fetch("/api/legislators/scatter/")
@@ -126,7 +116,7 @@ function TabbedCharts({
 
   useEffect(() => {
     if (startDate && endDate) {
-      const url = "http://localhost:8000/api/legislators/legislator_posts_by_month_top_50/?"
+      const url = "/api/legislators/legislator_posts_by_month_top_50/?"
       const params = {
         start_date: startDate.format("YYYY-MM-DD"),
         end_date: endDate.format("YYYY-MM-DD"),
@@ -152,7 +142,7 @@ function TabbedCharts({
 
   useEffect(() => {
     if (startDate && endDate) {
-      const url = "http://localhost:8000/api/posts/post_semantic_similarity/?";
+      const url = "/api/posts/post_semantic_similarity/?";
       const params = {
         start_date: startDate.format("YYYY-MM-DD"),
         end_date: endDate.format("YYYY-MM-DD"),
