@@ -21,7 +21,7 @@ function BipartiteFlow({ activeTopics, startDate, endDate, onDateChange, selecte
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:8000/api/flow/bipartite_data/`);
+        const response = await fetch(`/api/flow/bipartite_data/`);
         
         if (!response.ok) {
           throw new Error('Network response was not ok');

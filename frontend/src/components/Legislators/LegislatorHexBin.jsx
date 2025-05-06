@@ -30,7 +30,7 @@ export const LegislatorHex = ({ height, width, startDate, endDate, setLegislator
   // useEffect(() => {
   //   // Determine whether to use default data or fetch from the server
   //   console.log("Fetching data from server");
-  //   fetch("http://localhost:8000/api/legislators/scatter/")
+  //   fetch("/api/legislators/scatter/")
   //     .then((response) => response.json())
   //     .then((data) => {
   //       console.log("Legislator Data: ", data);
@@ -45,7 +45,7 @@ export const LegislatorHex = ({ height, width, startDate, endDate, setLegislator
   // useEffect(() => {
   //   console.log("filtering data");
   //   if (startDate && endDate) {
-  //     const url = "http://localhost:8000/api/legislators/scatter/?";
+  //     const url = "/api/legislators/scatter/?";
   //     const params = {
   //       startDate: startDate.format("DD-MM-YYYY"),
   //       endDate: endDate.format("DD-MM-YYYY"),

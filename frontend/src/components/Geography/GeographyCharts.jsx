@@ -49,7 +49,7 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
     const formattedStart = startDate.format('YYYY-MM-DD');
     const formattedEnd = endDate.format('YYYY-MM-DD');
     const topicsParam = `topics=${selectedTopics.join(',')}`;
-    const url = `http://127.0.0.1:8000/api/geo/activity/topics/?start_date=${formattedStart}&end_date=${formattedEnd}&${topicsParam}&metric=${selectedMetric}`;
+    const url = `/api/geo/activity/topics/?start_date=${formattedStart}&end_date=${formattedEnd}&${topicsParam}&metric=${selectedMetric}`;
 
     setLoading(true);
     fetch(url)

@@ -13,7 +13,7 @@ function AccountabilityInterface({ startDate, endDate, selectedTopics }) {
       setLoading(true);
       try {
         const topicsParam = selectedTopics.join(',');
-        const response = await fetch(`http://localhost:8000/api/accountability_interface/?start_date=${startDate.format('YYYY-MM-DD')}&end_date=${endDate.format('YYYY-MM-DD')}&topics=${topicsParam}`);
+        const response = await fetch(`/api/accountability_interface/?start_date=${startDate.format('YYYY-MM-DD')}&end_date=${endDate.format('YYYY-MM-DD')}&topics=${topicsParam}`);
         
         if (!response.ok) {
           throw new Error('Network response was not ok');

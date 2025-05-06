@@ -22,6 +22,8 @@ function TabbedCharts({
   endDate,
   selectedTopics,
   selectedMetric,
+  keyword,
+  legislator,
 }) {
   const [value, setValue] = useState(0);
   const [hoveredTab, setHoveredTab] = useState(null);
@@ -45,20 +47,8 @@ function TabbedCharts({
   const [loading, setLoading] = useState(false);
   const [semanticLoading, setSemanticLoading] = useState(false);
 
-  // useEffect(() => {
-  //   // Determine whether to use default data or fetch from the server
-  //   fetch("http://localhost:8000/api/legislators/scatter/")
-  //     .then((response) => response.json())
-  //     .then((data) => {
-  //       setLegScatterData(data);
-  //     })
-  //     .catch((error) =>
-  //       console.error("Error fetching legislator data:", error)
-  //     );
-  // }, []);
-
   useEffect(() => {
-    fetch("http://localhost:8000/api/legislators/scatter/")
+    fetch("/api/legislators/scatter/")
       .then((response) => response.json())
       .then((data) => {
         const keys = [
@@ -103,7 +93,7 @@ function TabbedCharts({
 
   useEffect(() => {
     if (startDate && endDate) {
-      const url = "http://localhost:8000/api/legislators/scatter/?";
+      const url = "/api/legislators/scatter/?";
       const params = {
         startDate: startDate.format("DD-MM-YYYY"),
         endDate: endDate.format("DD-MM-YYYY"),
@@ -131,8 +121,7 @@ function TabbedCharts({
 
   useEffect(() => {
     if (startDate && endDate) {
-      const url =
-        "http://localhost:8000/api/legislators/legislator_posts_by_month_top_50/?";
+      const url = "/api/legislators/legislator_posts_by_month_top_50/?"
       const params = {
         start_date: startDate.format("YYYY-MM-DD"),
         end_date: endDate.format("YYYY-MM-DD"),
@@ -158,7 +147,7 @@ function TabbedCharts({
 
   useEffect(() => {
     if (startDate && endDate) {
-      const url = "http://localhost:8000/api/posts/post_semantic_similarity/?";
+      const url = "/api/posts/post_semantic_similarity/?";
       const params = {
         start_date: startDate.format("YYYY-MM-DD"),
         end_date: endDate.format("YYYY-MM-DD"),
@@ -230,6 +219,8 @@ function TabbedCharts({
             startDate={startDate}
             endDate={endDate}
             selectedTopics={memoizedSelectedTopics}
+            keyword={keyword}
+            legislator={legislator}
           />
         )}
         {value === 1 && (
