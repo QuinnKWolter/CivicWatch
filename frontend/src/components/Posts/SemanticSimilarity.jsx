@@ -30,6 +30,7 @@ export const SemanticScatterPlot = ({
       rights: "#e377c2",
     },
   ];
+  const topics = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"]
 
   useEffect(() => {
     if (!data || data.length === 0) return;
@@ -215,6 +216,29 @@ export const SemanticScatterPlot = ({
       .style("pointer-events", "all")
       .lower() // Send to back so points are on top
       .call(zoom);
+    
+    svg
+      .selectAll("mydots")
+      .data(topics)
+      .enter()
+      .append("circle")
+      .attr("cx", 80)
+      .attr("cy", function (d, i) { return 10 + i * 15 })
+      .attr("r", 5)
+      .style("fill", function (d) { console.log("d", updatedColorScale[d]);  return updatedColorScale[0][d] })
+    
+    svg
+      .selectAll("mylabels")
+      .data(topics)
+      .enter()
+      .append("text")
+      .attr("x", 90)
+      .attr("y", function (d, i) { return 10 + i * 15})
+      .style("fill", function (d) { return updatedColorScale[0][d] })
+      .attr("text-anchor", "left")
+      .style("alignment-baseline", "middle")
+      .style("font-size", "10px")
+      .text(function(d){return d})
   }, [data, width, height]); // Rerun effect if these change
 
   const [tooltipData, setTooltipData] = useState(null);

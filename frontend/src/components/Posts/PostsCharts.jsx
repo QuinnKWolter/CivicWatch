@@ -10,7 +10,7 @@ export const PostCharts = ({ startDate, endDate, semanticData, semanticLoading, 
         return (
           <div className="flex flex-col items-center justify-center h-64">
             <FaSpinner className="animate-spin text-4xl text-primary mb-4" />
-            <p className="text-lg">Loading legislator data...</p>
+            <p className="text-lg">Loading post data...</p>
           </div>
         );
       }
