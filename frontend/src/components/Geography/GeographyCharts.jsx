@@ -172,9 +172,9 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
               <text x={(legendWidth * 0.7) + 5} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(demMax)}</text>
             </g>
 
-            <text x={legendWidth * 1.5} y={12} style={{ fontSize: '14px', fontWeight: 'bold' }} className="fill-current">Republican</text>
+            <text x={legendWidth * 1.2} y={12} style={{ fontSize: '14px', fontWeight: 'bold' }} className="fill-current">Republican</text>
             
-            <g transform={`translate(${legendWidth * 1.5 + 20}, 20)`}>
+            <g transform={`translate(${legendWidth * 1.2 + 20}, 20)`}>
               <text x={-25} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(repMin)}</text>
               
               {redScale.range().map((d, i) => (
