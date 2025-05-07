@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { Radar } from "./Radar";
 // import { SummaryLegislatorScatter } from "./SummaryLegislatorScatter";
 import { useState } from "react";
@@ -7,7 +7,7 @@ import { LegislatorHex } from "./LegislatorHexBin";
 import { RidgeLinePlot } from "./RidgeLine";
 import { LegislatorHeatMap } from "./LegislatorHeatMap"
 import { FaSpinner } from 'react-icons/fa';
-import  SemanticScatterPlot  from '../SemanticSimilarity'
+import  {SemanticScatterPlot}  from '../Posts/SemanticSimilarity'
 
 function LegislatorCharts({
   legislatorClicked,
@@ -102,6 +102,8 @@ function LegislatorCharts({
   const [demData, setDemData] = useState([]);
   const [repubData, setRepubData] = useState([]);
 
+
+
     
 
   const handleChange = (newValue) => {
@@ -160,18 +162,23 @@ function LegislatorCharts({
 
       <div className="mt-4 overflow-y-auto min-h-[400px]">
         {dVal === 0 && (
-          <LegislatorHeatMap
-            width={550}
-            height={400}
-            startDate={startDate}
-            endDate={endDate}
-            data={demData}
-            legScatterData={legScatterData}
-            setLegislatorClicked={setLegislatorClicked}
-            party={1}
-            legislatorClicked={legislatorClicked}
-          />
-        //  <SemanticScatterPlot width={400} height={400} data={semanticData.slice(0,100)} />
+          // <LegislatorHeatMap
+          //   width={550}
+          //   height={400}
+          //   startDate={startDate}
+          //   endDate={endDate}
+          //   data={demData}
+          //   legScatterData={legScatterData}
+          //   setLegislatorClicked={setLegislatorClicked}
+          //   party={1}
+          //   legislatorClicked={legislatorClicked}
+          // />
+
+          <div className="relative">
+            <SemanticScatterPlot width={400} height={400} data={semanticData.slice(0, 100)} hoveredSemanticDataRef={hoveredSemanticDataRef} />
+          </div>
+
+         
         )}
         {dVal === 1 && (
           

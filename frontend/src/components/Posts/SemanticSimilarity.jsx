@@ -1,13 +1,36 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import { Tooltip, TooltipGroup } from "./Legislators/LegislatorTooltip";
+import {
+  Tooltip,
+  TooltipGroup,
+  TextTip,
+} from "../Legislators/LegislatorTooltip";
+import { SemanticTooltip } from "../Legislators/SemanticTooltip";
 
-const SemanticScatterPlot = ({ data, width = 800, height = 600 }) => {
+export const SemanticScatterPlot = ({
+  data,
+  width = 800,
+  height = 600,
+  hoveredSemanticDataRef,
+}) => {
   const svgRef = useRef(null);
   const tooltipRef = useRef(null);
   const margin = { top: 40, right: 40, bottom: 50, left: 60 };
   const [hoverData, setHoverData] = useState([]);
   const [clickedTooltip, setClickedTooltip] = useState(false);
+  const updatedColorScale = [
+    {
+      abortion: "#1f77b4",
+      blacklivesmatter: "#ff7f0e",
+      capitol: "#2ca02c",
+      climate: "#2ca02c",
+      covid: "#d62728",
+      gun: "#9467bd",
+      immigra: "#8c564b",
+      rights: "#e377c2",
+    },
+  ];
+  const topics = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"]
 
   useEffect(() => {
     if (!data || data.length === 0) return;
@@ -101,7 +124,7 @@ const SemanticScatterPlot = ({ data, width = 800, height = 600 }) => {
       .attr("cx", (d) => xScale(d.pca_x))
       .attr("cy", (d) => yScale(d.pca_y))
       .attr("r", 5) // Radius of points
-      .attr("fill", (d) => colorScale(d.party))
+      .attr("fill", (d) => updatedColorScale[0][d.topics__name])
       .attr("fill-opacity", 0.7)
       .style("cursor", "pointer")
       .on("click", function (event, d) {
@@ -124,6 +147,8 @@ const SemanticScatterPlot = ({ data, width = 800, height = 600 }) => {
         point.x = xScale(d.pca_x);
         point.y = yScale(d.pca_y);
 
+        console.log("point.x, point.y", point.x, point.y);
+
         const screenCTM = svg.getScreenCTM();
         const screenPoint = point.matrixTransform(screenCTM);
         const containerRect = svg.parentNode.getBoundingClientRect();
@@ -132,7 +157,31 @@ const SemanticScatterPlot = ({ data, width = 800, height = 600 }) => {
         const yPos = screenPoint.y - containerRect.top;
 
         setHoverData({ xPos, yPos, d });
-        console.log("set hover data", xPos, yPos, d)
+        console.log("set hover data", xPos, yPos, d);
+      })
+      .on("mouseover", function (event, d) {
+        event.stopPropagation();
+
+        const svg = svgRef.current;
+        const chartArea = svg.querySelector("g"); // get <g transform="translate(...)">
+
+        const point = svg.createSVGPoint();
+        point.x = xScale(d.pca_x);
+        point.y = yScale(d.pca_y);
+
+        const screenPoint = point.matrixTransform(chartArea.getScreenCTM());
+        const containerRect = svg.getBoundingClientRect();
+
+        const xPos = screenPoint.x - containerRect.left;
+        const yPos = screenPoint.y - containerRect.top;
+
+        hoveredSemanticDataRef.current = { xPos, yPos, d };
+      })
+
+      .on("mouseleave", function (event, d) {
+        event.stopPropagation();
+
+        hoveredSemanticDataRef.current = null;
       });
 
     // --- Zoom ---
@@ -167,19 +216,85 @@ const SemanticScatterPlot = ({ data, width = 800, height = 600 }) => {
       .style("pointer-events", "all")
       .lower() // Send to back so points are on top
       .call(zoom);
+    
+    svg
+      .selectAll("mydots")
+      .data(topics)
+      .enter()
+      .append("circle")
+      .attr("cx", 80)
+      .attr("cy", function (d, i) { return 10 + i * 15 })
+      .attr("r", 5)
+      .style("fill", function (d) { console.log("d", updatedColorScale[d]);  return updatedColorScale[0][d] })
+    
+    svg
+      .selectAll("mylabels")
+      .data(topics)
+      .enter()
+      .append("text")
+      .attr("x", 90)
+      .attr("y", function (d, i) { return 10 + i * 15})
+      .style("fill", function (d) { return updatedColorScale[0][d] })
+      .attr("text-anchor", "left")
+      .style("alignment-baseline", "middle")
+      .style("font-size", "10px")
+      .text(function(d){return d})
   }, [data, width, height]); // Rerun effect if these change
+
+  const [tooltipData, setTooltipData] = useState(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (hoveredSemanticDataRef.current !== tooltipData) {
+        console.log("updated tooltip bc we zoomed or smth");
+        setTooltipData(hoveredSemanticDataRef.current);
+      }
+    }, 1);
+    return () => clearInterval(interval);
+  }, [hoveredSemanticDataRef, tooltipData]);
 
   return (
     <div style={{ position: "relative" }}>
       <svg ref={svgRef} width={width} height={height}></svg>
-      {hoverData && (
-        <Tooltip
-          xPos={hoverData.xPos}
+      {/* { && (
+        // <Tooltip
+        //   xPos={hoverData.xPos}
+        //   yPos={hoverData.yPos}
+        //   name={hoverData.d} />
+        <TextTip xPos={hoverData.xPos}
           yPos={hoverData.yPos}
-          name={hoverData.d} />
+          />
+      )} */}
+      {/* <SemanticTooltip width={width} height={height} data={tooltipData}  /> */}
+      {tooltipData === null ? (
+        <div>
+          <span className="font-bold text-xs">Topic:</span> <br></br>
+          <span className="font-bold text-xs">Party:</span> <br></br>
+          <span className="font-bold text-xs ">Date:</span> <br></br>
+          <span className="font-bold text-xs">Likes: </span> <br></br>
+          <span className="font-bold text-xs">Reposts: </span> <br></br>
+        </div>
+      ) : (
+        <div>
+          <span className="font-bold text-xs">Topic:</span>{" "}
+          <span className="text-xs"> {tooltipData.d.topics__name} </span>{" "}
+          <br></br>
+          <span className="font-bold text-xs">Party:</span>{" "}
+          <span className="text-xs"> {tooltipData.d.party} </span> <br></br>
+          <span className="font-bold text-xs ">Date:</span>{" "}
+          <span className="text-xs">
+            {" "}
+            {tooltipData.d.created_at.split("T")[0]}
+          </span>{" "}
+          <br></br>
+          <span className="font-bold text-xs">Likes: </span>{" "}
+          <span className="text-xs"> {tooltipData.d.like_count} </span>{" "}
+          <br></br>
+          <span className="font-bold text-xs">Reposts: </span>{" "}
+          <span className="text-xs"> {tooltipData.d.retweet_count} </span>{" "}
+          <br></br>
+        </div>
       )}
     </div>
   );
 };
-
-export default SemanticScatterPlot;

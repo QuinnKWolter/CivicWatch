@@ -14,19 +14,30 @@ import os
 from django.conf import settings
 from collections import defaultdict
 
-# 🔹 Helper function: Filter posts by date range and optional criteria
 def filter_posts(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
-    topic = request.GET.get('topic')
-    
-    posts = Post.objects.filter(created_at__range=[start_date, end_date])
-    if topic:
-        posts = posts.filter(text__icontains=topic)
-    
-    return posts
+    topics_param = request.GET.get('topics', '')
+    topic_list = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
+    keyword = request.GET.get('keyword', '')
+    print("keyword", keyword)
+    legislator_name = request.GET.get('legislator', '')
+    print("legislator_name", legislator_name)
 
-# 🔹 Legislator Data API
+    posts_filter = Q()
+    if start_date:
+        posts_filter &= Q(created_at__gte=parse_date(start_date))
+    if end_date:
+        posts_filter &= Q(created_at__lte=parse_date(end_date))
+    if topic_list:
+        posts_filter &= Q(topics__name__in=topic_list)
+    if keyword:
+        posts_filter &= Q(text__icontains=keyword)
+    if legislator_name:
+        posts_filter &= Q(legislator__name__iexact=legislator_name)
+
+    return Post.objects.filter(posts_filter).distinct()
+
 def all_legislators(request):
     try:
         print("Fetching legislators")
@@ -36,11 +47,6 @@ def all_legislators(request):
     except Exception as e:
         print("Error fetching legislators:", e)
         return JsonResponse({"error": str(e)}, status=500)
-
-def legislator_detail(request, legislator_id):
-    legislator = get_object_or_404(Legislator, pk=legislator_id)
-    return JsonResponse({"id": legislator.legislator_id, "name": legislator.name, "party": legislator.party, "state": legislator.state})
-
 
 def legislator_posts_by_month(request):
     start_date = request.GET.get('start_date')
@@ -265,21 +271,6 @@ def all_topics(request):
     topics = Topic.objects.values("id", "name", "description")
     return JsonResponse(list(topics), safe=False)
 
-# 🔹 Bipartite Temporal Flow Diagram APIs
-def flow_posts(request):
-    posts = filter_posts(request)
-    post_counts = posts.values("created_at").annotate(count=Count("post_id"))
-    return JsonResponse(list(post_counts), safe=False)
-
-def flow_civility_misinformation(request):
-    posts = filter_posts(request)
-    stats = posts.aggregate(avg_civility=Avg("civility_score"), avg_misinfo=Avg("count_misinfo"))
-    return JsonResponse(stats, safe=False)
-
-def flow_engagement(request):
-    posts = filter_posts(request)
-    engagement = posts.aggregate(total_likes=Sum("like_count"), total_retweets=Sum("retweet_count"))
-    return JsonResponse(engagement, safe=False)
 
 # 🔹 Chord Diagram APIs
 def chord_interactions(request):
@@ -309,98 +300,6 @@ def geo_activity(request):
     
     return JsonResponse(list(geo_stats), safe=False)
 
-# def geo_activity_topics(request):
-#     start_date = request.GET.get('start_date')
-#     end_date = request.GET.get('end_date')
-#     metric = request.GET.get('metric', 'posts')
-
-#     topics_param = request.GET.get('topics', '')
-#     topic_list = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
-
-#     # Define the default conditions
-#     default_start_date = '2020-01-01'
-#     default_end_date = '2021-12-31'
-#     default_topics = ['abortion', 'blacklivesmatter', 'capitol', 'climate', 'covid', 'gun', 'immigra', 'rights']
-
-#     # Check if the request matches the default conditions
-#     if (start_date == default_start_date and end_date == default_end_date and
-#         set(topic_list) == set(default_topics)):
-
-#         # Determine which default file to serve based on the metric
-#         if metric == 'posts':
-#             file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultChoroplethPosts.json')
-#         elif metric == 'legislators':
-#             file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultChoroplethLegislators.json')
-#         elif metric == 'engagement':
-#             file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultChoroplethEngagement.json')
-#         else:
-#             return JsonResponse({"error": "Invalid metric"}, status=400)
-
-#         try:
-#             with open(file_path, 'r') as f:
-#                 data = json.load(f)
-#             return JsonResponse(data, safe=False)
-#         except FileNotFoundError:
-#             return JsonResponse({"error": "Default data file not found"}, status=404)
-
-#     # If not default, proceed with the regular logic
-#     posts = Post.objects.all()
-
-#     if start_date:
-#         posts = posts.filter(created_at__gte=start_date)
-#     if end_date:
-#         posts = posts.filter(created_at__lte=end_date)
-
-#     if topic_list:
-#         posts = posts.filter(topics__name__in=topic_list).distinct()
-
-#     geo_stats = []
-
-#     if metric == 'posts':
-#         post_counts = posts.values('state', 'party').annotate(total=Count('post_id'))
-#         geo_stats = list(post_counts)
-
-#     elif metric == 'legislators':
-#         legislator_counts = posts.values('state', 'party', 'legislator_id').distinct().annotate(
-#             legislator_count=Count('legislator_id', distinct=True)
-#         )
-#         geo_stats = list(legislator_counts)
-
-#     elif metric == 'engagement':
-#         unique_post_ids = posts.values_list('post_id', flat=True).distinct()
-#         filtered_posts = Post.objects.filter(post_id__in=unique_post_ids)
-
-#         engagement_data = filtered_posts.values('state', 'party').annotate(
-#             total_engagement=Sum(F('like_count') + F('retweet_count'))
-#         )
-#         geo_stats = list(engagement_data)
-
-#     state_party_data = {}
-#     for entry in geo_stats:
-#         state = entry['state']
-#         party = entry['party']
-
-#         if party not in ['Democratic', 'Republican']:
-#             continue
-
-#         total = (
-#             entry['total'] if metric == 'posts'
-#             else entry['legislator_count'] if metric == 'legislators'
-#             else entry['total_engagement']
-#         )
-
-#         if state not in state_party_data:
-#             state_party_data[state] = {
-#                 'state': state,
-#                 'Democratic': 0,
-#                 'Republican': 0,
-#                 'total': 0
-#             }
-
-#         state_party_data[state][party] += total
-#         state_party_data[state]['total'] += total
-
-#     return JsonResponse(list(state_party_data.values()), safe=False)
 
 def geo_activity_topics(request):
     start_date = request.GET.get('start_date')
@@ -409,11 +308,6 @@ def geo_activity_topics(request):
 
     topics_param = request.GET.get('topics', '')
     topic_list = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
-
-    default_start_date = '2020-01-01'
-    default_end_date = '2021-12-31'
-    default_topics = ['abortion', 'blacklivesmatter', 'capitol', 'climate', 'covid', 'gun', 'immigra', 'rights']
-
     
     posts = Post.objects.all()
 
@@ -544,59 +438,6 @@ def post_semantic_similarity(request):
     posts_list = posts_query.values("post_id", "topics__name", "name", "party", "text", "created_at", "like_count", "retweet_count", "civility_score", "count_misinfo", "pca_x", "pca_y")
     return JsonResponse(list(posts_list), safe=False)
 
-
-
-# 🔹 Post Exploration APIs
-def all_posts(request):
-    posts = filter_posts(request)
-    post_list = posts.values("post_id", "text", "created_at", "like_count", "retweet_count", "civility_score", "count_misinfo")
-    return JsonResponse(list(post_list), safe=False)
-
-def top_posts(request):
-    posts = filter_posts(request).order_by("-like_count")[:10]
-    post_list = posts.values("post_id", "text", "like_count", "retweet_count")
-    return JsonResponse(list(post_list), safe=False)
-
-# def legislators_scatter_data(request):
-#     start_date = request.GET.get('start_date')
-#     end_date = request.GET.get('end_date')
-
-#     legislators = Legislator.objects.all()
-
-#     topic_keywords = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"]
-
-#     posts_filter = Q()
-#     if start_date:
-#         start_date = parse_date(start_date)
-#         posts_filter &= Q(created_at__gte=start_date)
-#     if end_date:
-#         end_date = parse_date(end_date)
-#         posts_filter &= Q(created_at__lte=end_date)
-
-#     data = []
-#     for legislator in legislators:
-#         posts = legislator.tweets.filter(posts_filter)
-
-#         topic_counts = {topic: posts.filter(text__icontains=topic).count() for topic in topic_keywords}
-
-#         data.append({
-#             "name": legislator.name,
-#             "state": legislator.state,
-#             "chamber": legislator.chamber,
-#             "party": legislator.party,
-#             "lid": legislator.legislator_id,
-#             "total_posts_tw": posts.count(),
-#             "total_likes_tw": posts.aggregate(total_likes=Sum("like_count"))["total_likes"] or 0,
-#             "total_retweets_tw": posts.aggregate(total_retweets=Sum("retweet_count"))["total_retweets"] or 0,
-#             "total_misinfo_count_tw": posts.aggregate(total_misinfo=Sum("count_misinfo"))["total_misinfo"] or 0,
-#             "total_interactions_tw": posts.aggregate(total_interactions=Sum("like_count") + Sum("retweet_count"))["total_interactions"] or 0,
-#             "interaction_score_tw": legislator.interaction_score_tw,
-#             "overperforming_score_tw": legislator.overperforming_score_tw,
-#             "civility_score_tw": legislator.civility_score_tw,
-#             **topic_counts  # Add topic data dynamically
-#         })
-
-#     return JsonResponse(data, safe=False)
 
 
 def legislators_scatter_data(request):
@@ -825,37 +666,9 @@ def post_statistics(request):
     return JsonResponse(response_data, safe=False)
 
 def overview_metrics(request):
-    """
-    Endpoint providing overview metrics and visualization data for dashboard
+    # Use the filter_posts function to get the filtered posts
+    filtered_posts = filter_posts(request).select_related('legislator').distinct()
 
-    Parameters:
-    - start_date: ISO format date string (e.g., "2020-01-01")
-    - end_date: ISO format date string (e.g., "2021-12-31")
-    - topics: Comma-separated list of topic names
-
-    Returns structured JSON with summary metrics and visualization data
-    """
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    topics_param = request.GET.get('topics', '')
-    
-    # Parse topics from comma-separated string to list if provided
-    topics = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
-    
-    # Build filter conditions for Posts
-    filters = Q()
-    if start_date and end_date:
-        start_date_obj = parse_date(start_date)
-        end_date_obj = parse_date(end_date)
-        filters &= Q(created_at__range=[start_date_obj, end_date_obj])
-    
-    # Add topic filtering if topics are provided
-    if topics:
-        filters &= Q(topics__name__in=topics)
-    
-    # Get filtered posts (using select_related to fetch legislator data efficiently)
-    filtered_posts = Post.objects.filter(filters).select_related('legislator').distinct()
-    
     # Calculate basic summary metrics by party
     summary_metrics = filtered_posts.values('party').annotate(
         total_posts=Count('post_id'),
@@ -863,7 +676,7 @@ def overview_metrics(request):
         total_likes=Sum('like_count'),
         total_retweets=Sum('retweet_count')
     ).order_by('party')
-    
+
     # Structure basic summary metrics in a dictionary keyed by party
     summary_metrics_dict = {}
     for item in summary_metrics:
@@ -874,25 +687,25 @@ def overview_metrics(request):
                 "totalLikes": item['total_likes'],
                 "totalRetweets": item['total_retweets']
             }
-    
+
     # Compute extended metrics for each party
     for party in ['Democratic', 'Republican']:
         # Filter posts further by party
         party_posts = filtered_posts.filter(party=party)
-        
+
         # 1. Number of Legislators: distinct legislator_id
         num_legislators = party_posts.values('legislator__legislator_id').distinct().count()
-        
+
         # 2. Number of Uncivil Posts: assume uncivil if civility_score < 1 (adjust threshold if needed)
         num_uncivil_posts = party_posts.filter(civility_score__lt=1).count()
-        
+
         # 3. Number of Misinformative Posts: assume misinformative if count_misinfo > 0
         num_misinfo_posts = party_posts.filter(count_misinfo__gt=0).count()
-        
+
         # 4. Most Active State: group by state, then pick the one with the largest post count
         most_active_state_obj = party_posts.values('state').annotate(post_count=Count('post_id')).order_by('-post_count').first()
         most_active_state = most_active_state_obj['state'] if most_active_state_obj else None
-        
+
         # Add these to the summary for the party
         if party in summary_metrics_dict:
             summary_metrics_dict[party].update({
@@ -913,12 +726,12 @@ def overview_metrics(request):
                 "numMisinfoPosts": 0,
                 "mostActiveState": None
             }
-    
+
     # Compile the final response data
     response_data = {
         "summaryMetrics": summary_metrics_dict,
     }
-    
+
     return JsonResponse(response_data)
 
 def bipartite_data(request):

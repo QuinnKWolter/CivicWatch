@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import dayjs from 'dayjs'
 import { colorMap, topicIcons } from '../../utils/utils';
 
-function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, activeTopics, setActiveTopics, startDate, setStartDate, endDate, setEndDate, sidebarOpen, selectedMetric, setSelectedMetric, keyword, setKeyword }) {
+function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, activeTopics, setActiveTopics, startDate, setStartDate, endDate, setEndDate, sidebarOpen, selectedMetric, setSelectedMetric, keyword, setKeyword, legislator, setLegislator }) {
   const [legislators, setLegislators] = useState([]);
-  const [selectedLegislator, setSelectedLegislator] = useState(null);
   const [flashpoint, setFlashpoint] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,7 +35,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
   const fetchLegislators = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8000/api/legislators/');
+      const response = await fetch('/api/legislators/');
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -50,7 +49,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
   };
 
   const handleLegislatorSelect = (legislator) => {
-    setSelectedLegislator(legislator);
+    setLegislator(legislator);
     setSearchTerm(`${legislator.name} (${legislator.party.charAt(0)} - ${legislator.state})`);
     setDropdownOpen(false);
   };

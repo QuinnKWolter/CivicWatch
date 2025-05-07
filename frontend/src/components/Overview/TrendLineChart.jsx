@@ -25,11 +25,11 @@ function TrendLineChart({ startDate, endDate, selectedTopics }) {
           selectedTopics.every(topic => defaultTopics.includes(topic))
         ) {
           // Fetch default data
-          response = await fetch('http://localhost:8000/api/default_trendline_data/');
+          response = await fetch('/api/default_trendline_data/');
         } else {
           // Fetch regular data
           const topicsParam = selectedTopics.join(',');
-          response = await fetch(`http://localhost:8000/api/trend_data/?start_date=${startDate.format('YYYY-MM-DD')}&end_date=${endDate.format('YYYY-MM-DD')}&topics=${topicsParam}`);
+          response = await fetch(`/api/trend_data/?start_date=${startDate.format('YYYY-MM-DD')}&end_date=${endDate.format('YYYY-MM-DD')}&topics=${topicsParam}`);
         }
 
         if (!response.ok) {
