@@ -3,7 +3,7 @@ import pandas as pd
 from django.core.management.base import BaseCommand
 from sentence_transformers import SentenceTransformer
 from sklearn.decomposition import PCA
-from ...models import Post
+from civicwatch.models import Post
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
