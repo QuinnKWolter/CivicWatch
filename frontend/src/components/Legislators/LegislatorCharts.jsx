@@ -162,21 +162,21 @@ function LegislatorCharts({
 
       <div className="mt-4 overflow-y-auto min-h-[400px]">
         {dVal === 0 && (
-          // <LegislatorHeatMap
-          //   width={550}
-          //   height={400}
-          //   startDate={startDate}
-          //   endDate={endDate}
-          //   data={demData}
-          //   legScatterData={legScatterData}
-          //   setLegislatorClicked={setLegislatorClicked}
-          //   party={1}
-          //   legislatorClicked={legislatorClicked}
-          // />
+          <LegislatorHeatMap
+            width={550}
+            height={400}
+            startDate={startDate}
+            endDate={endDate}
+            data={demData}
+            legScatterData={legScatterData}
+            setLegislatorClicked={setLegislatorClicked}
+            party={1}
+            legislatorClicked={legislatorClicked}
+          />
 
-          <div className="relative">
-            <SemanticScatterPlot width={400} height={400} data={semanticData.slice(0, 100)} hoveredSemanticDataRef={hoveredSemanticDataRef} />
-          </div>
+          // <div className="relative">
+          //   <SemanticScatterPlot width={400} height={400} data={semanticData.slice(0, 100)} hoveredSemanticDataRef={hoveredSemanticDataRef} />
+          // </div>
 
          
         )}

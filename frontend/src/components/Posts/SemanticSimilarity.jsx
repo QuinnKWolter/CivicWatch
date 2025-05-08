@@ -35,6 +35,8 @@ export const SemanticScatterPlot = ({
   useEffect(() => {
     if (!data || data.length === 0) return;
 
+    console.log("DATA:" , data)
+
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove(); // Clear previous renders
 
