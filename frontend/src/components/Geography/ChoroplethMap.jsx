@@ -1,5 +1,4 @@
-import '../../App.css';
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import PropTypes from 'prop-types';
 
@@ -13,11 +12,11 @@ function ChoroplethMap({
   onStateSelected,
   showLegend = false,
   blueScale,
-  redScale
+  redScale,
+  isNormalized
 }) {
   const svgRef = useRef();
 
-  // Render the map when data or dimensions change
   useEffect(() => {
     if (!geojson || geoData.length === 0) return;
 
@@ -43,29 +42,48 @@ function ChoroplethMap({
 
     const path = d3.geoPath(d3.geoAlbersUsa().scale(1300).translate([487.5, 305]));
 
-    const stateGeoMap = new Map();
-    geoData.forEach(d => stateGeoMap.set(d.state, d));
+    const stateGeoMap = new Map(geoData.map(d => [d.state, d]));
+
+    // Normalization logic
+    const demValues = geoData.map(d => d.democratTotal);
+    const repValues = geoData.map(d => d.republicanTotal);
+    const demMean = d3.mean(demValues);
+    const repMean = d3.mean(repValues);
+    const demStdDev = d3.deviation(demValues) || 1;
+    const repStdDev = d3.deviation(repValues) || 1;
+
+    // Color calculation for raw and normalized data
+    const getColor = (stateName) => {
+      const stateData = stateGeoMap.get(stateName);
+      if (!stateData) return '#eee';
+
+      const { democratTotal, republicanTotal } = stateData;
+
+      // Normalize data based on toggle
+      if (isNormalized) {
+        const demZ = (democratTotal - demMean) / demStdDev;
+        const repZ = (republicanTotal - repMean) / repStdDev;
+
+        if (isNaN(demZ) || isNaN(repZ)) return '#eee';
+        console.log(`Normalized Z-Scores -> Democrat: ${demZ}, Republican: ${repZ}`); // Debugging output
+        return demZ > repZ ? blueScale(democratTotal) : redScale(republicanTotal);
+      } else {
+        console.log(`Raw data -> Democrat: ${democratTotal}, Republican: ${republicanTotal}`); // Debugging output
+        // Use raw data when normalized is false
+        return democratTotal > republicanTotal ? blueScale(democratTotal) : redScale(republicanTotal);
+      }
+    };
 
     const metricLabel = selectedMetric === 'posts' ? 'Total Posts' : 
-                       selectedMetric === 'legislators' ? 'Total Legislators' : 
-                       'Total Engagement';
+                        selectedMetric === 'legislators' ? 'Total Legislators' : 
+                        'Total Engagement';
 
     svg.append('g')
       .selectAll('path')
       .data(geojson.features)
       .join('path')
       .attr('d', path)
-      .attr('fill', d => {
-        const stateName = d.properties.name;
-        const stateData = stateGeoMap.get(stateName);
-        if (!stateData) return '#eee';
-        
-        const dem = stateData.democratTotal;
-        const rep = stateData.republicanTotal;
-        
-        if (dem > rep) return blueScale(dem);
-        return redScale(rep);
-      })
+      .attr('fill', d => getColor(d.properties.name))
       .attr('stroke', '#fff')
       .attr('stroke-width', 0.5)
       .on('mousemove', function (event, d) {
@@ -74,13 +92,14 @@ function ChoroplethMap({
         if (!stateData) return;
 
         const tooltipHtml = `
-          <strong>${stateName}</strong><br/>
-          <strong>${metricLabel}:</strong> ${formatNumber(stateData.total_engagement)}<br/>
-          <strong>From date:</strong> ${startDate.format('YYYY-MM-DD')} to ${endDate.format('YYYY-MM-DD')}<br/>
-          <strong>On topics:</strong> ${selectedTopics.join(', ') || 'All topics'}<br/>
-          With <strong>Democrats:</strong> ${formatNumber(stateData.democratTotal)}<br/>
-          And <strong>Republicans:</strong> ${formatNumber(stateData.republicanTotal)}<br/>
-        `;
+        <strong>${stateName}</strong><br/>
+        <strong>${metricLabel}:</strong> ${formatNumber(stateData.total_engagement)}<br/>
+        <strong>From:</strong> ${startDate.format('YYYY-MM-DD')} to ${endDate.format('YYYY-MM-DD')}<br/>
+        <strong>Topics:</strong> ${selectedTopics.join(', ') || 'All topics'}<br/>
+        <strong>Democrats:</strong> ${isNormalized ? formatNumber((stateData.democratTotal - demMean) / demStdDev) : formatNumber(stateData.democratTotal)}<br/>
+        <strong>Republicans:</strong> ${isNormalized ? formatNumber((stateData.republicanTotal - repMean) / repStdDev) : formatNumber(stateData.republicanTotal)}<br/>
+        <strong>${isNormalized ? 'Normalized' : 'Raw'} Data</strong><br/>
+      `;
 
         tooltip
           .html(tooltipHtml)
@@ -104,7 +123,7 @@ function ChoroplethMap({
       });
 
     return () => tooltip.remove();
-  }, [geojson, geoData, selectedMetric, startDate, endDate, selectedTopics, onStateSelected, blueScale, redScale]);
+  }, [geojson, geoData, selectedMetric, startDate, endDate, selectedTopics, onStateSelected, blueScale, redScale, isNormalized]);
 
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -146,3 +165,4 @@ ChoroplethMap.propTypes = {
 };
 
 export default ChoroplethMap;
+
