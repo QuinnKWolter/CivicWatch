@@ -1,5 +1,5 @@
 import '../../App.css';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import { FaSpinner } from 'react-icons/fa';
@@ -25,10 +25,11 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
   const [selectedState, setSelectedState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isNormalized, setIsNormalized] = useState(false);
+
   const legendWidth = 200;
   const legendHeight = 10;
 
-  // Load GeoJSON data
   useEffect(() => {
     fetch('./us-states.json')
       .then(res => res.json())
@@ -42,7 +43,6 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
       });
   }, []);
 
-  // Fetch state data based on selected filters
   useEffect(() => {
     if (!startDate || !endDate || !selectedTopics || selectedTopics.length === 0) return;
 
@@ -72,13 +72,10 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
       });
   }, [startDate, endDate, selectedTopics, selectedMetric]);
 
-  // Update selected state when metric changes
   useEffect(() => {
     if (!selectedState || !geoData.length) return;
-    
-    // Find the updated data for the currently selected state
+
     const updatedStateData = geoData.find(d => d.state === selectedState.name);
-    
     if (updatedStateData) {
       setSelectedState({
         name: selectedState.name,
@@ -87,20 +84,13 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
     }
   }, [geoData, selectedState?.name, selectedMetric]);
 
-  // Calculate min/max values for both parties
   const demMin = d3.min(geoData, d => d.democratTotal) || 0;
   const demMax = d3.max(geoData, d => d.democratTotal) || 0;
   const repMin = d3.min(geoData, d => d.republicanTotal) || 0;
   const repMax = d3.max(geoData, d => d.republicanTotal) || 0;
 
-  // Update the scales to use the actual data range
-  const blueScale = d3.scaleLinear()
-    .domain([demMin, demMax])
-    .range(['#add8e6', '#1e3a8a']);
-
-  const redScale = d3.scaleLinear()
-    .domain([repMin, repMax])
-    .range(['#f4cccc', '#cc0000']);
+  const blueScale = d3.scaleLinear().domain([demMin, demMax]).range(['#add8e6', '#1e3a8a']);
+  const redScale = d3.scaleLinear().domain([repMin, repMax]).range(['#f4cccc', '#cc0000']);
 
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -108,15 +98,16 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
     return num;
   };
 
-  // Format metric name for display
   const getMetricDisplayName = (metric) => {
-    switch(metric) {
+    switch (metric) {
       case 'posts': return 'Posts';
       case 'legislators': return 'Legislators';
       case 'engagement': return 'Engagement';
       default: return 'Activity';
     }
   };
+
+  const toggleNormalization = () => setIsNormalized(prev => !prev);
 
   if (loading) {
     return (
@@ -137,7 +128,7 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
 
   return (
     <>
-      <ChoroplethMap 
+      <ChoroplethMap
         geojson={geojson}
         geoData={geoData}
         selectedMetric={selectedMetric}
@@ -148,16 +139,16 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
         showLegend={false}
         blueScale={blueScale}
         redScale={redScale}
+        isNormalized={isNormalized}
       />
-      
+
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '30px', marginBottom: '20px' }}>
         <svg width={legendWidth * 3} height={legendHeight * 4} className="text-base-content">
           <g transform="translate(30, 0)">
             <text x={0} y={12} style={{ fontSize: '14px', fontWeight: 'bold' }} className="fill-current">Democrat</text>
-            
-            <g transform={`translate(20, 20)`}>
+
+            <g transform="translate(20, 20)">
               <text x={-25} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(demMin)}</text>
-              
               {blueScale.range().map((d, i) => (
                 <rect
                   key={`blue-rect-${i}`}
@@ -168,15 +159,13 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
                   style={{ fill: d }}
                 />
               ))}
-              
               <text x={(legendWidth * 0.7) + 5} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(demMax)}</text>
             </g>
 
-            <text x={legendWidth * 1.2} y={12} style={{ fontSize: '14px', fontWeight: 'bold' }} className="fill-current">Republican</text>
+            <text x={legendWidth * 1.5} y={12} style={{ fontSize: '14px', fontWeight: 'bold' }} className="fill-current">Republican</text>
             
             <g transform={`translate(${legendWidth * 1.2 + 20}, 20)`}>
               <text x={-25} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(repMin)}</text>
-              
               {redScale.range().map((d, i) => (
                 <rect
                   key={`red-rect-${i}`}
@@ -187,27 +176,34 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
                   style={{ fill: d }}
                 />
               ))}
-              
               <text x={(legendWidth * 0.7) + 5} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(repMax)}</text>
             </g>
           </g>
         </svg>
       </div>
 
+      <div className="flex justify-center mb-4">
+        <button onClick={toggleNormalization} className="btn btn-primary">
+          {isNormalized ? 'Switch to Raw Data' : 'Switch to Normalized Data'}
+        </button>
+      </div>
+
       {selectedState && (
         <div className="mt-6 px-4">
-          <h3 className="text-base-content text-xl font-bold mb-3">{selectedState.name} {getMetricDisplayName(selectedMetric)} Breakdown</h3>
+          <h3 className="text-base-content text-xl font-bold mb-3">
+            {selectedState.name} {getMetricDisplayName(selectedMetric)} Breakdown
+          </h3>
           <div className="overflow-x-auto">
             <table className="table table-zebra w-full">
               <thead>
-                <tr className="!bg-base-200">
+              <tr className="!bg-base-200">
                   <th className="text-base-content !bg-base-200 border-b-base-300">Topic</th>
                   <th className="!bg-base-200 text-blue-600 border-b-base-300">Democratic</th>
                   <th className="!bg-base-200 text-red-600 border-b-base-300">Republican</th>
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(selectedState.topicBreakdown).map(([topic, { Democratic, Republican }]) => (
+                  {Object.entries(selectedState.topicBreakdown).map(([topic, { Democratic, Republican }]) => (
                   <tr key={topic} className="hover">
                     <td className="font-medium">{topic}</td>
                     <td className="text-blue-600">{formatNumber(Democratic)}</td>
@@ -224,10 +220,10 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
 }
 
 GeographyCharts.propTypes = {
-  startDate: PropTypes.object,
-  endDate: PropTypes.object,
-  selectedTopics: PropTypes.array,
-  selectedMetric: PropTypes.string
+  startDate: PropTypes.object.isRequired,
+  endDate: PropTypes.object.isRequired,
+  selectedTopics: PropTypes.array.isRequired,
+  selectedMetric: PropTypes.string.isRequired,
 };
 
 export default GeographyCharts;
