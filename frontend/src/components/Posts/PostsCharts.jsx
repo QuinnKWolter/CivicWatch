@@ -17,7 +17,7 @@ export const PostCharts = ({ startDate, endDate, semanticData, semanticLoading, 
     
     return (
         <div className="relative">
-            <SemanticScatterPlot width={400} height={800} data={semanticData.slice(0, 100)} hoveredSemanticDataRef={hoveredSemanticDataRef} />
+            <SemanticScatterPlot width={380} height={380} data={semanticData.slice(0, 100)} hoveredSemanticDataRef={hoveredSemanticDataRef} />
 
         </div>
     )
