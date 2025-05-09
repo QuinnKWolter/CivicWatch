@@ -6,11 +6,13 @@ import {
   TextTip,
 } from "../Legislators/LegislatorTooltip";
 import { SemanticTooltip } from "../Legislators/SemanticTooltip";
+import Tippy from '@tippyjs/react'
+import {followCursor} from 'tippy.js'
 
 export const SemanticScatterPlot = ({
   data,
-  width = 800,
-  height = 600,
+  width ,
+  height,
   hoveredSemanticDataRef,
 }) => {
   const svgRef = useRef(null);
@@ -18,6 +20,8 @@ export const SemanticScatterPlot = ({
   const margin = { top: 40, right: 40, bottom: 50, left: 60 };
   const [hoverData, setHoverData] = useState([]);
   const [clickedTooltip, setClickedTooltip] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState('');
+  const [tooltipVisible, setTooltipVisible] = useState(false);
   const updatedColorScale = [
     {
       abortion: "#1f77b4",
@@ -160,30 +164,74 @@ export const SemanticScatterPlot = ({
 
         setHoverData({ xPos, yPos, d });
         console.log("set hover data", xPos, yPos, d);
-      })
-      .on("mouseover", function (event, d) {
-        event.stopPropagation();
-
-        const svg = svgRef.current;
-        const chartArea = svg.querySelector("g"); // get <g transform="translate(...)">
-
-        const point = svg.createSVGPoint();
-        point.x = xScale(d.pca_x);
-        point.y = yScale(d.pca_y);
-
-        const screenPoint = point.matrixTransform(chartArea.getScreenCTM());
-        const containerRect = svg.getBoundingClientRect();
-
-        const xPos = screenPoint.x - containerRect.left;
-        const yPos = screenPoint.y - containerRect.top;
 
         hoveredSemanticDataRef.current = { xPos, yPos, d };
+      })
+      .on("mouseover", function (event, d) {
+        // event.stopPropagation();
+
+        // const svg = svgRef.current;
+        // const chartArea = svg.querySelector("g"); // get <g transform="translate(...)">
+
+        // const point = svg.createSVGPoint();
+        // point.x = xScale(d.pca_x);
+        // point.y = yScale(d.pca_y);
+
+        // const screenPoint = point.matrixTransform(chartArea.getScreenCTM());
+        // const containerRect = svg.getBoundingClientRect();
+
+        // const xPos = screenPoint.x - containerRect.left;
+        // const yPos = screenPoint.y - containerRect.top;
+
+        //hoveredSemanticDataRef.current = { xPos, yPos, d };
+
+        setTooltipContent(
+          <div
+            style={{
+              color: "gray",
+              borderRadius: "1px",
+              padding: "0.5px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center", 
+              height: "100%",
+              width: "100%",
+              lineHeight: "0.8em" 
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+              <strong style={{ fontSize: "0.5em", color: "white" }}>
+                Topic: {d.topics__name}
+              </strong>
+              <strong style={{ fontSize: "0.5em", color: "white" }}>
+                Party: {d.party}
+              </strong>
+              <strong style={{ fontSize: "0.5em", color: "white" }}>
+                Date: {d.created_at.split("T")[0]}
+              </strong>
+              <strong style={{ fontSize: "0.5em", color: "white" }}>
+                Likes: {d.like_count}
+              </strong>
+              <strong style={{fontSize: "0.5em", color: "white"}}>
+                Reposts: {d.retweet_count}
+              </strong>
+              <strong style={{fontSize: "0.5em", color:"white"}}>
+                Author: {d.name}
+              </strong>
+            </div>
+          </div>
+        );
+        
+        setTooltipVisible(true);
       })
 
       .on("mouseleave", function (event, d) {
         event.stopPropagation();
 
-        hoveredSemanticDataRef.current = null;
+        
+        setTooltipVisible(false);
       });
 
     // --- Zoom ---
@@ -257,7 +305,17 @@ export const SemanticScatterPlot = ({
 
   return (
     <div style={{ position: "relative" }}>
-      <svg ref={svgRef} width={width} height={height}></svg>
+      <Tippy
+        content={tooltipContent}
+        visible={tooltipVisible}
+        arrow={false}
+        placement="top"
+        followCursor={true}
+        appendTo={() => document.body}
+        plugins={[followCursor]}
+      >
+        <svg ref={svgRef} width={width} height={height}></svg>
+        </Tippy>
       {/* { && (
         // <Tooltip
         //   xPos={hoverData.xPos}
@@ -270,31 +328,13 @@ export const SemanticScatterPlot = ({
       {/* <SemanticTooltip width={width} height={height} data={tooltipData}  /> */}
       {tooltipData === null ? (
         <div>
-          <span className="font-bold text-xs">Topic:</span> <br></br>
-          <span className="font-bold text-xs">Party:</span> <br></br>
-          <span className="font-bold text-xs ">Date:</span> <br></br>
-          <span className="font-bold text-xs">Likes: </span> <br></br>
-          <span className="font-bold text-xs">Reposts: </span> <br></br>
+          <span className="font-bold text-xs">Post Text:</span> <br></br>
+          
         </div>
       ) : (
         <div>
-          <span className="font-bold text-xs">Topic:</span>{" "}
-          <span className="text-xs"> {tooltipData.d.topics__name} </span>{" "}
-          <br></br>
-          <span className="font-bold text-xs">Party:</span>{" "}
-          <span className="text-xs"> {tooltipData.d.party} </span> <br></br>
-          <span className="font-bold text-xs ">Date:</span>{" "}
-          <span className="text-xs">
-            {" "}
-            {tooltipData.d.created_at.split("T")[0]}
-          </span>{" "}
-          <br></br>
-          <span className="font-bold text-xs">Likes: </span>{" "}
-          <span className="text-xs"> {tooltipData.d.like_count} </span>{" "}
-          <br></br>
-          <span className="font-bold text-xs">Reposts: </span>{" "}
-          <span className="text-xs"> {tooltipData.d.retweet_count} </span>{" "}
-          <br></br>
+            <span className="font-bold text-xs">Post Text: </span>{" "}
+          <span className="text-xs"> { tooltipData.d.text} </span>{" "}
         </div>
       )}
     </div>
