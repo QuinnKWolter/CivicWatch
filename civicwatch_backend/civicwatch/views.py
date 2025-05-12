@@ -282,7 +282,7 @@ def chord_interactions(request):
     if interaction_type:
         interactions = interactions.filter(interaction_type=interaction_type)
 
-    interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"))
+    interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"), source_name=F("source_legislator__name"), target_name=F("target_legislator__name")) #  
     return JsonResponse(list(interaction_counts), safe=False)
 
 def chord_top_legislators(request):
