@@ -7,7 +7,7 @@ export const PostCharts = ({
   endDate, 
   semanticData, 
   semanticLoading, 
-  hoveredSemanticDataRef 
+  hoveredSemanticDataRef
 }) => {
   const [ref, bounds] = useMeasure();
 

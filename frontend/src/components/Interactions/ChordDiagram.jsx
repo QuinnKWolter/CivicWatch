@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import * as d3 from "d3";
 import { ChordSquares } from "./MatrixComponent";
+import Tippy from "@tippyjs/react";
+import { followCursor } from "tippy.js";
 
 const MARGIN = 30;
 const NODE_THICKNESS = 15;
@@ -12,21 +14,27 @@ const partyColor = (party) => {
   return "#999999";
 };
 
-export const ChordDiagram = ({ width, height, startDate, endDate }) => {
+export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) => {
   const svgRef = useRef(null);
   const [matrixChordData, setMatrixChordData] = useState([]);
   const [matrixChordNames, setMatrixChordNames] = useState([]);
   const [connectionColors, setConnectionColors] = useState({});
   const [legCivility, setLegCivility] = useState({});
   const [legMisinfo, setLegMisinfo] = useState({});
-  const [legInteractionScore, setLegInteractionScore] = useState({})
+  const [legInteractionScore, setLegInteractionScore] = useState({});
+  const [allIds, setAllIds] = useState([]);
+  const [tooltipContent, setTooltipContent] = useState([]);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
 
   const url = "http://localhost:8000/api/chord/chord_interactions/?";
 
   useEffect(() => {
+    console.log("reran")
+    console.log("legislator", legislator.legislator_id);
     const params = {
       start_date: startDate.format("YYYY-MM-DD"),
       end_date: endDate.format("YYYY-MM-DD"),
+      legislator: legislator.legislator_id
     };
 
     const queryParams = new URLSearchParams(params).toString();
@@ -35,24 +43,17 @@ export const ChordDiagram = ({ width, height, startDate, endDate }) => {
     fetch(query)
       .then((response) => response.json())
       .then((data) => {
+        console.log(data)
         const filteredData = data.filter(
           (d) =>
             d.count > 0 &&
-            d.source_name != d.target_name &&
-            d.source_state == "WI" 
+            d.source_name != d.target_name
         );
 
         if (filteredData.length === 0) {
           console.log("No data after filtering");
           return;
         }
-
-        
-        const idToParty = {};
-        filteredData.map((d) => {
-          idToParty[d.source_legislator_id] = d.source_party;
-        });
-        console.log("id", idToParty);
 
         const sourceIds = filteredData.map((d) => d.source_legislator_id);
         const targetIds = filteredData.map((d) => d.target_legislator_id);
@@ -84,7 +85,7 @@ export const ChordDiagram = ({ width, height, startDate, endDate }) => {
           idToCivility[d.source_legislator_id] = d.source_civility;
           idToCivility[d.target_legislator_id] = d.target_civility;
         });
-        const allCivilities = allIds.map((id) => idToCivility[id])
+        const allCivilities = allIds.map((id) => idToCivility[id]);
 
         const idToMisinfo = {};
         filteredData.forEach((d) => {
@@ -96,29 +97,41 @@ export const ChordDiagram = ({ width, height, startDate, endDate }) => {
 
         const idToInteractionScore = {};
         filteredData.forEach((d) => {
-          idToInteractionScore[d.source_legislator_id] = d.source_interaction_score;
-          idToInteractionScore[d.target_legislator_id] = d.target_interaction_score;
-        })
+          idToInteractionScore[d.source_legislator_id] =
+            d.source_interaction_score;
+          idToInteractionScore[d.target_legislator_id] =
+            d.target_interaction_score;
+        });
 
-        const allInteractionScores = allIds.map((id) => idToInteractionScore[id]);
+        const allInteractionScores = allIds.map(
+          (id) => idToInteractionScore[id]
+        );
 
-        console.log("allCivilites", allCivilities)
-        
-        console.log("allnames", allNames)
+        const idToParty = {};
+        filteredData.forEach((d) => {
+          idToParty[d.source_legislator_id] = d.source_party;
+          idToParty[d.target_legislator_id] = d.target_party;
+        });
+        // console.log("id", idToParty);
 
-        console.log("allmisinfos", allMisinfo[19])
+        // console.log("allCivilites", allCivilities);
 
-        console.log("allinteractions", allInteractionScores)
+        // console.log("allnames", allNames);
+
+        // console.log("allmisinfos", allMisinfo[19]);
+
+        // console.log("allinteractions", allInteractionScores);
 
         setMatrixChordData(matrix);
         setMatrixChordNames(allNames);
         setConnectionColors(idToParty);
         setLegCivility(allCivilities);
         setLegMisinfo(allMisinfo);
-        setLegInteractionScore(allInteractionScores)
+        setLegInteractionScore(allInteractionScores);
+        setAllIds(allIds);
       })
       .catch((error) => console.error("error fetching chord data", error));
-  }, [startDate, endDate]);
+  }, [startDate, endDate, legislator]);
 
   const allNodes = useMemo(() => {
     if (!matrixChordData || matrixChordData.length === 0) return null;
@@ -149,15 +162,14 @@ export const ChordDiagram = ({ width, height, startDate, endDate }) => {
         const textAnchor = isFlipped ? "end" : "start";
         const transform = `
     rotate(${rotate})
-    translate(${Math.min(width, height) / 2 - MARGIN + 10})
+    translate(${Math.min(width, height) / 2 - 78 + 10})
     ${isFlipped ? "rotate(180)" : ""}
   `;
-        
 
-        const radius = Math.min((width, height / 2 ) - MARGIN + 10);
+        const radius = Math.min((width, height / 2) - MARGIN + 10);
         const offset = 15;
 
-        const cx = (Math.cos(angle - Math.PI / 2) * (radius + offset))
+        const cx = Math.cos(angle - Math.PI / 2) * (radius + offset);
         const cy = Math.sin(angle - Math.PI / 2) * (radius + offset);
 
         const maxMis = d3.max(legMisinfo);
@@ -166,13 +178,56 @@ export const ChordDiagram = ({ width, height, startDate, endDate }) => {
 
         const maxInt = d3.max(legInteractionScore);
 
+        const nodeId = allIds[group.index];
+        const party = connectionColors[nodeId];
+        const arcFill = partyColor(party);
+
+        // console.log("connectionColors", connectionColors);
+        // console.log("nodeId:", nodeId);
+
         return (
           <g key={i}>
             <path
               d={arcGenerator(group)}
-              fill="#808080"
-              stroke="#333"
-              strokeWidth={0.5}
+              fill={arcFill}
+              stroke={matrixChordNames[i] === legislator.name ? "#FFFF00" : arcFill}
+              strokeWidth={2}
+              onMouseOver={(e) => {
+                setTooltipContent(
+                  <div
+                    style={{
+                      color: "gray",
+                      borderRadius: "1px",
+                      padding: "0.5px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textAlign: "center",
+                      height: "100%",
+                      width: "100%",
+                      lineHeight: "0.8em",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "1px",
+                      }}
+                    >
+                      <strong style={{ fontSize: "1em", color: "white" }}>
+                       
+                        {matrixChordNames[i]}
+                      </strong>
+                    </div>
+                  </div>
+                );
+                setTooltipVisible(true);
+              }}
+              onMouseOut={(e) => {
+                setTooltipVisible(false);
+              }}
             />
             {/* <path
               d={outerArc(group)}
@@ -180,7 +235,7 @@ export const ChordDiagram = ({ width, height, startDate, endDate }) => {
               stroke="#FF0000"
               strokeWidth={0.3}
             /> */}
-            <text
+            {/* <text
               transform={transform}
               dy=".35em"
               textAnchor={textAnchor}
@@ -188,7 +243,7 @@ export const ChordDiagram = ({ width, height, startDate, endDate }) => {
               stroke="white"
             >
               {matrixChordNames[i]}
-            </text>
+            </text> */}
             {/* <circle
               cx={cx}
               cy={cy}
@@ -196,8 +251,17 @@ export const ChordDiagram = ({ width, height, startDate, endDate }) => {
               fill="blue"
               strokeWidth={0.3}
             /> */}
-            <ChordSquares x={cx} y={cy} rotate={rotate} legCivility={legCivility[i]} legMisinfo={legMisinfo[i]} maxMis={maxMis} maxCiv={maxCiv} maxInt={maxInt} legInteractionScore={legInteractionScore[i]} />
-           
+            <ChordSquares
+              x={cx}
+              y={cy}
+              rotate={rotate}
+              legCivility={legCivility[i]}
+              legMisinfo={legMisinfo[i]}
+              maxMis={maxMis}
+              maxCiv={maxCiv}
+              maxInt={maxInt}
+              legInteractionScore={legInteractionScore[i]}
+            />
           </g>
         );
       });
@@ -263,6 +327,16 @@ export const ChordDiagram = ({ width, height, startDate, endDate }) => {
         border: "1px solid #eee",
       }}
     >
+      <Tippy
+        content={tooltipContent}
+        visible={tooltipVisible}
+        arrow={false}
+        placement="top"
+        followCursor={true}
+        appendto={() => document.body}
+        plugins={[followCursor]}>
+
+      
       <svg
         ref={svgRef}
         width={width}
@@ -275,7 +349,8 @@ export const ChordDiagram = ({ width, height, startDate, endDate }) => {
             {allNodes}
           </g>
         )}
-      </svg>
+        </svg>
+        </Tippy>
     </div>
   );
 };

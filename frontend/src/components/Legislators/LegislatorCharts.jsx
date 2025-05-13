@@ -21,6 +21,7 @@ function LegislatorCharts({
   monthlyLeg,
   loading,
   semanticData,
+  legislator
 }) {
   const axisConfig = useMemo(() => {
     if (!legScatterData || legScatterData.length === 0) return [];
@@ -196,6 +197,7 @@ function LegislatorCharts({
               height={400}
               startDate={startDate}
               endDate={endDate}
+              legislator={legislator}
             />
           </>
 

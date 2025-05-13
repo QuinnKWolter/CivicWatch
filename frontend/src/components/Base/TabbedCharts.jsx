@@ -249,6 +249,7 @@ function TabbedCharts({
             monthlyLeg={monthlyLeg}
             loading={loading}
             semanticData={semanticData}
+            legislator={legislator}
           />
         )}
         {value === 4 && (
