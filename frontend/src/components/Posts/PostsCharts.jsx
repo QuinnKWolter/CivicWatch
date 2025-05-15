@@ -1,15 +1,46 @@
 import useMeasure from 'react-use-measure';
 import { SemanticScatterPlot } from "./SemanticSimilarity";
 import { FaSpinner } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
 
 export const PostCharts = ({ 
   startDate, 
   endDate, 
   semanticData, 
   semanticLoading, 
-  hoveredSemanticDataRef
+  hoveredSemanticDataRef,
+  keyword,
+  setSemanticData,
+  legislator
 }) => {
   const [ref, bounds] = useMeasure();
+  const [filteredData, setFilteredData] = useState([])
+
+
+useEffect(() => {
+  if (!semanticData) return;
+
+  let filtered = semanticData;
+
+  const hasKeyword = typeof keyword === "string" && keyword.trim() !== "";
+  const hasLegislator = legislator && legislator.name && legislator.name.trim() !== "";
+
+  if (hasKeyword) {
+    filtered = filtered.filter((d) => d.text.includes(keyword));
+  }
+
+  if (hasLegislator) {
+    filtered = filtered.filter((d) => d.name === legislator.name);
+  }
+
+  if (!hasKeyword && !hasLegislator) {
+    filtered = semanticData.slice(0, 100);
+  }
+
+  setFilteredData(filtered);
+}, [keyword, legislator, semanticData]);
+
+
 
   if (semanticLoading) {
     return (
@@ -30,7 +61,7 @@ export const PostCharts = ({
           <SemanticScatterPlot 
             width={bounds.width} 
             height={bounds.height}
-            data={semanticData?.slice(0, 100) || []}
+            data={filteredData}
             hoveredSemanticDataRef={hoveredSemanticDataRef}
           />
         )}

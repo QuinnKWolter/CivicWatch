@@ -261,7 +261,7 @@ function TabbedCharts({
           />
         )}
         {value === 2 && (
-          <PostCharts startDate={startDate} endDate={endDate} semanticData={semanticData} semanticLoading={semanticLoading} hoveredSemanticDataRef={hoveredSemanticDataRef} />
+          <PostCharts startDate={startDate} endDate={endDate} semanticData={semanticData} setSemanticData={setSemanticData} semanticLoading={semanticLoading} hoveredSemanticDataRef={hoveredSemanticDataRef} keyword={keyword} legislator={legislator} />
         )}
       </div>
     </div>
