@@ -180,7 +180,7 @@ function LegislatorCharts({
       <div className="mt-4 overflow-y-auto min-h-[400px]">
         {dVal === 0 && (
           <>
-            {/* <LegislatorHeatMap
+            <LegislatorHeatMap
               width={550}
               height={400}
               startDate={startDate}
@@ -190,15 +190,15 @@ function LegislatorCharts({
               setLegislatorClicked={setLegislatorClicked}
               party={1}
               legislatorClicked={legislatorClicked}
-            /> */}
+            />
 
-            <ChordDiagram
+            {/* <ChordDiagram
               width={550}
               height={400}
               startDate={startDate}
               endDate={endDate}
               legislator={legislator}
-            />
+            /> */}
           </>
 
           // <div className="relative">
