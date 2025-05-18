@@ -50,5 +50,5 @@ urlpatterns = [
     path("api/legislators/", views.all_legislators, name="all_legislators"),
     path('api/posts/post_semantic_similarity/', views.post_semantic_similarity, name="semantic_similarity"),
 
-    path('api/chord/interactions/', views.chord_interactions, name="semantic_similarity")
+    path('api/chord/interactions/', views.chord_interactions, name="chord_diagram")
 ]
