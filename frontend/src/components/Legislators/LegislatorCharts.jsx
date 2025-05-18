@@ -2,12 +2,12 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { Radar } from "./Radar";
 // import { SummaryLegislatorScatter } from "./SummaryLegislatorScatter";
 import { useState } from "react";
-import { LineChart } from "./PostLinechart";
-import { LegislatorHex } from "./LegislatorHexBin";
+// import { LineChart } from "./PostLinechart";
+// import { LegislatorHex } from "./LegislatorHexBin";
 import { RidgeLinePlot } from "./RidgeLine";
 import { LegislatorHeatMap } from "./LegislatorHeatMap"
 import { FaSpinner } from 'react-icons/fa';
-import  {SemanticScatterPlot}  from '../Posts/SemanticSimilarity'
+// import  {SemanticScatterPlot}  from '../Posts/SemanticSimilarity'
 
 function LegislatorCharts({
   legislatorClicked,
