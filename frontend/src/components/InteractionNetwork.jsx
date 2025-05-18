@@ -321,7 +321,13 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
   useEffect(() => {
     if (!data) return;
 
-     let linksToKeep = data.links;
+      let linksToKeep = data.links;
+      if (selectedTopics && selectedTopics.length > 0) {
+        linksToKeep = linksToKeep.filter(link =>
+          Array.isArray(link.topics) &&
+          link.topics.some(t => selectedTopics.includes(t))
+        );
+      }
 
    const connectedIds = new Set();
    linksToKeep.forEach(l => {

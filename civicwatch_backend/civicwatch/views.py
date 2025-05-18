@@ -292,73 +292,84 @@ def chord_top_legislators(request):
 
 def chord_interactions(request):
     start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
+    end_date   = request.GET.get('end_date')
+    topics_q   = request.GET.get('topics') 
 
-    interactions = LegislatorInteraction.objects.select_related('source_legislator', 'target_legislator') \
-        .filter(date__range=[start_date, end_date])
+    qs = LegislatorInteraction.objects.select_related(
+        'post', 'source_legislator', 'target_legislator'
+    ).prefetch_related(
+        'post__topics'
+    ).filter(
+        date__range=[start_date, end_date]
+    )
 
-    grouped = interactions.values(
-        'source_legislator__name',
-        'target_legislator__name',
-        'interaction_type'
-    ).annotate(count=Count('post'))
+    if topics_q:
+        topic_list = [t.strip() for t in topics_q.split(',') if t.strip()]
+        qs = qs.filter(post__topics__name__in=topic_list)
 
-    # Build legislator metadata
     legislator_info = {}
-    for interaction in interactions:
-        for legislator in [interaction.source_legislator, interaction.target_legislator]:
-            if legislator.name not in legislator_info:
-                legislator_info[legislator.name] = {
-                    'id': legislator.legislator_id,
-                    'party': legislator.party,
-                    'state': legislator.state
+    for interaction in qs:
+        for leg in (interaction.source_legislator, interaction.target_legislator):
+            if leg.name not in legislator_info:
+                legislator_info[leg.name] = {
+                    'id':    leg.legislator_id,
+                    'party': leg.party,
+                    'state': leg.state
                 }
 
-    # Map legislator names to indices
-    sorted_names = sorted(legislator_info.keys())
-    name_to_index = {name: idx for idx, name in enumerate(sorted_names)}
-    index_to_legislator_id = {idx: legislator_info[name]['id'] for name, idx in name_to_index.items()}
+    sorted_names    = sorted(legislator_info)
+    name_to_index   = {name: idx for idx, name in enumerate(sorted_names)}
+    index_to_leg_id = {idx: legislator_info[name]['id'] for name, idx in name_to_index.items()}
 
     nodes = [
         {
-            'id': name_to_index[name],
-            'legislator_id': legislator_info[name]['id'],
-            'name': name,
-            'party': legislator_info[name]['party'],
-            'state': legislator_info[name]['state']
+            'id':              idx,
+            'legislator_id':   info['id'],
+            'name':            name,
+            'party':           info['party'],
+            'state':           info['state'],
         }
-        for name in sorted_names
+        for name, idx in name_to_index.items()
+        for info in (legislator_info[name],)
     ]
 
-    link_map = defaultdict(lambda: {'mention': 0, 'reply': 0, 'retweet': 0})
+    link_map = defaultdict(lambda: {
+        'mention': 0,
+        'reply':   0,
+        'retweet': 0,
+        'topics':  set(),
+    })
 
-    for row in grouped:
-        source = row['source_legislator__name']
-        target = row['target_legislator__name']
-        interaction_type = row['interaction_type']
-        count = row['count']
+    for interaction in qs:
+        src_idx = name_to_index[interaction.source_legislator.name]
+        tgt_idx = name_to_index[interaction.target_legislator.name]
+        itype   = interaction.interaction_type
+        field   = 'retweet' if itype == 'share' else itype
 
-        if source in name_to_index and target in name_to_index:
-            key = (name_to_index[source], name_to_index[target])
-            link_map[key][interaction_type] += count
+        link_map[(src_idx, tgt_idx)][field] += 1
+
+        for topic in interaction.post.topics.all():
+            link_map[(src_idx, tgt_idx)]['topics'].add(topic.name)
 
     links = []
-    for (src, tgt), types in link_map.items():
-        total = types['mention'] + types['reply'] + types['retweet']
+    for (src, tgt), data in link_map.items():
+        total = data['mention'] + data['reply'] + data['retweet']
         links.append({
-            'source': src,
-            'target': tgt,
-            'source_legislator_id': index_to_legislator_id[src],
-            'target_legislator_id': index_to_legislator_id[tgt],
-            'mention': types['mention'],
-            'reply': types['reply'],
-            'retweet': types['retweet'],
-            'value': total
+            'source':                src,
+            'target':                tgt,
+            'source_legislator_id':  index_to_leg_id[src],
+            'target_legislator_id':  index_to_leg_id[tgt],
+            'mention':               data['mention'],
+            'reply':                 data['reply'],
+            'retweet':               data['retweet'],
+            'value':                 total,
+            'topics':                sorted(data['topics']),
         })
 
     return JsonResponse({
         'nodes': nodes,
-        'links': links
+        'links': links,
+        'link_count':len(links)
     })
 
 
