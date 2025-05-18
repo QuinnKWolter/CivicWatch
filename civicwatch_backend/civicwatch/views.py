@@ -291,87 +291,15 @@ def chord_top_legislators(request):
 
 
 def chord_interactions(request):
-    start_date = request.GET.get('start_date')
-    end_date   = request.GET.get('end_date')
-    topics_q   = request.GET.get('topics') 
-
-    qs = LegislatorInteraction.objects.select_related(
-        'post', 'source_legislator', 'target_legislator'
-    ).prefetch_related(
-        'post__topics'
-    ).filter(
-        date__range=[start_date, end_date]
-    )
-
-    if topics_q:
-        topic_list = [t.strip() for t in topics_q.split(',') if t.strip()]
-        qs = qs.filter(post__topics__name__in=topic_list)
-
-    legislator_info = {}
-    for interaction in qs:
-        for leg in (interaction.source_legislator, interaction.target_legislator):
-            if leg.name not in legislator_info:
-                legislator_info[leg.name] = {
-                    'id':    leg.legislator_id,
-                    'party': leg.party,
-                    'state': leg.state
-                }
-
-    sorted_names    = sorted(legislator_info)
-    name_to_index   = {name: idx for idx, name in enumerate(sorted_names)}
-    index_to_leg_id = {idx: legislator_info[name]['id'] for name, idx in name_to_index.items()}
-
-    nodes = [
-        {
-            'id':              idx,
-            'legislator_id':   info['id'],
-            'name':            name,
-            'party':           info['party'],
-            'state':           info['state'],
-        }
-        for name, idx in name_to_index.items()
-        for info in (legislator_info[name],)
-    ]
-
-    link_map = defaultdict(lambda: {
-        'mention': 0,
-        'reply':   0,
-        'retweet': 0,
-        'topics':  set(),
-    })
-
-    for interaction in qs:
-        src_idx = name_to_index[interaction.source_legislator.name]
-        tgt_idx = name_to_index[interaction.target_legislator.name]
-        itype   = interaction.interaction_type
-        field   = 'retweet' if itype == 'share' else itype
-
-        link_map[(src_idx, tgt_idx)][field] += 1
-
-        for topic in interaction.post.topics.all():
-            link_map[(src_idx, tgt_idx)]['topics'].add(topic.name)
-
-    links = []
-    for (src, tgt), data in link_map.items():
-        total = data['mention'] + data['reply'] + data['retweet']
-        links.append({
-            'source':                src,
-            'target':                tgt,
-            'source_legislator_id':  index_to_leg_id[src],
-            'target_legislator_id':  index_to_leg_id[tgt],
-            'mention':               data['mention'],
-            'reply':                 data['reply'],
-            'retweet':               data['retweet'],
-            'value':                 total,
-            'topics':                sorted(data['topics']),
-        })
-
-    return JsonResponse({
-        'nodes': nodes,
-        'links': links,
-        'link_count':len(links)
-    })
-
+    file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultInteractionNetwork.json')
+    
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
 
 # 🔹 Geographic Data API
 def geo_activity(request):
