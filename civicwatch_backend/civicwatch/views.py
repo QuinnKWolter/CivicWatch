@@ -273,21 +273,94 @@ def all_topics(request):
 
 
 # 🔹 Chord Diagram APIs
-def chord_interactions(request):
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    interaction_type = request.GET.get('interaction_type')
+# def chord_interactions(request):
+#     start_date = request.GET.get('start_date')
+#     end_date = request.GET.get('end_date')
+#     interaction_type = request.GET.get('interaction_type')
 
-    interactions = LegislatorInteraction.objects.filter(date__range=[start_date, end_date])
-    if interaction_type:
-        interactions = interactions.filter(interaction_type=interaction_type)
+#     interactions = LegislatorInteraction.objects.filter(date__range=[start_date, end_date])
+#     if interaction_type:
+#         interactions = interactions.filter(interaction_type=interaction_type)
 
-    interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"))
-    return JsonResponse(list(interaction_counts), safe=False)
+#     interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"))
+#     return JsonResponse(list(interaction_counts), safe=False)
 
 def chord_top_legislators(request):
     interactions = LegislatorInteraction.objects.values("source_legislator_id").annotate(total_interactions=Count("post_id"))
     return JsonResponse(list(interactions), safe=False)
+
+
+def chord_interactions(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    interactions = LegislatorInteraction.objects.select_related('source_legislator', 'target_legislator') \
+        .filter(date__range=[start_date, end_date])
+
+    grouped = interactions.values(
+        'source_legislator__name',
+        'target_legislator__name',
+        'interaction_type'
+    ).annotate(count=Count('post'))
+
+    # Build legislator metadata
+    legislator_info = {}
+    for interaction in interactions:
+        for legislator in [interaction.source_legislator, interaction.target_legislator]:
+            if legislator.name not in legislator_info:
+                legislator_info[legislator.name] = {
+                    'id': legislator.legislator_id,
+                    'party': legislator.party,
+                    'state': legislator.state
+                }
+
+    # Map legislator names to indices
+    sorted_names = sorted(legislator_info.keys())
+    name_to_index = {name: idx for idx, name in enumerate(sorted_names)}
+    index_to_legislator_id = {idx: legislator_info[name]['id'] for name, idx in name_to_index.items()}
+
+    nodes = [
+        {
+            'id': name_to_index[name],
+            'legislator_id': legislator_info[name]['id'],
+            'name': name,
+            'party': legislator_info[name]['party'],
+            'state': legislator_info[name]['state']
+        }
+        for name in sorted_names
+    ]
+
+    link_map = defaultdict(lambda: {'mention': 0, 'reply': 0, 'retweet': 0})
+
+    for row in grouped:
+        source = row['source_legislator__name']
+        target = row['target_legislator__name']
+        interaction_type = row['interaction_type']
+        count = row['count']
+
+        if source in name_to_index and target in name_to_index:
+            key = (name_to_index[source], name_to_index[target])
+            link_map[key][interaction_type] += count
+
+    links = []
+    for (src, tgt), types in link_map.items():
+        total = types['mention'] + types['reply'] + types['retweet']
+        links.append({
+            'source': src,
+            'target': tgt,
+            'source_legislator_id': index_to_legislator_id[src],
+            'target_legislator_id': index_to_legislator_id[tgt],
+            'mention': types['mention'],
+            'reply': types['reply'],
+            'retweet': types['retweet'],
+            'value': total
+        })
+
+    return JsonResponse({
+        'nodes': nodes,
+        'links': links
+    })
+
 
 # 🔹 Geographic Data API
 def geo_activity(request):
