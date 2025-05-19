@@ -282,18 +282,30 @@ def chord_interactions(request):
     print(legislator)
     
 
-    interactions = LegislatorInteraction.objects.filter(date__range=[start_date, end_date])
-    if interaction_type:
-        interactions = interactions.filter(interaction_type=interaction_type)
+#     interactions = LegislatorInteraction.objects.filter(date__range=[start_date, end_date])
+#     if interaction_type:
+#         interactions = interactions.filter(interaction_type=interaction_type)
     if legislator:
         interactions = interactions.filter(Q(source_legislator_id=legislator) | Q(target_legislator_id = legislator))
 
-    interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"), source_name=F("source_legislator__name"), target_name=F("target_legislator__name"), source_state=F("source_legislator__state"), target_state=F("target_legislator__state"), source_party=F("source_legislator__party"), source_civility=F("source_legislator__civility_score_tw"), target_civility=F("target_legislator__civility_score_tw"), source_misinfo_count=F("source_legislator__total_misinfo_count_tw"), target_misinfo_count=F("target_legislator__total_misinfo_count_tw"), source_interaction_score=F("source_legislator__interaction_score_tw"), target_interaction_score=F("target_legislator__interaction_score_tw"), target_party=F("target_legislator__party")) #  
-    return JsonResponse(list(interaction_counts), safe=False)
+#     interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"), source_name=F("source_legislator__name"), target_name=F("target_legislator__name"), source_state=F("source_legislator__state"), target_state=F("target_legislator__state"), source_party=F("source_legislator__party"), source_civility=F("source_legislator__civility_score_tw"), target_civility=F("target_legislator__civility_score_tw"), source_misinfo_count=F("source_legislator__total_misinfo_count_tw"), target_misinfo_count=F("target_legislator__total_misinfo_count_tw"), source_interaction_score=F("source_legislator__interaction_score_tw"), target_interaction_score=F("target_legislator__interaction_score_tw"), target_party=F("target_legislator__party")) #  
+#     return JsonResponse(list(interaction_counts), safe=False)
 
-def chord_top_legislators(request):
+def chord_top_legislators_novel(request):
     interactions = LegislatorInteraction.objects.values("source_legislator_id").annotate(total_interactions=Count("post_id"))
     return JsonResponse(list(interactions), safe=False)
+
+
+def chord_interactions(request):
+    file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultInteractionNetwork.json')
+    
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
 
 # 🔹 Geographic Data API
 def geo_activity(request):
@@ -926,3 +938,13 @@ def default_trendline_data(request):
         return JsonResponse(data, safe=False)
     except FileNotFoundError:
         return HttpResponse(status=404, content="Default trendline data not found.")
+
+def us_states_data(request):
+    file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'us-states.json')
+    
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        return JsonResponse(data, safe=False)
+    except FileNotFoundError:
+        return HttpResponse(status=404, content="US states data not found.")
