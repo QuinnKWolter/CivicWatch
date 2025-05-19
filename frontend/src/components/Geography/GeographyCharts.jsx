@@ -31,16 +31,22 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
   const legendHeight = 10;
 
   useEffect(() => {
-    fetch('./us-states.json')
-      .then(res => res.json())
-      .then(data => {
+    const fetchGeoJson = async () => {
+      try {
+        const response = await fetch('/api/us-states/');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
         const states = topojson.feature(data, data.objects.states);
         setGeojson(states);
-      })
-      .catch(err => {
+      } catch (err) {
         console.error('Error loading GeoJSON:', err);
         setError("Failed to load geography data. Please try again.");
-      });
+      }
+    };
+
+    fetchGeoJson();
   }, []);
 
   useEffect(() => {

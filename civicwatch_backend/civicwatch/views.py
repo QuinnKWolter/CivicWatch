@@ -920,3 +920,13 @@ def default_trendline_data(request):
         return JsonResponse(data, safe=False)
     except FileNotFoundError:
         return HttpResponse(status=404, content="Default trendline data not found.")
+
+def us_states_data(request):
+    file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'us-states.json')
+    
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        return JsonResponse(data, safe=False)
+    except FileNotFoundError:
+        return HttpResponse(status=404, content="US states data not found.")
