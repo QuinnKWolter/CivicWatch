@@ -27,6 +27,7 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) =
   const [tooltipVisible, setTooltipVisible] = useState(false);
 
   const url = "http://localhost:8000/api/chord/chord_interactions/?";
+  
 
   useEffect(() => {
     console.log("reran")
