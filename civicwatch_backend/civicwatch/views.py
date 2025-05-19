@@ -273,21 +273,33 @@ def all_topics(request):
 
 
 # 🔹 Chord Diagram APIs
-def chord_interactions(request):
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    interaction_type = request.GET.get('interaction_type')
+# def chord_interactions(request):
+#     start_date = request.GET.get('start_date')
+#     end_date = request.GET.get('end_date')
+#     interaction_type = request.GET.get('interaction_type')
 
-    interactions = LegislatorInteraction.objects.filter(date__range=[start_date, end_date])
-    if interaction_type:
-        interactions = interactions.filter(interaction_type=interaction_type)
+#     interactions = LegislatorInteraction.objects.filter(date__range=[start_date, end_date])
+#     if interaction_type:
+#         interactions = interactions.filter(interaction_type=interaction_type)
 
-    interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"))
-    return JsonResponse(list(interaction_counts), safe=False)
+#     interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"))
+#     return JsonResponse(list(interaction_counts), safe=False)
 
 def chord_top_legislators(request):
     interactions = LegislatorInteraction.objects.values("source_legislator_id").annotate(total_interactions=Count("post_id"))
     return JsonResponse(list(interactions), safe=False)
+
+
+def chord_interactions(request):
+    file_path = os.path.join(settings.BASE_DIR, 'static', 'data', 'defaultInteractionNetwork.json')
+    
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
 
 # 🔹 Geographic Data API
 def geo_activity(request):

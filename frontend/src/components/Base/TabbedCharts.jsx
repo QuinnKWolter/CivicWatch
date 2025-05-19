@@ -12,6 +12,7 @@ import dayjs from "dayjs";
 import AccountabilityInterface from "../Accountability/AccountabilityInterface";
 import { BsFilePost } from "react-icons/bs";
 import { PostCharts } from "../Posts/PostsCharts";
+import InteractionNetwork from "../InteractionNetwork";
 
 function TabbedCharts({
   legislatorClicked,
@@ -177,7 +178,8 @@ function TabbedCharts({
     // { icon: <MdOutlineAccountBox />, label: "Accountability", value: 5 },
     { icon: <FaUsers />, label: "Legislators", value: 3 },
     { icon: <IoEarthOutline />, label: "Geography", value: 4 },
-    {icon: <BsFilePost />, label: "Posts", value: 2}
+    {icon: <BsFilePost />, label: "Posts", value: 2},
+    {icon: <FaUsers />, label: "InteractioNetwork", value: 6}
   
   ];
 
@@ -261,6 +263,15 @@ function TabbedCharts({
         )}
         {value === 2 && (
           <PostCharts startDate={startDate} endDate={endDate} semanticData={semanticData} semanticLoading={semanticLoading} hoveredSemanticDataRef={hoveredSemanticDataRef} />
+        )}
+        {value === 6 && (
+          <InteractionNetwork
+            startDate={startDate}
+            endDate={endDate}
+            selectedTopics={memoizedSelectedTopics}
+            selectedMetric={selectedMetric}
+            legislator={legislator}
+          />
         )}
       </div>
     </div>
