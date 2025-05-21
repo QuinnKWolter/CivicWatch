@@ -273,23 +273,24 @@ def all_topics(request):
 
 
 # 🔹 Chord Diagram APIs
-def chord_interactions(request):
+def chord_interactions_novel(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     legislator = request.GET.get('legislator')
     interaction_type = request.GET.get('interaction_type')
 
     print(legislator)
+    print("LEGISLATOR", legislator)
     
 
-#     interactions = LegislatorInteraction.objects.filter(date__range=[start_date, end_date])
-#     if interaction_type:
-#         interactions = interactions.filter(interaction_type=interaction_type)
+    interactions = LegislatorInteraction.objects.filter(date__range=[start_date, end_date])
+    if interaction_type:
+        interactions = interactions.filter(interaction_type=interaction_type)
     if legislator:
         interactions = interactions.filter(Q(source_legislator_id=legislator) | Q(target_legislator_id = legislator))
 
-#     interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"), source_name=F("source_legislator__name"), target_name=F("target_legislator__name"), source_state=F("source_legislator__state"), target_state=F("target_legislator__state"), source_party=F("source_legislator__party"), source_civility=F("source_legislator__civility_score_tw"), target_civility=F("target_legislator__civility_score_tw"), source_misinfo_count=F("source_legislator__total_misinfo_count_tw"), target_misinfo_count=F("target_legislator__total_misinfo_count_tw"), source_interaction_score=F("source_legislator__interaction_score_tw"), target_interaction_score=F("target_legislator__interaction_score_tw"), target_party=F("target_legislator__party")) #  
-#     return JsonResponse(list(interaction_counts), safe=False)
+    interaction_counts = interactions.values("source_legislator_id", "target_legislator_id").annotate(count=Count("post"), source_name=F("source_legislator__name"), target_name=F("target_legislator__name"), source_state=F("source_legislator__state"), target_state=F("target_legislator__state"), source_party=F("source_legislator__party"), source_civility=F("source_legislator__civility_score_tw"), target_civility=F("target_legislator__civility_score_tw"), source_misinfo_count=F("source_legislator__total_misinfo_count_tw"), target_misinfo_count=F("target_legislator__total_misinfo_count_tw"), source_interaction_score=F("source_legislator__interaction_score_tw"), target_interaction_score=F("target_legislator__interaction_score_tw"), target_party=F("target_legislator__party")) #  
+    return JsonResponse(list(interaction_counts), safe=False)
 
 def chord_top_legislators_novel(request):
     interactions = LegislatorInteraction.objects.values("source_legislator_id").annotate(total_interactions=Count("post_id"))

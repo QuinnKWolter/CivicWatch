@@ -13,6 +13,7 @@ import AccountabilityInterface from "../Accountability/AccountabilityInterface";
 import { BsFilePost } from "react-icons/bs";
 import { PostCharts } from "../Posts/PostsCharts";
 import InteractionNetwork from "../InteractionNetwork";
+import * as topojson from 'topojson-client';
 
 function TabbedCharts({
   legislatorClicked,
@@ -31,6 +32,9 @@ function TabbedCharts({
 
   const [monthlyLeg, setMonthlyLeg] = useState([]);
   const [semanticData, setSemanticData] = useState([])
+  const [geoData, setGeoData] = useState([]);
+  const [geojson, setGeojson] = useState(null);
+   const [error, setError] = useState(null);
 
   const hoveredSemanticDataRef = useRef(null);
 
@@ -90,6 +94,25 @@ function TabbedCharts({
         console.error("Error fetching legislator data:", error)
       );
   }, []);
+
+   useEffect(() => {
+      const fetchGeoJson = async () => {
+        try {
+          const response = await fetch('/api/us-states/');
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const data = await response.json();
+          const states = topojson.feature(data, data.objects.states);
+          setGeojson(states);
+        } catch (err) {
+          console.error('Error loading GeoJSON:', err);
+          setError("Failed to load geography data. Please try again.");
+        }
+      };
+  
+      fetchGeoJson();
+    }, []);
   
 
   useEffect(() => {
@@ -252,6 +275,7 @@ function TabbedCharts({
             loading={loading}
             semanticData={semanticData}
             legislator={legislator}
+            geojson={geojson}
           />
         )}
         {value === 4 && (
@@ -260,6 +284,10 @@ function TabbedCharts({
             endDate={endDate}
             selectedTopics={memoizedSelectedTopics}
             selectedMetric={selectedMetric}
+            geoData={geoData}
+            setGeoData={setGeoData}
+            geojson={geojson}
+            setGeojson={setGeojson}
           />
         )}
         {value === 2 && (

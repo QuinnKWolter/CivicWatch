@@ -3,6 +3,20 @@ import * as d3 from "d3";
 import { ChordSquares } from "./MatrixComponent";
 import Tippy from "@tippyjs/react";
 import { followCursor } from "tippy.js";
+import { Map } from "./InteractionMap";
+
+const stateAbbrevToName = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
+  MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
+  NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
+  OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+  SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
+  VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+};
 
 const MARGIN = 30;
 const NODE_THICKNESS = 15;
@@ -14,7 +28,8 @@ const partyColor = (party) => {
   return "#999999";
 };
 
-export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) => {
+
+export const ChordDiagram = ({ width, height, startDate, endDate, legislator, geojson }) => {
   const svgRef = useRef(null);
   const [matrixChordData, setMatrixChordData] = useState([]);
   const [matrixChordNames, setMatrixChordNames] = useState([]);
@@ -25,8 +40,9 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) =
   const [allIds, setAllIds] = useState([]);
   const [tooltipContent, setTooltipContent] = useState([]);
   const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [connections, setConnections] = useState([]);
 
-  const url = "http://localhost:8000/api/chord/chord_interactions/?";
+  const url = "http://localhost:9000/api/chord/chord_interactions/?";
   
 
   useEffect(() => {
@@ -41,10 +57,18 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) =
     const queryParams = new URLSearchParams(params).toString();
     const query = `${url}${queryParams}`;
 
+    console.log("QUERY", query)
+
+    function includesPair(arr, pair) {
+  return arr.some(
+    (item) => item[0] === pair[0] && item[1] === pair[1]
+  );
+}
+
     fetch(query)
       .then((response) => response.json())
       .then((data) => {
-        console.log(data)
+        console.log("INTERACTION DATA", data)
         const filteredData = data.filter(
           (d) =>
             d.count > 0 &&
@@ -55,6 +79,25 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) =
           console.log("No data after filtering");
           return;
         }
+
+        const filteredConnections = []
+
+        filteredData.forEach((d, i) => {
+
+          let toAdd =[stateAbbrevToName[d.source_state], stateAbbrevToName[d.target_state]]
+
+          if (!includesPair(filteredConnections, toAdd))
+          {
+             filteredConnections[i] = toAdd
+
+          }
+
+         
+
+
+        })
+
+        console.log("filtered connections", filteredConnections)
 
         const sourceIds = filteredData.map((d) => d.source_legislator_id);
         const targetIds = filteredData.map((d) => d.target_legislator_id);
@@ -130,6 +173,7 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) =
         setLegMisinfo(allMisinfo);
         setLegInteractionScore(allInteractionScores);
         setAllIds(allIds);
+        setConnections(filteredConnections)
       })
       .catch((error) => console.error("error fetching chord data", error));
   }, [startDate, endDate, legislator]);
@@ -187,6 +231,7 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) =
         // console.log("nodeId:", nodeId);
 
         return (
+          <>
           <g key={i}>
             <path
               d={arcGenerator(group)}
@@ -263,7 +308,11 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) =
               maxInt={maxInt}
               legInteractionScore={legInteractionScore[i]}
             />
+
+            
           </g>
+         
+          </>
         );
       });
     } catch (error) {
@@ -320,29 +369,52 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) =
   }, [matrixChordData, width, height]);
 
   return (
+  <div
+    style={{
+      width: `${width}px`,
+      height: `${height}px`,
+      position: "relative", // needed for absolute children
+      border: "1px solid #eee",
+    }}
+  >
+    {/* Translucent Map layer underneath */}
     <div
       style={{
-        width: "100%",
-        height: `${height}px`,
-        overflowY: "auto",
-        border: "1px solid #eee",
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        width: `200px`,
+        height: `200px`,
+        opacity: 0.6, // make map semi-transparent
+        zIndex: 10,
+          pointerEvents: "none", // let events pass through to chord
+        transform: "translate(-50%, -50%)"
       }}
     >
-      <Tippy
-        content={tooltipContent}
-        visible={tooltipVisible}
-        arrow={false}
-        placement="top"
-        followCursor={true}
-        appendto={() => document.body}
-        plugins={[followCursor]}>
+      <Map height={200} width={200} data={geojson} connections={connections} />
+    </div>
 
-      
+    {/* Chord Diagram layer on top */}
+    <Tippy
+      content={tooltipContent}
+      visible={tooltipVisible}
+      arrow={false}
+      placement="top"
+      followCursor={true}
+      appendTo={() => document.body}
+      plugins={[followCursor]}
+    >
       <svg
         ref={svgRef}
         width={width}
         height={height}
-        style={{ border: "1px solid #fff" }}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          zIndex: 0,
+          border: "1px solid #fff",
+        }}
       >
         {matrixChordData.length > 0 && (
           <g transform={`translate(${width / 2}, ${height / 2})`}>
@@ -350,8 +422,9 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator}) =
             {allNodes}
           </g>
         )}
-        </svg>
-        </Tippy>
-    </div>
-  );
+      </svg>
+    </Tippy>
+  </div>
+);
+
 };

@@ -19,9 +19,9 @@ const stateAbbrevToName = {
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
-function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric }) {
-  const [geojson, setGeojson] = useState(null);
-  const [geoData, setGeoData] = useState([]);
+function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, geoData, setGeoData, geojson, setGeojson }) {
+ 
+  
   const [selectedState, setSelectedState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -30,24 +30,7 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric })
   const legendWidth = 200;
   const legendHeight = 10;
 
-  useEffect(() => {
-    const fetchGeoJson = async () => {
-      try {
-        const response = await fetch('/api/us-states/');
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        const states = topojson.feature(data, data.objects.states);
-        setGeojson(states);
-      } catch (err) {
-        console.error('Error loading GeoJSON:', err);
-        setError("Failed to load geography data. Please try again.");
-      }
-    };
-
-    fetchGeoJson();
-  }, []);
+ 
 
   useEffect(() => {
     if (!startDate || !endDate || !selectedTopics || selectedTopics.length === 0) return;
