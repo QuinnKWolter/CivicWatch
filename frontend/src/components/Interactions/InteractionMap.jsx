@@ -6,7 +6,7 @@ import {useEffect, useRef, useLayoutEffect, useMemo} from 'react'
 // ]
 
 
-export const Map = ({ width, height, data, connections }) => {
+export const InteractionMap = ({ width, height, data, connections }) => {
     const canvasRef = useRef(null);
       const requestRef = useRef()
         const progressRef = useRef(0)
@@ -94,7 +94,7 @@ export const Map = ({ width, height, data, connections }) => {
       context.stroke()
 
       // Draw animated connections
-      context.strokeStyle = 'rgba(255, 0, 0, 0.5)'
+      context.strokeStyle = 'rgba(255, 240, 0, 0.5)'
             context.lineWidth = 4
             context.lineCap = 'round'
             context.lineJoin = 'round'

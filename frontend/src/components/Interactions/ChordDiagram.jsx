@@ -3,19 +3,60 @@ import * as d3 from "d3";
 import { ChordSquares } from "./MatrixComponent";
 import Tippy from "@tippyjs/react";
 import { followCursor } from "tippy.js";
-import { Map } from "./InteractionMap";
+import { InteractionMap } from "./InteractionMap";
+import useMeasure from "react-use-measure";
 
 const stateAbbrevToName = {
-  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
-  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
-  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
-  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
-  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
-  MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
-  NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
-  OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
-  SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
-  VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+  AL: "Alabama",
+  AK: "Alaska",
+  AZ: "Arizona",
+  AR: "Arkansas",
+  CA: "California",
+  CO: "Colorado",
+  CT: "Connecticut",
+  DE: "Delaware",
+  FL: "Florida",
+  GA: "Georgia",
+  HI: "Hawaii",
+  ID: "Idaho",
+  IL: "Illinois",
+  IN: "Indiana",
+  IA: "Iowa",
+  KS: "Kansas",
+  KY: "Kentucky",
+  LA: "Louisiana",
+  ME: "Maine",
+  MD: "Maryland",
+  MA: "Massachusetts",
+  MI: "Michigan",
+  MN: "Minnesota",
+  MS: "Mississippi",
+  MO: "Missouri",
+  MT: "Montana",
+  NE: "Nebraska",
+  NV: "Nevada",
+  NH: "New Hampshire",
+  NJ: "New Jersey",
+  NM: "New Mexico",
+  NY: "New York",
+  NC: "North Carolina",
+  ND: "North Dakota",
+  OH: "Ohio",
+  OK: "Oklahoma",
+  OR: "Oregon",
+  PA: "Pennsylvania",
+  RI: "Rhode Island",
+  SC: "South Carolina",
+  SD: "South Dakota",
+  TN: "Tennessee",
+  TX: "Texas",
+  UT: "Utah",
+  VT: "Vermont",
+  VA: "Virginia",
+  WA: "Washington",
+  WV: "West Virginia",
+  WI: "Wisconsin",
+  WY: "Wyoming",
 };
 
 const MARGIN = 30;
@@ -28,8 +69,16 @@ const partyColor = (party) => {
   return "#999999";
 };
 
-
-export const ChordDiagram = ({ width, height, startDate, endDate, legislator, geojson }) => {
+export const ChordDiagram = ({
+  width,
+  height,
+  startDate,
+  endDate,
+  legislator,
+  geojson,
+}) => {
+  
+  const [ref, bounds] = useMeasure();
   const svgRef = useRef(null);
   const [matrixChordData, setMatrixChordData] = useState([]);
   const [matrixChordNames, setMatrixChordNames] = useState([]);
@@ -41,38 +90,41 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator, ge
   const [tooltipContent, setTooltipContent] = useState([]);
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [connections, setConnections] = useState([]);
+  const [topicMap, setTopicMap] = useState(new Map());
+  const [hoveredChordIndex, setHoveredChordIndex] = useState(null);
+  //  if (!legislator) return (<div>NO DATA AVAILIBLE</div>);
 
   const url = "http://localhost:9000/api/chord/chord_interactions/?";
+
+ 
   
 
+
   useEffect(() => {
-    console.log("reran")
-    console.log("legislator", legislator.legislator_id);
+
+    if (!legislator) return;
+   
     const params = {
       start_date: startDate.format("YYYY-MM-DD"),
       end_date: endDate.format("YYYY-MM-DD"),
-      legislator: legislator.legislator_id
+      legislator: legislator.legislator_id,
     };
 
     const queryParams = new URLSearchParams(params).toString();
     const query = `${url}${queryParams}`;
 
-    console.log("QUERY", query)
+    console.log("QUERY", query);
 
     function includesPair(arr, pair) {
-  return arr.some(
-    (item) => item[0] === pair[0] && item[1] === pair[1]
-  );
-}
+      return arr.some((item) => item[0] === pair[0] && item[1] === pair[1]);
+    }
 
     fetch(query)
       .then((response) => response.json())
       .then((data) => {
-        console.log("INTERACTION DATA", data)
+        console.log("INTERACTION DATA", data);
         const filteredData = data.filter(
-          (d) =>
-            d.count > 0 &&
-            d.source_name != d.target_name
+          (d) => d.count > 0 && d.source_name != d.target_name
         );
 
         if (filteredData.length === 0) {
@@ -80,24 +132,23 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator, ge
           return;
         }
 
-        const filteredConnections = []
+        const filteredConnections = [];
 
         filteredData.forEach((d, i) => {
+          let toAdd = [
+            stateAbbrevToName[d.source_state],
+            stateAbbrevToName[d.target_state],
+          ];
 
-          let toAdd =[stateAbbrevToName[d.source_state], stateAbbrevToName[d.target_state]]
-
-          if (!includesPair(filteredConnections, toAdd))
-          {
-             filteredConnections[i] = toAdd
-
+          if (
+            !includesPair(filteredConnections, toAdd) &&
+            d.source_state != d.target_state
+          ) {
+            filteredConnections[i] = toAdd;
           }
+        });
 
-         
-
-
-        })
-
-        console.log("filtered connections", filteredConnections)
+        console.log("filtered connections", filteredConnections);
 
         const sourceIds = filteredData.map((d) => d.source_legislator_id);
         const targetIds = filteredData.map((d) => d.target_legislator_id);
@@ -156,6 +207,14 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator, ge
           idToParty[d.source_legislator_id] = d.source_party;
           idToParty[d.target_legislator_id] = d.target_party;
         });
+
+        const topicMapT = new Map();
+        filteredData.forEach((d) => {
+          const key = `${d.source_legislator_id}-${d.target_legislator_id}`;
+          topicMapT.set(key, d.topics || []);
+        });
+
+        console.log("All Topics", topicMapT);
         // console.log("id", idToParty);
 
         // console.log("allCivilites", allCivilities);
@@ -173,7 +232,8 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator, ge
         setLegMisinfo(allMisinfo);
         setLegInteractionScore(allInteractionScores);
         setAllIds(allIds);
-        setConnections(filteredConnections)
+        setConnections(filteredConnections);
+        setTopicMap(topicMapT);
       })
       .catch((error) => console.error("error fetching chord data", error));
   }, [startDate, endDate, legislator]);
@@ -231,14 +291,16 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator, ge
         // console.log("nodeId:", nodeId);
 
         return (
-          <>
           <g key={i}>
             <path
               d={arcGenerator(group)}
               fill={arcFill}
-              stroke={matrixChordNames[i] === legislator.name ? "#FFFF00" : arcFill}
+              stroke={
+                matrixChordNames[i] === legislator.name ? "#FFFF00" : arcFill
+              }
               strokeWidth={2}
               onMouseOver={(e) => {
+                console.log("hovered");
                 setTooltipContent(
                   <div
                     style={{
@@ -263,7 +325,6 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator, ge
                       }}
                     >
                       <strong style={{ fontSize: "1em", color: "white" }}>
-                       
                         {matrixChordNames[i]}
                       </strong>
                     </div>
@@ -308,11 +369,7 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator, ge
               maxInt={maxInt}
               legInteractionScore={legInteractionScore[i]}
             />
-
-            
           </g>
-         
-          </>
         );
       });
     } catch (error) {
@@ -346,19 +403,88 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator, ge
 
       return chords.map((connection, i) => {
         const sourceIndex = connection.source.index;
-        const sourceId = Object.keys(connectionColors)[sourceIndex];
+        const targetIndex = connection.target.index;
+        const sourceId = allIds[sourceIndex]
         const party = connectionColors[sourceId];
         const fillColor = partyColor(party);
         const d = ribbonGenerator(connection);
+        const key = `${allIds[sourceIndex]}-${allIds[targetIndex]}`;
+        const topics = topicMap.get(key) || [];
+        console.log("hoverd index", hoveredChordIndex)
 
         return (
           <path
             key={i}
             d={d}
             fill={fillColor}
-            opacity={0.3}
-            stroke={fillColor}
-            strokeWidth={0.5}
+          opacity={hoveredChordIndex === i ? 0.75 : 0.3} // 🔍 Highlight effect
+  stroke={hoveredChordIndex === i ? "#FFFF00" : fillColor} // 🔍 Optional contrast
+  strokeWidth={hoveredChordIndex === i ? 1.5 : 0.5} // 🔍 Emphasize stroke
+            onMouseOut={(e) => {
+              setHoveredChordIndex(null)
+                setTooltipVisible(false);
+              }}
+            onMouseOver={() => {
+              console.log("I", i)
+              setHoveredChordIndex(i)
+              setTooltipContent(
+                <div
+                  style={{
+                    color: "gray",
+                    borderRadius: "1px",
+                    padding: "0.5px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    textAlign: "center",
+                    height: "100%",
+                    width: "100%",
+                    lineHeight: "0.8em",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "5px",
+                    }}
+                  >
+                    <strong style={{ fontSize: "1em", color: "white" }}>
+                      From: {matrixChordNames[connection.source.index]}
+                    </strong>
+                    <strong style={{ fontSize: "1em", color: "white" }}>
+                      To: {matrixChordNames[connection.target.index]}
+                    </strong>
+                    <strong style={{ fontSize: "1em", color: "white" }}>
+                      Interactions: {matrixChordData[sourceIndex][targetIndex]}
+                    </strong>
+
+                    {topics.length > 0 && (
+                      <>
+                        <strong style={{ fontSize: "1em", color: "white" }}>
+                          Topics:
+                        </strong>
+                        <ul
+                          style={{
+                            margin: 0,
+                            paddingLeft: "1em",
+                            color: "white",
+                          }}
+                        >
+                          {topics.map((topic, j) => (
+                            <li key={j} style={{ fontSize: "0.9em" }}>
+                              {topic}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+              setTooltipVisible(true);
+            }}
           />
         );
       });
@@ -366,65 +492,76 @@ export const ChordDiagram = ({ width, height, startDate, endDate, legislator, ge
       console.error("Error generating connections:", error);
       return null;
     }
-  }, [matrixChordData, width, height]);
+  }, [matrixChordData, width, height, hoveredChordIndex]);
 
+  if (!legislator)
+  {
+    return <div>PICK A LEGISLATOR TO SEE DATA</div>
+  }
+
+  
   return (
-  <div
-    style={{
-      width: `${width}px`,
-      height: `${height}px`,
-      position: "relative", // needed for absolute children
-      border: "1px solid #eee",
-    }}
-  >
-    {/* Translucent Map layer underneath */}
     <div
       style={{
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-        width: `200px`,
-        height: `200px`,
-        opacity: 0.6, // make map semi-transparent
-        zIndex: 10,
-          pointerEvents: "none", // let events pass through to chord
-        transform: "translate(-50%, -50%)"
+        width: `100%`,
+        height: `${height}px`,
+        position: "relative", // needed for absolute children
+        border: "1px solid #eee",
       }}
     >
-      <Map height={200} width={200} data={geojson} connections={connections} />
-    </div>
-
-    {/* Chord Diagram layer on top */}
-    <Tippy
-      content={tooltipContent}
-      visible={tooltipVisible}
-      arrow={false}
-      placement="top"
-      followCursor={true}
-      appendTo={() => document.body}
-      plugins={[followCursor]}
-    >
-      <svg
-        ref={svgRef}
-        width={width}
-        height={height}
+      {/* Translucent Map layer underneath */}
+      <div
+        ref={ref}
         style={{
           position: "absolute",
-          top: 0,
-          left: 0,
-          zIndex: 0,
-          border: "1px solid #fff",
+          top: "50%",
+          left: "50%",
+          width: `${Math.min(width, height) / 2}px`,
+          height: `${Math.min(width, height) / 2}px`,
+          opacity: 0.6, // make map semi-transparent
+          zIndex: 10,
+          pointerEvents: "none", // let events pass through to chord
+          transform: "translate(-50%, -50%)",
         }}
       >
-        {matrixChordData.length > 0 && (
-          <g transform={`translate(${width / 2}, ${height / 2})`}>
-            {allConnections}
-            {allNodes}
-          </g>
-        )}
-      </svg>
-    </Tippy>
-  </div>
-);
+        <InteractionMap
+          height={Math.min(width, height) / 2}
+          width={Math.min(width, height) / 2}
+          data={geojson}
+          connections={connections}
+        />
+      </div>
 
+      {/* Chord Diagram layer on top */}
+      <Tippy
+        content={tooltipContent}
+        visible={tooltipVisible}
+        arrow={false}
+        placement="top"
+        followCursor={true}
+        appendTo={() => document.body}
+        plugins={[followCursor]}
+      >
+        <svg
+          ref={svgRef}
+          width={width}
+          height={height}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            zIndex: 0,
+            border: "1px solid #fff",
+          }}
+        >
+          {matrixChordData.length > 0 && (
+            <g transform={`translate(${width / 2}, ${height / 2})`}>
+              {allConnections}
+              {allNodes}
+            </g>
+          )}
+        </svg>
+      </Tippy>
+    </div>
+  );
 };

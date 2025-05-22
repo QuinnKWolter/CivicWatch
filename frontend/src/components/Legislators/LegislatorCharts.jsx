@@ -9,6 +9,7 @@ import { LegislatorHeatMap } from "./LegislatorHeatMap";
 import { FaSpinner } from "react-icons/fa";
 // import { SemanticScatterPlot } from "../Posts/SemanticSimilarity";
 import { ChordDiagram } from "../Interactions/ChordDiagram";
+import useMeasure from "react-use-measure";
 
 function LegislatorCharts({
   legislatorClicked,
@@ -22,8 +23,10 @@ function LegislatorCharts({
   loading,
   semanticData,
   legislator,
-  geojson
+  geojson,
 }) {
+  const [ref, bounds] = useMeasure();
+
   const axisConfig = useMemo(() => {
     if (!legScatterData || legScatterData.length === 0) return [];
 
@@ -178,7 +181,7 @@ function LegislatorCharts({
         </button>
       </div>
 
-      <div className="mt-4 overflow-y-auto min-h-[400px]">
+      <div ref={ref} className=" relative mt-4 overflow-y-auto min-h-[400px]">
         {dVal === 0 && (
           <>
             {/* <LegislatorHeatMap
@@ -193,14 +196,16 @@ function LegislatorCharts({
               legislatorClicked={legislatorClicked}
             /> */}
 
-            <ChordDiagram
-              width={550}
-              height={400}
-              startDate={startDate}
-              endDate={endDate}
-              legislator={legislator}
-              geojson={geojson}
-            />
+            {bounds.width > 0 && (
+              <ChordDiagram
+                width={bounds.width}
+                height={bounds.height}
+                startDate={startDate}
+                endDate={endDate}
+                legislator={legislator}
+                geojson={geojson}
+              />
+            )}
           </>
 
           // <div className="relative">
