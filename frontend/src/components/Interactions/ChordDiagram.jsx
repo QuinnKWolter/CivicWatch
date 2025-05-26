@@ -93,6 +93,7 @@ export const ChordDiagram = ({
   const [connections, setConnections] = useState([]);
   const [topicMap, setTopicMap] = useState(new Map());
   const [hoveredChordIndex, setHoveredChordIndex] = useState(null);
+  const [legStates, setLegStates] = useState([]);
   //  if (!legislator) return (<div>NO DATA AVAILIBLE</div>);
 
   const url = "http://localhost:9000/api/chord/chord_interactions/?";
@@ -217,7 +218,21 @@ export const ChordDiagram = ({
           topicMapT.set(key, d.topics || []);
         });
 
-        console.log("All Topics", topicMapT);
+        const idToState = {}
+      
+        filteredData.forEach((d) => {
+          idToState[d.source_legislator_id] =
+            d.source_state;
+          idToState[d.target_legislator_id] =
+            d.target_state;
+        });
+
+        const allStates = allIds.map((id) => idToState[id]);
+
+        
+
+
+        console.log("All states", idToState);
         // console.log("id", idToParty);
 
         // console.log("allCivilites", allCivilities);
@@ -228,6 +243,8 @@ export const ChordDiagram = ({
 
         // console.log("allinteractions", allInteractionScores);
 
+        console.log("chord data", matrixChordData)
+
         setMatrixChordData(matrix);
         setMatrixChordNames(allNames);
         setConnectionColors(idToParty);
@@ -237,6 +254,7 @@ export const ChordDiagram = ({
         setAllIds(allIds);
         setConnections(filteredConnections);
         setTopicMap(topicMapT);
+        setLegStates(allStates)
       })
       .catch((error) => console.error("error fetching chord data", error));
   }, [startDate, endDate, legislator]);
@@ -343,10 +361,14 @@ export const ChordDiagram = ({
     console.log("clicked");
     const legislatorId = allIds[group.index];
     const legislatorName = matrixChordNames[group.index];
+    const legislatorState = legStates[group.index];
+    console.log("legStates", legStates)
+    console.log("state", legislatorState)
     setLegislator({
       legislator_id: legislatorId,
       name: legislatorName,
       party: connectionColors[legislatorId],
+      state: legislatorState,
     });
   } catch (e) {
     console.error("Error on click:", e);
@@ -394,7 +416,7 @@ export const ChordDiagram = ({
       console.error("Error generating chord diagram:", error);
       return null;
     }
-  }, [matrixChordData, matrixChordNames, height, width, setLegislator]);
+  }, [matrixChordData, matrixChordNames, height, width, setLegislator, legislator.name, legislator]);
 
   const allConnections = useMemo(() => {
     if (!matrixChordData || matrixChordData.length === 0) return null;

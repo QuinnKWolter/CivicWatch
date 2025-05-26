@@ -76,8 +76,16 @@ function Sidebar({
     }
   };
 
+  useEffect(() => {
+    if (legislator) {
+      setSearchTerm(
+        `${legislator.name} (${legislator.party.charAt(0)} - ${
+          legislator.state
+        })`
+      );
+    }
+  }, [legislator]);
   const handleLegislatorSelect = (legislator) => {
-   
     setLegislator(legislator);
     setSearchTerm(
       `${legislator.name} (${legislator.party.charAt(0)} - ${legislator.state})`
