@@ -321,6 +321,7 @@ export const ChordDiagram = ({
               }
               strokeWidth={2}
               onMouseOver={(e) => {
+                const legislatorState = legStates[group.index]
                 console.log("hovered");
                 setTooltipContent(
                   <div
@@ -346,7 +347,7 @@ export const ChordDiagram = ({
                       }}
                     >
                       <strong style={{ fontSize: "1em", color: "white" }}>
-                        {matrixChordNames[i]}
+                        {matrixChordNames[i]} ({legislatorState})
                       </strong>
                     </div>
                   </div>
@@ -558,7 +559,7 @@ export const ChordDiagram = ({
           left: "50%",
           width: `${Math.min(width, height) / 2}px`,
           height: `${Math.min(width, height) / 2}px`,
-          opacity: 0.6, // make map semi-transparent
+          opacity: 0.9, // make map semi-transparent
           zIndex: 10,
           pointerEvents: "none", // let events pass through to chord
           transform: "translate(-50%, -50%)",
