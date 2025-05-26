@@ -154,6 +154,7 @@ function App() {
                     selectedMetric={selectedMetric}
                     keyword={keyword}
                     legislator={legislator}
+                    setLegislator={setLegislator}
                   />
                 </div>
                 <div className="col-span-3 bg-base-200 rounded-lg shadow-lg overflow-hidden">

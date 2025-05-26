@@ -26,6 +26,7 @@ function TabbedCharts({
   selectedMetric,
   keyword,
   legislator,
+  setLegislator
 }) {
   const [value, setValue] = useState(0);
   const [hoveredTab, setHoveredTab] = useState(null);
@@ -276,6 +277,7 @@ function TabbedCharts({
             semanticData={semanticData}
             legislator={legislator}
             geojson={geojson}
+            setLegislator={setLegislator}
           />
         )}
         {value === 4 && (

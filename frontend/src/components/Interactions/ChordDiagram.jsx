@@ -76,6 +76,7 @@ export const ChordDiagram = ({
   endDate,
   legislator,
   geojson,
+  setLegislator
 }) => {
   
   const [ref, bounds] = useMeasure();
@@ -103,6 +104,8 @@ export const ChordDiagram = ({
   useEffect(() => {
 
     if (!legislator) return;
+
+    console.log("Legislator", legislator)
    
     const params = {
       start_date: startDate.format("YYYY-MM-DD"),
@@ -335,6 +338,21 @@ export const ChordDiagram = ({
               onMouseOut={(e) => {
                 setTooltipVisible(false);
               }}
+              onClick={() => {
+  try {
+    console.log("clicked");
+    const legislatorId = allIds[group.index];
+    const legislatorName = matrixChordNames[group.index];
+    setLegislator({
+      legislator_id: legislatorId,
+      name: legislatorName,
+      party: connectionColors[legislatorId],
+    });
+  } catch (e) {
+    console.error("Error on click:", e);
+  }
+}}
+
             />
             {/* <path
               d={outerArc(group)}
@@ -376,7 +394,7 @@ export const ChordDiagram = ({
       console.error("Error generating chord diagram:", error);
       return null;
     }
-  }, [matrixChordData, matrixChordNames, height, width]);
+  }, [matrixChordData, matrixChordNames, height, width, setLegislator]);
 
   const allConnections = useMemo(() => {
     if (!matrixChordData || matrixChordData.length === 0) return null;
@@ -541,6 +559,7 @@ export const ChordDiagram = ({
         followCursor={true}
         appendTo={() => document.body}
         plugins={[followCursor]}
+        style={{ pointerEvents: "none" }}
       >
         <svg
           ref={svgRef}

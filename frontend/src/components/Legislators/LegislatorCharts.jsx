@@ -24,6 +24,7 @@ function LegislatorCharts({
   semanticData,
   legislator,
   geojson,
+  setLegislator
 }) {
   const [ref, bounds] = useMeasure();
 
@@ -204,6 +205,7 @@ function LegislatorCharts({
                 endDate={endDate}
                 legislator={legislator}
                 geojson={geojson}
+                setLegislator={setLegislator}
               />
             )}
           </>
