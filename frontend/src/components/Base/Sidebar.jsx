@@ -1,14 +1,33 @@
-import React, { useState, useEffect, useRef } from 'react';
-import dayjs from 'dayjs'
-import { colorMap, topicIcons } from '../../utils/utils';
+import React, { useState, useEffect, useRef } from "react";
+import dayjs from "dayjs";
+import { colorMap, topicIcons } from "../../utils/utils";
 
-function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection, activeTopics, setActiveTopics, startDate, setStartDate, endDate, setEndDate, sidebarOpen, selectedMetric, setSelectedMetric, keyword, setKeyword, legislator, setLegislator }) {
+function Sidebar({
+  filters,
+  handleFilterChange,
+  expandedSections,
+  toggleSection,
+  activeTopics,
+  setActiveTopics,
+  startDate,
+  setStartDate,
+  endDate,
+  setEndDate,
+  sidebarOpen,
+  selectedMetric,
+  setSelectedMetric,
+  keyword,
+  setKeyword,
+  legislator,
+  setLegislator,
+}) {
   const [legislators, setLegislators] = useState([]);
-  const [flashpoint, setFlashpoint] = useState('');
+  const [flashpoint, setFlashpoint] = useState("");
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [inputValue, setInputValue] = useState([]);
 
   // Initialize expandedSections with all sections expanded
   const [localExpandedSections, setLocalExpandedSections] = useState({
@@ -20,52 +39,75 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
   });
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      console.log("debouncing");
+      setKeyword(inputValue);
+    }, 2000);
+
+    return () => clearTimeout(handler);
+  }, [inputValue]);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownRef]);
 
   const fetchLegislators = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/legislators/');
+      const response = await fetch("/api/legislators/");
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error("Network response was not ok");
       }
       const data = await response.json();
       setLegislators(data);
     } catch (error) {
-      console.error('Error fetching legislators:', error);
+      console.error("Error fetching legislators:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (legislator) {
+      setSearchTerm(
+        `${legislator.name} (${legislator.party.charAt(0)} - ${
+          legislator.state
+        })`
+      );
+    }
+  }, [legislator]);
   const handleLegislatorSelect = (legislator) => {
     setLegislator(legislator);
-    setSearchTerm(`${legislator.name} (${legislator.party.charAt(0)} - ${legislator.state})`);
+    setSearchTerm(
+      `${legislator.name} (${legislator.party.charAt(0)} - ${legislator.state})`
+    );
     setDropdownOpen(false);
   };
 
-  const filteredLegislators = legislators.filter(legislator =>
+  const filteredLegislators = legislators.filter((legislator) =>
     legislator.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const flashpoints = [
-  { label: 'January 6th Insurrection', dateRange: ['2021-01-06', '2021-01-31'] },
-    { label: '2020 BLM Protests', dateRange: ['2020-05-25', '2020-07-31'] },
+    {
+      label: "January 6th Insurrection",
+      dateRange: ["2021-01-06", "2021-01-31"],
+    },
+    { label: "2020 BLM Protests", dateRange: ["2020-05-25", "2020-07-31"] },
     // Add more flashpoints as needed
   ];
 
   const handleFlashpointChange = (event) => {
-    const selected = flashpoints.find(fp => fp.label === event.target.value);
+    const selected = flashpoints.find((fp) => fp.label === event.target.value);
     if (selected) {
       setStartDate(dayjs(selected.dateRange[0]));
       setEndDate(dayjs(selected.dateRange[1]));
@@ -75,7 +117,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
   };
 
   const toggleLocalSection = (section) => {
-    setLocalExpandedSections(prevState => ({
+    setLocalExpandedSections((prevState) => ({
       ...prevState,
       [section]: !prevState[section],
     }));
@@ -87,7 +129,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
         <div className="mb-4">
           <button
             className="w-full bg-primary text-primary-content py-2 rounded"
-            onClick={() => toggleLocalSection('flashpoints')}
+            onClick={() => toggleLocalSection("flashpoints")}
           >
             Date Settings
           </button>
@@ -100,8 +142,10 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                 onChange={handleFlashpointChange}
               >
                 <option value="">Select a key event</option>
-                {flashpoints.map(fp => (
-                  <option key={fp.label} value={fp.label}>{fp.label}</option>
+                {flashpoints.map((fp) => (
+                  <option key={fp.label} value={fp.label}>
+                    {fp.label}
+                  </option>
                 ))}
               </select>
 
@@ -109,14 +153,14 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
               <input
                 type="date"
                 className="w-full bg-base-300 text-base-content p-2 m-1 rounded"
-                value={dayjs(startDate).format('YYYY-MM-DD')}
+                value={dayjs(startDate).format("YYYY-MM-DD")}
                 onChange={(e) => setStartDate(dayjs(e.target.value))}
               />
               <br />
               <input
                 type="date"
                 className="w-full bg-base-300 text-base-content p-2 m-1 rounded"
-                value={dayjs(endDate).format('YYYY-MM-DD')}
+                value={dayjs(endDate).format("YYYY-MM-DD")}
                 onChange={(e) => setEndDate(dayjs(e.target.value))}
               />
             </div>
@@ -126,7 +170,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
         <div className="mb-4">
           <button
             className="w-full bg-primary text-primary-content py-2 rounded"
-            onClick={() => toggleLocalSection('legislators')}
+            onClick={() => toggleLocalSection("legislators")}
           >
             Select Legislator
           </button>
@@ -150,13 +194,14 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                     {loading ? (
                       <li className="p-2 text-center">Loading...</li>
                     ) : (
-                      filteredLegislators.map(legislator => (
+                      filteredLegislators.map((legislator) => (
                         <li
                           key={legislator.legislator_id}
                           className="p-2 hover:bg-base-300 cursor-pointer"
                           onClick={() => handleLegislatorSelect(legislator)}
                         >
-                          {legislator.name} ({legislator.party.charAt(0)} - {legislator.state})
+                          {legislator.name} ({legislator.party.charAt(0)} -{" "}
+                          {legislator.state})
                         </li>
                       ))
                     )}
@@ -170,7 +215,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
         <div className="mb-4">
           <button
             className="w-full bg-primary text-primary-content py-2 rounded"
-            onClick={() => toggleLocalSection('keywords')}
+            onClick={() => toggleLocalSection("keywords")}
           >
             Keyword Search
           </button>
@@ -179,8 +224,8 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
               <input
                 type="text"
                 className="input input-bordered w-full"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
               />
             </div>
           )}
@@ -189,17 +234,29 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
         <div className="mb-4">
           <button
             className="w-full bg-primary text-primary-content py-2 rounded"
-            onClick={() => toggleLocalSection('topics')}
+            onClick={() => toggleLocalSection("topics")}
           >
             Topic Settings
           </button>
           {localExpandedSections.topics && (
             <div className="mt-4">
               <label className="block text-base-content">Topics</label>
-              {['capitol', 'immigra', 'abortion', 'blacklivesmatter', 'climate', 'gun', 'rights', 'covid'].map(topic => {
+              {[
+                "capitol",
+                "immigra",
+                "abortion",
+                "blacklivesmatter",
+                "climate",
+                "gun",
+                "rights",
+                "covid",
+              ].map((topic) => {
                 const Icon = topicIcons[topic];
                 return (
-                  <div key={topic} className="flex items-center justify-between">
+                  <div
+                    key={topic}
+                    className="flex items-center justify-between"
+                  >
                     <div className="flex items-center">
                       <input
                         type="checkbox"
@@ -207,17 +264,25 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                         onChange={(e) => {
                           const newTopics = e.target.checked
                             ? [...activeTopics, topic]
-                            : activeTopics.filter(t => t !== topic);
+                            : activeTopics.filter((t) => t !== topic);
                           setActiveTopics(newTopics);
                         }}
                         className="checkbox checkbox-primary mr-2 mb-1"
                       />
                       <Icon className="mr-2" />
-                      <span className="text-base-content">{topic.charAt(0).toUpperCase() + topic.slice(1)}</span>
+                      <span className="text-base-content">
+                        {topic.charAt(0).toUpperCase() + topic.slice(1)}
+                      </span>
                     </div>
                     <div className="flex">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colorMap[topic]?.D }}></div>
-                      <div className="w-3 h-3 rounded-full ml-1" style={{ backgroundColor: colorMap[topic]?.R }}></div>
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: colorMap[topic]?.D }}
+                      ></div>
+                      <div
+                        className="w-3 h-3 rounded-full ml-1"
+                        style={{ backgroundColor: colorMap[topic]?.R }}
+                      ></div>
                     </div>
                   </div>
                 );
@@ -229,7 +294,7 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
         <div className="mb-4">
           <button
             className="w-full bg-primary text-primary-content py-2 rounded"
-            onClick={() => toggleLocalSection('metrics')}
+            onClick={() => toggleLocalSection("metrics")}
           >
             Metric Settings
           </button>
@@ -242,8 +307,8 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                     type="radio"
                     name="metric"
                     value="posts"
-                    checked={selectedMetric === 'posts'}
-                    onChange={() => setSelectedMetric('posts')}
+                    checked={selectedMetric === "posts"}
+                    onChange={() => setSelectedMetric("posts")}
                     className="radio radio-primary mr-2"
                   />
                   Posts
@@ -253,8 +318,8 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                     type="radio"
                     name="metric"
                     value="legislators"
-                    checked={selectedMetric === 'legislators'}
-                    onChange={() => setSelectedMetric('legislators')}
+                    checked={selectedMetric === "legislators"}
+                    onChange={() => setSelectedMetric("legislators")}
                     className="radio radio-primary mr-2"
                   />
                   Legislators
@@ -264,8 +329,8 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
                     type="radio"
                     name="metric"
                     value="engagement"
-                    checked={selectedMetric === 'engagement'}
-                    onChange={() => setSelectedMetric('engagement')}
+                    checked={selectedMetric === "engagement"}
+                    onChange={() => setSelectedMetric("engagement")}
                     className="radio radio-primary mr-2"
                   />
                   Engagement
@@ -279,4 +344,4 @@ function Sidebar({ filters, handleFilterChange, expandedSections, toggleSection,
   );
 }
 
-export default Sidebar; 
+export default Sidebar;
