@@ -6,12 +6,13 @@ import {
   TextTip,
 } from "../Legislators/LegislatorTooltip";
 import { SemanticTooltip } from "../Legislators/SemanticTooltip";
-import Tippy from '@tippyjs/react'
-import {followCursor} from 'tippy.js'
+import Tippy from "@tippyjs/react";
+import { followCursor } from "tippy.js";
+import { colorMap } from "../../utils/utils";
 
 export const SemanticScatterPlot = ({
   data,
-  width ,
+  width,
   height,
   hoveredSemanticDataRef,
 }) => {
@@ -20,7 +21,7 @@ export const SemanticScatterPlot = ({
   const margin = { top: 40, right: 40, bottom: 50, left: 60 };
   const [hoverData, setHoverData] = useState([]);
   const [clickedTooltip, setClickedTooltip] = useState(false);
-  const [tooltipContent, setTooltipContent] = useState('');
+  const [tooltipContent, setTooltipContent] = useState("");
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const updatedColorScale = [
     {
@@ -34,12 +35,21 @@ export const SemanticScatterPlot = ({
       rights: "#e377c2",
     },
   ];
-  const topics = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"]
+  const topics = [
+    "capitol",
+    "immigra",
+    "abortion",
+    "blacklivesmatter",
+    "climate",
+    "gun",
+    "rights",
+    "covid",
+  ];
 
   useEffect(() => {
     if (!data || data.length === 0) return;
 
-    console.log("DATA:" , data)
+    console.log("DATA:", data);
 
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove(); // Clear previous renders
@@ -130,13 +140,16 @@ export const SemanticScatterPlot = ({
       .attr("cx", (d) => xScale(d.pca_x))
       .attr("cy", (d) => yScale(d.pca_y))
       .attr("r", 5) // Radius of points
-      .attr("fill", (d) => updatedColorScale[0][d.topics__name])
+      .attr(
+        "fill",
+        (d) => colorMap[d.topics__name][d.party === "Democratic" ? "D" : "R"]
+      )
       .attr("fill-opacity", 0.7)
       .style("cursor", "pointer")
       .on("click", function (event, d) {
         // Fixed: 'd' is the single datum
         event.stopPropagation(); // Prevent event from bubbling to zoom
-        console.log("Clicked point:", d);
+        console.log("Clicked point:", d.party);
 
         if (
           hoverData &&
@@ -195,13 +208,15 @@ export const SemanticScatterPlot = ({
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              textAlign: "center", 
+              textAlign: "center",
               height: "100%",
               width: "100%",
-              lineHeight: "0.8em" 
+              lineHeight: "0.8em",
             }}
           >
-            <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "1px" }}
+            >
               <strong style={{ fontSize: "0.5em", color: "white" }}>
                 Topic: {d.topics__name}
               </strong>
@@ -214,23 +229,22 @@ export const SemanticScatterPlot = ({
               <strong style={{ fontSize: "0.5em", color: "white" }}>
                 Likes: {d.like_count}
               </strong>
-              <strong style={{fontSize: "0.5em", color: "white"}}>
+              <strong style={{ fontSize: "0.5em", color: "white" }}>
                 Reposts: {d.retweet_count}
               </strong>
-              <strong style={{fontSize: "0.5em", color:"white"}}>
+              <strong style={{ fontSize: "0.5em", color: "white" }}>
                 Author: {d.name}
               </strong>
             </div>
           </div>
         );
-        
+
         setTooltipVisible(true);
       })
 
       .on("mouseleave", function (event, d) {
         event.stopPropagation();
 
-        
         setTooltipVisible(false);
       });
 
@@ -266,29 +280,94 @@ export const SemanticScatterPlot = ({
       .style("pointer-events", "all")
       .lower() // Send to back so points are on top
       .call(zoom);
-    
+
     svg
       .selectAll("mydots")
       .data(topics)
       .enter()
       .append("circle")
-      .attr("cx", 80)
-      .attr("cy", function (d, i) { return 10 + i * 15 })
+      .attr("cx", 85)
+      .attr("cy", function (d, i) {
+        return 20 + i * 15;
+      })
       .attr("r", 5)
-      .style("fill", function (d) { console.log("d", updatedColorScale[d]);  return updatedColorScale[0][d] })
-    
+      .style("fill", function (d) {
+        console.log("d", colorMap[d]["D"]);
+        return colorMap[d]["D"];
+      });
+
+    svg
+      .selectAll("mydots2")
+      .data(topics)
+      .enter()
+      .append("circle")
+      .attr("cx", 70)
+      .attr("cy", function (d, i) {
+        return 20 + i * 15;
+      })
+      .attr("r", 5)
+      .style("fill", function (d) {
+        return colorMap[d]["R"];
+      });
+
     svg
       .selectAll("mylabels")
       .data(topics)
       .enter()
       .append("text")
-      .attr("x", 90)
-      .attr("y", function (d, i) { return 10 + i * 15})
-      .style("fill", function (d) { return updatedColorScale[0][d] })
+      .attr("x", 95)
+      .attr("y", function (d, i) {
+        return 20 + i * 15;
+      })
+      .style("fill", function (d) {
+        return "gray";
+      })
       .attr("text-anchor", "left")
       .style("alignment-baseline", "middle")
       .style("font-size", "10px")
-      .text(function(d){return d})
+      .text(function (d) {
+        return d;
+      });
+    
+    svg
+      .selectAll("mylabels1")
+      .data(topics)
+      .enter()
+      .append("text")
+      .attr("x", 83)
+      .attr("y", function (d, i) {
+        return 10;
+      })
+      .style("fill", function (d) {
+        return "gray";
+      })
+      .attr("text-anchor", "left")
+      .style("alignment-baseline", "middle")
+      .style("font-size", "10px")
+      .text(function (d) {
+        return "D";
+      });
+    
+    svg
+      .selectAll("mylabels2")
+      .data(topics)
+      .enter()
+      .append("text")
+      .attr("x", 67)
+      .attr("y", function (d, i) {
+        return 10;
+      })
+      .style("fill", function (d) {
+        return "gray";
+      })
+      .attr("text-anchor", "left")
+      .style("alignment-baseline", "middle")
+      .style("font-size", "10px")
+      .text(function (d) {
+        return "R";
+      });
+
+    
   }, [data, width, height]); // Rerun effect if these change
 
   const [tooltipData, setTooltipData] = useState(null);
@@ -315,7 +394,7 @@ export const SemanticScatterPlot = ({
         plugins={[followCursor]}
       >
         <svg ref={svgRef} width={width} height={height}></svg>
-        </Tippy>
+      </Tippy>
       {/* { && (
         // <Tooltip
         //   xPos={hoverData.xPos}
@@ -329,12 +408,11 @@ export const SemanticScatterPlot = ({
       {tooltipData === null ? (
         <div>
           <span className="font-bold text-xs">Post Text:</span> <br></br>
-          
         </div>
       ) : (
         <div>
-            <span className="font-bold text-xs">Post Text: </span>{" "}
-          <span className="text-xs"> { tooltipData.d.text} </span>{" "}
+          <span className="font-bold text-xs">Post Text: </span>{" "}
+          <span className="text-xs"> {tooltipData.d.text} </span>{" "}
         </div>
       )}
     </div>

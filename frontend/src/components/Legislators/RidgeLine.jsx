@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import * as d3 from "d3";
 import dayjs from "dayjs";
+import { colorMap } from "../../utils/utils";
 
 export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, endDate }) => {
   const svgRef = useRef(null);
   const [testData, setTestData] = useState({});
   
   // Remove the allDates state since we can calculate it from testData when needed
-  const allPossibleTopics = ["abortion", "blacklivesmatter", "capitol", "climate", "covid", "gun", "immigra", "rights"];
+  const allPossibleTopics = ["capitol", "immigra", "abortion", "blacklivesmatter", "climate", "gun", "rights", "covid"];
 
   useEffect(() => {
     
@@ -70,8 +71,8 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
       allDates.push(new Date(d));
     }
 
-    // Rest of your rendering code...
-    const topics = Object.keys(testData);
+    
+    const topics = allPossibleTopics;
     const x = d3
       .scaleTime()
       .domain(dateRange)
@@ -146,6 +147,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
 
       const dateMap = new Map();
       posts.forEach((post) => {
+        
         const postDate = new Date(post.date).toISOString();
         dateMap.set(postDate, post.count);
       });
@@ -155,11 +157,18 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
         count: dateMap.get(date.toISOString()) || 0,
       }));
 
+
+      console.log("topic", topic);
+      console.log("party", legislatorClicked[0].party)
+      const party = legislatorClicked[0].party
+      if (!colorMap[topic]) {
+  console.warn(`Missing color mapping for topic: ${topic}`);
+}
       d3.select(this)
         .append("path")
-        .attr("fill", updatedColorScale[0][topic])
+        .attr("fill", colorMap[topic][party])
         .attr("fill-opacity", 0.3)
-        .attr("stroke", updatedColorScale[0][topic])
+        .attr("stroke", colorMap[topic][party])
         .attr("stroke-width", 1)
         .attr("d", area(filledPosts));
     });

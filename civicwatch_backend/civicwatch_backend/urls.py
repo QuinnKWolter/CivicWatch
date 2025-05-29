@@ -49,6 +49,9 @@ urlpatterns = [
     path('api/default_trendline_data/', views.default_trendline_data, name='default_trendline_data'),
     path("api/legislators/", views.all_legislators, name="all_legislators"),
     path('api/posts/post_semantic_similarity/', views.post_semantic_similarity, name="semantic_similarity"),
-
-    path('api/chord/interactions/', views.chord_interactions, name="chord_diagram")
+    path('api/chord/interactions/', views.chord_interactions, name="chord_diagram"),
+    path("api/us-states/", views.us_states_data, name="us_states_data"),
+    path('api/posts/post_semantic_similarity/', views.post_semantic_similarity, name="semantic_similarity"),
+    path('api/chord/chord_interactions/', views.chord_interactions_novel, name="chord interactions"),
+    path('api/chord/chord_top_legislators/', views.chord_top_legislators_novel, name="top legislators")
 ]
