@@ -193,10 +193,13 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
   return (
     <>
       <h3 className="text-center mb-2">Post Frequency Over Time by Topic</h3>
-      <div className="w-full" style={{ height: '500px' }}>
+      <div className="w-full" width={width} height={height} style={{ border: "1px solid #eee" }}>
         <svg
           ref={svgRef}
-          className="w-full h-full"
+          width={width}
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="xMidYMid meet"
         />
       </div>
     </>

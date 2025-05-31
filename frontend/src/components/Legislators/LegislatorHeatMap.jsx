@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
 
 export const LegislatorHeatMap = ({
-  height = 600,
+  height = 900,
   width = 500,
   data,
   legScatterData,
@@ -255,17 +255,18 @@ export const LegislatorHeatMap = ({
     <div
       style={{
         width: "100%",
-        height: `${height}px`,
+        height: `auto`,
         overflowY: "auto",
         border: "1px solid #eee",
       }}
     >
       <svg
         ref={svgRef}
+        viewBox={`0 0 ${width} ${totalHeight}`}
         style={{
           display: "block",
           width: "100%",
-          height: `${totalHeight}px`,
+          height: `auto`,
         }}
       />
     </div>

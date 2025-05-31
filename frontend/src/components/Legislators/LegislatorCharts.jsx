@@ -185,9 +185,9 @@ function LegislatorCharts({
       <div ref={ref} className=" relative mt-4 overflow-y-auto min-h-[400px]">
         {dVal === 0 && (
           <>
-            {/* <LegislatorHeatMap
-              width={550}
-              height={400}
+            {bounds.width > 0 && <LegislatorHeatMap
+              width={bounds.width}
+              height={bounds.width * 1.75}
               startDate={startDate}
               endDate={endDate}
               data={demData}
@@ -195,9 +195,9 @@ function LegislatorCharts({
               setLegislatorClicked={setLegislatorClicked}
               party={1}
               legislatorClicked={legislatorClicked}
-            /> */}
+            />}
 
-            {bounds.width > 0 && (
+            {/* {bounds.width > 0 && (
               <ChordDiagram
                 width={bounds.width}
                 height={bounds.height}
@@ -207,7 +207,7 @@ function LegislatorCharts({
                 geojson={geojson}
                 setLegislator={setLegislator}
               />
-            )}
+            )} */}
           </>
 
           // <div className="relative">
@@ -216,8 +216,8 @@ function LegislatorCharts({
         )}
         {dVal === 1 && (
           <LegislatorHeatMap
-            width={550}
-            height={400}
+            width={bounds.width}
+            height={bounds.width * 1.75}
             startDate={startDate}
             endDate={endDate}
             data={repubData}
@@ -286,8 +286,8 @@ function LegislatorCharts({
           //   height={300}
           // />
           <RidgeLinePlot
-            height={800}
-            width={500}
+            height={bounds.height/2}
+            width={bounds.width}
             legislatorClicked={legislatorClicked}
             startDate={startDate}
             endDate={endDate}
