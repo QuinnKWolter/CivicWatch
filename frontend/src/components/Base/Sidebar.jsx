@@ -194,6 +194,8 @@ function Sidebar({
                     {loading ? (
                       <li className="p-2 text-center">Loading...</li>
                     ) : (
+                        
+                       
                       filteredLegislators.map((legislator) => (
                         <li
                           key={legislator.legislator_id}
@@ -204,7 +206,9 @@ function Sidebar({
                           {legislator.state})
                         </li>
                       ))
-                    )}
+                        
+                         
+                    ) }
                   </ul>
                 )}
               </div>

@@ -29,6 +29,7 @@ function LegislatorCharts({
   activeTopics,
 }) {
   const [ref, bounds] = useMeasure();
+  const [match, setMatch] = useState(true);
 
   const axisConfig = useMemo(() => {
     if (!legScatterData || legScatterData.length === 0) return [];
@@ -64,14 +65,10 @@ function LegislatorCharts({
     ];
   }, [legScatterData]);
 
-  useEffect(() => {
-    console.log("does this work", legScatterData);
-  }, [legScatterData]);
-
   const axisConfigTopics = useMemo(() => {
     if (!legScatterData || legScatterData.length === 0) return [];
 
-    console.log("SCATTER DATA", legScatterData)
+    console.log("SCATTER DATA", legScatterData);
 
     let topics = [
       {
@@ -131,15 +128,14 @@ function LegislatorCharts({
             .map((d) => d.blacklivesmatter)
             .filter(Number.isFinite)
         ),
-      }
+      },
     ];
 
-    console.log("ACTIVE TOPICS", activeTopics)
+    console.log("ACTIVE TOPICS", activeTopics);
 
-    return topics.filter((d) =>
-      activeTopics.includes(d.name.toLowerCase())
-    );
-  });
+    return topics.filter((d) => activeTopics.includes(d.name.toLowerCase()));
+  },[activeTopics, legScatterData]);
+  
   // [
   //   { name: "capitol", max: 244 },
   //   { name: "climate", max: 418 },
@@ -174,6 +170,17 @@ function LegislatorCharts({
     }
   }, [monthlyLeg, loading]);
 
+  useEffect(() => {
+    if (legislator) {
+      const matchInData =
+        demData.some((d) => d.name === legislator.name) ||
+        repubData.some((d) => d.name === legislator.name);
+      console.log("set match")
+      setMatch(matchInData);
+    }
+    console.log("bounds", bounds)
+  }, [demData, legislator, repubData]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-64">
@@ -207,27 +214,29 @@ function LegislatorCharts({
           Republican Post Heat Map
         </button>
       </div>
+      <div ref={ref}>
+      {match &&
+        <div  className=" relative mt-4 overflow-y-auto min-h-[400px]">
+          {dVal === 0 && (
+            <>
+              {bounds.width > 0 && match && (
+                <LegislatorHeatMap
+                  width={bounds.width}
+                  height={bounds.width * 1.75}
+                  startDate={startDate}
+                  endDate={endDate}
+                  data={demData}
+                  legScatterData={legScatterData}
+                  setLegislatorClicked={setLegislatorClicked}
+                  party={1}
+                  legislatorClicked={legislatorClicked}
+                  legislator={legislator}
+                  setLegislator={setLegislator}
+                  match={match}
+                />
+              )}
 
-      <div ref={ref} className=" relative mt-4 overflow-y-auto min-h-[400px]">
-        {dVal === 0 && (
-          <>
-            {bounds.width > 0 && (
-              <LegislatorHeatMap
-                width={bounds.width}
-                height={bounds.width * 1.75}
-                startDate={startDate}
-                endDate={endDate}
-                data={demData}
-                legScatterData={legScatterData}
-                setLegislatorClicked={setLegislatorClicked}
-                party={1}
-                legislatorClicked={legislatorClicked}
-                legislator={legislator}
-                setLegislator={setLegislator}
-              />
-            )}
-
-            {/* {bounds.width > 0 && (
+              {/* {bounds.width > 0 && (
               <ChordDiagram
                 width={bounds.width}
                 height={bounds.height}
@@ -238,28 +247,30 @@ function LegislatorCharts({
                 setLegislator={setLegislator}
               />
             )} */}
-          </>
+            </>
 
-          // <div className="relative">
-          //   <SemanticScatterPlot width={400} height={400} data={semanticData.slice(0, 100)} hoveredSemanticDataRef={hoveredSemanticDataRef} />
-          // </div>
-        )}
-        {dVal === 1 && (
-          <LegislatorHeatMap
-            width={bounds.width}
-            height={bounds.width * 1.75}
-            startDate={startDate}
-            endDate={endDate}
-            data={repubData}
-            legScatterData={legScatterData}
-            setLegislatorClicked={setLegislatorClicked}
-            party={2}
-            legislatorClicked={legislatorClicked}
-            legislator={legislator}
-            setLegislator={setLegislator}
-          />
-        )}
-      </div>
+            // <div className="relative">
+            //   <SemanticScatterPlot width={400} height={400} data={semanticData.slice(0, 100)} hoveredSemanticDataRef={hoveredSemanticDataRef} />
+            // </div>
+          )}
+          {dVal === 1 && match && (
+            <LegislatorHeatMap
+              width={bounds.width}
+              height={bounds.width * 1.75}
+              startDate={startDate}
+              endDate={endDate}
+              data={repubData}
+              legScatterData={legScatterData}
+              setLegislatorClicked={setLegislatorClicked}
+              party={2}
+              legislatorClicked={legislatorClicked}
+              legislator={legislator}
+              setLegislator={setLegislator}
+              match={match}
+            />
+          )}
+          </div>}
+        </div>
 
       <div className="flex space-x-2 border-b border-base-300 mt-3">
         <button
@@ -320,12 +331,13 @@ function LegislatorCharts({
           //   height={300}
           // />
           <RidgeLinePlot
-            height={bounds.height / 2}
+              height={bounds.height > 0 ? bounds.height / 2 : 300}
             width={bounds.width}
             legislatorClicked={legislatorClicked}
             startDate={startDate}
             endDate={endDate}
             activeTopics={activeTopics}
+            legislator={legislator}
           />
         )}
       </div>

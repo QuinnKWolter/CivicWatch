@@ -10,35 +10,40 @@ export const LegislatorHeatMap = ({
   setLegislatorClicked,
   party,
   legislator,
-  setLegislator
+  setLegislator,
+  match
 }) => {
   const margin = { top: 50, right: 30, bottom: 50, left: 156 };
   const svgRef = useRef(null);
   const [rowHeight] = useState(20);
   const [totalHeight, setTotalHeight] = useState(height);
+  const [totalWidth, setTotalWidth] = useState(width);
+  // const [match, setMatch] = useState(true)
 
   const handleClick = (name) => {
     setLegislatorClicked(legScatterData.filter((d) => d.name === name));
   };
-  
-  useEffect(() => {
-  if (
-    legislator &&
-    legislator.name &&
-    (!legislatorClicked.length || legislator.name !== legislatorClicked[0].name)
-  ) {
-    const match = legScatterData.find((d) => d.name === legislator.name);
-    if (match) {
-      setLegislatorClicked([match]);
-    }
-  }
-}, [legislator, legScatterData]);
 
+  useEffect(() => {
+    if (
+      legislator &&
+      legislator.name &&
+      (!legislatorClicked.length ||
+        legislator.name !== legislatorClicked[0].name)
+    ) {
+      const match = legScatterData.find((d) => d.name === legislator.name);
+      if (match) {
+        setLegislatorClicked([match]);
+      }
+      
+    }
+    
+  }, [legislator, legScatterData]);
 
   useEffect(() => {
     console.log("DATA", data);
-    console.log("LEGISLATOR", legislator)
-    console.log("LEGISLATORCLICKED", legislatorClicked)
+    console.log("LEGISLATOR", legislator);
+    console.log("LEGISLATORCLICKED", legislatorClicked);
     if (!data.length) return;
     // Calculate needed height
     const neededHeight = margin.top + margin.bottom + data.length * rowHeight;
@@ -60,6 +65,9 @@ export const LegislatorHeatMap = ({
     // Create scales
     const monthArray = Array.from(allMonths).sort((a, b) => a - b);
     const names = processedData.map((d) => d.name);
+
+    const minColWidth = 25; // Minimum pixel width per month column
+   
 
     const allDates = d3.timeMonths(
       d3.min(
@@ -103,6 +111,12 @@ export const LegislatorHeatMap = ({
     const postCounts = data.flatMap((d) =>
       Object.values(d.monthly_post_counts)
     );
+
+     const neededWidth =
+      margin.left + margin.right + minColWidth * allDates.length;
+    const finalWidth = Math.max(width, neededWidth); // Keep at least the original width
+    setTotalWidth(finalWidth);
+    setTotalHeight(neededHeight);
     const q95 = d3.quantile(postCounts.sort(d3.ascending), 0.95); // 95th percentile
     let color;
     // Create a nonlinear color scale focused on typical values
@@ -122,11 +136,11 @@ export const LegislatorHeatMap = ({
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    svg
-      .attr("width", width)
-      .attr("height", Math.min(neededHeight, height))
-      .attr("viewBox", `0 0 ${width} ${neededHeight}`)
-      .attr("preserveAspectRatio", "none");
+    svg;
+    // .attr("width", width)
+    // .attr("height", Math.min(neededHeight, height))
+    // .attr("viewBox", `0 0 ${width} ${neededHeight}`)
+    // .attr("preserveAspectRatio", "none");
 
     const g = svg.append("g");
 
@@ -186,17 +200,17 @@ export const LegislatorHeatMap = ({
       .join("rect")
       .attr("x", (d) => x(d.date))
       .attr("width", x.bandwidth())
-      .attr("height", y.bandwidth() * 0.8)
-      .attr("y", y.bandwidth() * 0.1)
+      .attr("height", y.bandwidth())
+      .attr("y", 0)
       .attr("fill", (d) => color(d.count))
       .append("title")
       .text((d) => `${d.name}: ${d.count} posts in ${d.monthStr}`);
 
-    const legendWidth = 300;
+   const legendWidth = Math.min(300, width - margin.left - margin.right - 40);
     const legendHeight = 10;
-    const legendX = width - legendWidth - 130; 
+    const legendX =
+      margin.left + (width - margin.left - margin.right - legendWidth) / 2;
     const legendY = neededHeight - margin.bottom + 15;
-
 
     const defs = svg.append("defs");
     const gradientId = "legendGradient";
@@ -231,7 +245,6 @@ export const LegislatorHeatMap = ({
       .ticks(4)
       .tickFormat(d3.format(".0f"));
 
-
     const legendGroup = g
       .append("g")
       .attr("class", "legend")
@@ -263,7 +276,7 @@ export const LegislatorHeatMap = ({
     console.log("Total cells:", processedData.length * allDates.length);
   }, [data, height, width, margin, rowHeight, legislatorClicked, legislator]);
 
-  if (!data?.length) {
+  if (!data?.length ) {
     return (
       <div className="flex items-center justify-center">No data available</div>
     );
@@ -275,15 +288,15 @@ export const LegislatorHeatMap = ({
         width: "100%",
         height: `auto`,
         overflowY: "auto",
-        border: "1px solid #eee",
+        overflowX: totalWidth > width ? "auto" : "hidden", // horizontal scroll if needed
       }}
     >
       <svg
         ref={svgRef}
-        viewBox={`0 0 ${width} ${totalHeight}`}
+        viewBox={`0 0 ${totalWidth} ${totalHeight}`}
         style={{
           display: "block",
-          width: "100%",
+          width: totalWidth > width ? totalWidth : "100%",
           height: `auto`,
         }}
       />

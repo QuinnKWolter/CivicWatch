@@ -3,16 +3,19 @@ import * as d3 from "d3";
 import dayjs from "dayjs";
 import { colorMap } from "../../utils/utils";
 
-export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, endDate, activeTopics}) => {
+export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, endDate, activeTopics, legislator}) => {
   const svgRef = useRef(null);
   const [testData, setTestData] = useState({});
   
   // Remove the allDates state since we can calculate it from testData when needed
   const allPossibleTopics = ["capitol", "immigra", "abortion", "blacklivesmatter", "climate", "gun", "rights", "covid"];
 
-  useEffect(() => {
+  console.log("height, width", height, width)
 
-    if (legislatorClicked.length < 1) return;
+  useEffect(() => {
+    console.log("running")
+
+    if (legislatorClicked.length < 1 && !legislator) return;
     
 
     const url = "/api/legislator_posts/?"
@@ -20,8 +23,10 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
     const params = {
       start_date: startDate.format("YYYY-MM-DD"),
       end_date: endDate.format("YYYY-MM-DD"),
-      name: legislatorClicked[0].name
+      name: legislator === null ?  legislatorClicked[0].name : legislator.name
     }
+
+    console.log("params", params)
 
 
 
@@ -31,7 +36,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
     fetch(query)
       .then((response) => response.json())
       .then((data) => {
-        console.log(data)
+        console.log("ridge data" ,data)
         const updatedData = Object.fromEntries(
           Object.entries(data).map(([topic, posts]) => {
             if (posts.length < 10) {
@@ -49,9 +54,10 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
         });
 
         setTestData(updatedData);
+        console.log("updated data", data)
       })
       .catch((error) => console.error("Error fetching data", error));
-  }, [legislatorClicked, startDate, endDate, activeTopics]); // Remove allDates from dependencies
+  }, [legislatorClicked, startDate, endDate, activeTopics, legislator]); // Remove allDates from dependencies
 
   useEffect(() => {
     if (Object.keys(testData).length === 0) return;
@@ -162,7 +168,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
 
       console.log("topic", topic);
       console.log("party", legislatorClicked[0].party)
-      const party = legislatorClicked[0].party
+      const party = legislator === null ? legislatorClicked[0].party :  legislator.party
       if (!colorMap[topic]) {
   console.warn(`Missing color mapping for topic: ${topic}`);
 }
@@ -182,6 +188,8 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
     yAxis.selectAll("text")
       .style("font-size", "9px")
     
+    
+    
   }, [testData, width, height]);
 
   if (!legislatorClicked || Object.keys(legislatorClicked).length === 0) {
@@ -195,7 +203,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
   return (
     <>
       <h3 className="text-center mb-2">Post Frequency Over Time by Topic</h3>
-      <div className="w-full" width={width} height={height} style={{ border: "1px solid #eee" }}>
+      <div className="w-full" width={width} height={height}>
         <svg
           ref={svgRef}
           width={width}
