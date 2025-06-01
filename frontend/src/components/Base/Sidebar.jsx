@@ -1,19 +1,26 @@
-import React, { useState, useEffect, useRef } from "react";
-import dayjs from "dayjs";
-import { colorMap, topicIcons } from "../../utils/utils";
+import React, { useState, useEffect, useRef } from 'react';
+import dayjs from 'dayjs';
+import { colorMap, topicIcons } from '../../utils/utils';
 
-function Sidebar({
-  filters,
-  handleFilterChange,
-  expandedSections,
-  toggleSection,
+// Constants
+const FLASHPOINTS = [
+  { label: 'January 6th Insurrection', range: ['2021-01-06', '2021-01-31'] },
+  { label: '2020 BLM Protests', range: ['2020-05-25', '2020-07-31'] },
+];
+const TOPICS = Object.keys(topicIcons);
+const METRICS = [
+  { value: 'posts', label: 'Posts' },
+  { value: 'legislators', label: 'Legislators' },
+  { value: 'engagement', label: 'Engagement' },
+];
+
+export default function Sidebar({
   activeTopics,
   setActiveTopics,
   startDate,
   setStartDate,
   endDate,
   setEndDate,
-  sidebarOpen,
   selectedMetric,
   setSelectedMetric,
   keyword,
@@ -22,15 +29,13 @@ function Sidebar({
   setLegislator,
 }) {
   const [legislators, setLegislators] = useState([]);
-  const [flashpoint, setFlashpoint] = useState("");
+  const [flashpoint, setFlashpoint] = useState('');
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const [inputValue, setInputValue] = useState([]);
-
-  // Initialize expandedSections with all sections expanded
-  const [localExpandedSections, setLocalExpandedSections] = useState({
+  const dropdownRef = useRef();
+  const [inputValue, setInputValue] = useState('');
+  const [sections, setSections] = useState({
     flashpoints: true,
     legislators: true,
     keywords: true,
@@ -38,310 +43,222 @@ function Sidebar({
     metrics: true,
   });
 
+  // Debounce keyword input
   useEffect(() => {
-    const handler = setTimeout(() => {
-      console.log("debouncing");
-      setKeyword(inputValue);
-    }, 2000);
+    const id = setTimeout(() => setKeyword(inputValue), 2000);
+    return () => clearTimeout(id);
+  }, [inputValue, setKeyword]);
 
-    return () => clearTimeout(handler);
-  }, [inputValue]);
-
+  // Close dropdown on outside click
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const onClick = e => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
       }
     };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [dropdownRef]);
-
+  // Fetch legislators
   const fetchLegislators = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/legislators/");
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const data = await response.json();
-      setLegislators(data);
-    } catch (error) {
-      console.error("Error fetching legislators:", error);
+      const res = await fetch('/api/legislators/');
+      if (!res.ok) throw new Error();
+      setLegislators(await res.json());
+    } catch {
+      console.error('Failed to fetch legislators');
     } finally {
       setLoading(false);
     }
   };
 
+  // Keep searchTerm in sync
   useEffect(() => {
     if (legislator) {
-      setSearchTerm(
-        `${legislator.name} (${legislator.party.charAt(0)} - ${
-          legislator.state
-        })`
-      );
+      const { name, party, state } = legislator;
+      setSearchTerm(`${name} (${party.charAt(0)} - ${state})`);
     }
   }, [legislator]);
-  const handleLegislatorSelect = (legislator) => {
-    setLegislator(legislator);
-    setSearchTerm(
-      `${legislator.name} (${legislator.party.charAt(0)} - ${legislator.state})`
-    );
+
+  const handleSelect = leg => {
+    setLegislator(leg);
+    setSearchTerm(`${leg.name} (${leg.party.charAt(0)} - ${leg.state})`);
     setDropdownOpen(false);
   };
 
-  const filteredLegislators = legislators.filter((legislator) =>
-    legislator.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = legislators.filter(l =>
+    l.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const flashpoints = [
-    {
-      label: "January 6th Insurrection",
-      dateRange: ["2021-01-06", "2021-01-31"],
-    },
-    { label: "2020 BLM Protests", dateRange: ["2020-05-25", "2020-07-31"] },
-    // Add more flashpoints as needed
-  ];
-
-  const handleFlashpointChange = (event) => {
-    const selected = flashpoints.find((fp) => fp.label === event.target.value);
-    if (selected) {
-      setStartDate(dayjs(selected.dateRange[0]));
-      setEndDate(dayjs(selected.dateRange[1]));
-      // Adjust other selections if needed
-    }
-    setFlashpoint(event.target.value);
-  };
-
-  const toggleLocalSection = (section) => {
-    setLocalExpandedSections((prevState) => ({
-      ...prevState,
-      [section]: !prevState[section],
-    }));
-  };
+  const toggleSection = key =>
+    setSections(s => ({ ...s, [key]: !s[key] }));
 
   return (
-    <div className="w-64 h-full bg-base-200 shadow-xl overflow-y-auto">
-      <div className="p-4 space-y-4">
-        <div className="mb-4">
-          <button
-            className="w-full bg-primary text-primary-content py-2 rounded"
-            onClick={() => toggleLocalSection("flashpoints")}
-          >
-            Date Settings
-          </button>
-          {localExpandedSections.flashpoints && (
-            <div className="mt-4">
-              <label className="block text-base-content">Flashpoints</label>
-              <select
-                className="select select-bordered w-full"
-                value={flashpoint}
-                onChange={handleFlashpointChange}
-              >
-                <option value="">Select a key event</option>
-                {flashpoints.map((fp) => (
-                  <option key={fp.label} value={fp.label}>
-                    {fp.label}
-                  </option>
-                ))}
-              </select>
+    <aside className="w-64 h-full bg-base-200 shadow-xl overflow-y-auto p-4 space-y-4">
+      <Section
+        title="Date Settings"
+        open={sections.flashpoints}
+        onToggle={() => toggleSection('flashpoints')}
+      >
+        <label className="block">Flashpoints</label>
+        <select
+          className="select select-bordered w-full"
+          value={flashpoint}
+          onChange={e => {
+            const fp = FLASHPOINTS.find(f => f.label === e.target.value);
+            if (fp) {
+              setStartDate(dayjs(fp.range[0]));
+              setEndDate(dayjs(fp.range[1]));
+            }
+            setFlashpoint(e.target.value);
+          }}
+        >
+          <option value="">Select a key event</option>
+          {FLASHPOINTS.map(fp => (
+            <option key={fp.label} value={fp.label}>
+              {fp.label}
+            </option>
+          ))}
+        </select>
+        <label className="block mt-4">Date Range</label>
+        <input
+          type="date"
+          className="input input-bordered w-full"
+          value={dayjs(startDate).format('YYYY-MM-DD')}
+          onChange={e => setStartDate(dayjs(e.target.value))}
+        />
+        <input
+          type="date"
+          className="input input-bordered w-full mt-2"
+          value={dayjs(endDate).format('YYYY-MM-DD')}
+          onChange={e => setEndDate(dayjs(e.target.value))}
+        />
+      </Section>
 
-              <label className="block text-base-content mt-4">Date Range</label>
-              <input
-                type="date"
-                className="w-full bg-base-300 text-base-content p-2 m-1 rounded"
-                value={dayjs(startDate).format("YYYY-MM-DD")}
-                onChange={(e) => setStartDate(dayjs(e.target.value))}
-              />
-              <br />
-              <input
-                type="date"
-                className="w-full bg-base-300 text-base-content p-2 m-1 rounded"
-                value={dayjs(endDate).format("YYYY-MM-DD")}
-                onChange={(e) => setEndDate(dayjs(e.target.value))}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <button
-            className="w-full bg-primary text-primary-content py-2 rounded"
-            onClick={() => toggleLocalSection("legislators")}
-          >
-            Select Legislator
-          </button>
-          {localExpandedSections.legislators && (
-            <div className="mt-4">
-              <div className="relative" ref={dropdownRef}>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  placeholder="Search legislator"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onFocus={() => {
-                    if (legislators.length === 0) fetchLegislators();
-                    setDropdownOpen(true);
-                  }}
-                  onClick={() => setDropdownOpen(true)}
-                />
-                {dropdownOpen && (
-                  <ul className="absolute z-10 w-full bg-base-200 border border-base-300 rounded mt-1 max-h-60 overflow-y-auto">
-                    {loading ? (
-                      <li className="p-2 text-center">Loading...</li>
-                    ) : (
-                      filteredLegislators.map((legislator) => (
-                        <li
-                          key={legislator.legislator_id}
-                          className="p-2 hover:bg-base-300 cursor-pointer"
-                          onClick={() => handleLegislatorSelect(legislator)}
-                        >
-                          {legislator.name} ({legislator.party.charAt(0)} -{" "}
-                          {legislator.state})
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <button
-            className="w-full bg-primary text-primary-content py-2 rounded"
-            onClick={() => toggleLocalSection("keywords")}
-          >
-            Keyword Search
-          </button>
-          {localExpandedSections.keywords && (
-            <div className="mt-4">
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="mb-4">
-          <button
-            className="w-full bg-primary text-primary-content py-2 rounded"
-            onClick={() => toggleLocalSection("topics")}
-          >
-            Topic Settings
-          </button>
-          {localExpandedSections.topics && (
-            <div className="mt-4">
-              <label className="block text-base-content">Topics</label>
-              {[
-                "capitol",
-                "immigra",
-                "abortion",
-                "blacklivesmatter",
-                "climate",
-                "gun",
-                "rights",
-                "covid",
-              ].map((topic) => {
-                const Icon = topicIcons[topic];
-                return (
-                  <div
-                    key={topic}
-                    className="flex items-center justify-between"
+      <Section
+        title="Select Legislator"
+        open={sections.legislators}
+        onToggle={() => toggleSection('legislators')}
+      >
+        <div className="relative" ref={dropdownRef}>
+          <input
+            type="text"
+            className="input input-bordered w-full"
+            placeholder="Search legislator"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            onFocus={() => {
+              if (!legislators.length) fetchLegislators();
+              setDropdownOpen(true);
+            }}
+          />
+          {dropdownOpen && (
+            <ul className="absolute z-10 w-full bg-base-200 border rounded mt-1 max-h-60 overflow-y-auto">
+              {loading ? (
+                <li className="p-2 text-center">Loading...</li>
+              ) : (
+                filtered.map(leg => (
+                  <li
+                    key={leg.legislator_id}
+                    className="p-2 hover:bg-base-300 cursor-pointer"
+                    onClick={() => handleSelect(leg)}
                   >
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={activeTopics.includes(topic)}
-                        onChange={(e) => {
-                          const newTopics = e.target.checked
-                            ? [...activeTopics, topic]
-                            : activeTopics.filter((t) => t !== topic);
-                          setActiveTopics(newTopics);
-                        }}
-                        className="checkbox checkbox-primary mr-2 mb-1"
-                      />
-                      <Icon className="mr-2" />
-                      <span className="text-base-content">
-                        {topic.charAt(0).toUpperCase() + topic.slice(1)}
-                      </span>
-                    </div>
-                    <div className="flex">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: colorMap[topic]?.D }}
-                      ></div>
-                      <div
-                        className="w-3 h-3 rounded-full ml-1"
-                        style={{ backgroundColor: colorMap[topic]?.R }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    {leg.name} ({leg.party.charAt(0)} - {leg.state})
+                  </li>
+                ))
+              )}
+            </ul>
           )}
         </div>
+      </Section>
 
-        <div className="mb-4">
-          <button
-            className="w-full bg-primary text-primary-content py-2 rounded"
-            onClick={() => toggleLocalSection("metrics")}
-          >
-            Metric Settings
-          </button>
-          {localExpandedSections.metrics && (
-            <div className="mt-4">
-              <label className="block text-base-content">Select Metric</label>
-              <div className="flex flex-col space-y-2">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="metric"
-                    value="posts"
-                    checked={selectedMetric === "posts"}
-                    onChange={() => setSelectedMetric("posts")}
-                    className="radio radio-primary mr-2"
-                  />
-                  Posts
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="metric"
-                    value="legislators"
-                    checked={selectedMetric === "legislators"}
-                    onChange={() => setSelectedMetric("legislators")}
-                    className="radio radio-primary mr-2"
-                  />
-                  Legislators
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="metric"
-                    value="engagement"
-                    checked={selectedMetric === "engagement"}
-                    onChange={() => setSelectedMetric("engagement")}
-                    className="radio radio-primary mr-2"
-                  />
-                  Engagement
-                </label>
+      <Section
+        title="Keyword Search"
+        open={sections.keywords}
+        onToggle={() => toggleSection('keywords')}
+      >
+        <input
+          type="text"
+          className="input input-bordered w-full"
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+        />
+      </Section>
+
+      <Section
+        title="Topic Settings"
+        open={sections.topics}
+        onToggle={() => toggleSection('topics')}
+      >
+        {TOPICS.filter(topic => topic !== 'all').map(topic => {
+          const Icon = topicIcons[topic];
+          return (
+            <div key={topic} className="flex items-center justify-between">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={activeTopics.includes(topic)}
+                  onChange={e => {
+                    const next = e.target.checked
+                      ? [...activeTopics, topic]
+                      : activeTopics.filter(t => t !== topic);
+                    setActiveTopics(next);
+                  }}
+                  className="checkbox checkbox-primary mr-2"
+                />
+                <Icon className="mr-2" />
+                {topic.charAt(0).toUpperCase() + topic.slice(1)}
+              </label>
+              <div className="flex">
+                <span
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: colorMap[topic]?.D }}
+                />
+                <span
+                  className="w-3 h-3 rounded-full ml-1"
+                  style={{ backgroundColor: colorMap[topic]?.R }}
+                />
               </div>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
+          );
+        })}
+      </Section>
+
+      <Section
+        title="Metric Settings"
+        open={sections.metrics}
+        onToggle={() => toggleSection('metrics')}
+      >
+        {METRICS.map(m => (
+          <label key={m.value} className="flex items-center">
+            <input
+              type="radio"
+              name="metric"
+              value={m.value}
+              checked={selectedMetric === m.value}
+              onChange={() => setSelectedMetric(m.value)}
+              className="radio radio-primary mr-2"
+            />
+            {m.label}
+          </label>
+        ))}
+      </Section>
+    </aside>
   );
 }
 
-export default Sidebar;
+function Section({ title, open, onToggle, children }) {
+  return (
+    <div>
+      <button
+        className="w-full bg-primary text-primary-content py-2 rounded"
+        onClick={onToggle}
+      >
+        {title}
+      </button>
+      {open && <div className="mt-4 space-y-2">{children}</div>}
+    </div>
+  );
+}
