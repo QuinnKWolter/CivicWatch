@@ -411,8 +411,8 @@ export const SemanticScatterPlot = ({
         </div>
       ) : (
         <div>
-          <span className="font-bold text-xs">Post Text: </span>{" "}
-          <span className="text-xs"> {tooltipData.d.text} </span>{" "}
+          <span className="font-bold text-lg">Post Text: </span>{" "}
+          <span className="text-lg"> {tooltipData.d.text} </span>{" "}
         </div>
       )}
     </div>

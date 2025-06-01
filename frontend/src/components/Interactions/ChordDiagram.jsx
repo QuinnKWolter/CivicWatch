@@ -188,8 +188,9 @@ export const ChordDiagram = ({
 
         const idToMisinfo = {};
         filteredData.forEach((d) => {
-          idToMisinfo[d.source_legislator_id] = d.source_civility;
-          idToMisinfo[d.target_legislator_id] = d.target_civility;
+          console.log("D", d)
+          idToMisinfo[d.source_legislator_id] = d.source_misinfo_count;
+          idToMisinfo[d.target_legislator_id] = d.target_misinfo_count;
         });
 
         const allMisinfo = allIds.map((id) => idToMisinfo[id]);
