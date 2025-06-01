@@ -5,11 +5,14 @@ import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 import TrendLineChart from './TrendLineChart';
 import { colorMap, formatNumber } from '../../utils/utils';
+import { ChordDiagram } from "../Interactions/ChordDiagram";
+import useMeasure from "react-use-measure";
 
-function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword, legislator }) {
+function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword, legislator, geojson, setLegislator}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [ref, bounds] = useMeasure();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -203,6 +206,25 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword, legi
             </div>
           </div>
         ))}
+      </div>
+
+      <h2 className="text-lg flex items-center">
+        Legislator Interactions
+      </h2>
+      <div className="card shadow-md">
+        <div className="card-body p-2">
+          <div className="h-100" ref={ref}>
+              <ChordDiagram
+                width={bounds.width}
+                height={bounds.height}
+                startDate={startDate}
+                endDate={endDate}
+                legislator={legislator}
+                geojson={geojson}
+                setLegislator={setLegislator}
+              />
+          </div>
+        </div>
       </div>
 
       {/* Line Chart Section */}

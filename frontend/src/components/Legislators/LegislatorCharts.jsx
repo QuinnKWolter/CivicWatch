@@ -10,6 +10,7 @@ import { FaSpinner } from "react-icons/fa";
 // import { SemanticScatterPlot } from "../Posts/SemanticSimilarity";
 import { ChordDiagram } from "../Interactions/ChordDiagram";
 import useMeasure from "react-use-measure";
+import { active } from "d3";
 
 function LegislatorCharts({
   legislatorClicked,
@@ -24,7 +25,8 @@ function LegislatorCharts({
   semanticData,
   legislator,
   geojson,
-  setLegislator
+  setLegislator,
+  activeTopics,
 }) {
   const [ref, bounds] = useMeasure();
 
@@ -69,7 +71,9 @@ function LegislatorCharts({
   const axisConfigTopics = useMemo(() => {
     if (!legScatterData || legScatterData.length === 0) return [];
 
-    return [
+    console.log("SCATTER DATA", legScatterData)
+
+    let topics = [
       {
         display_name: "Capitol",
         name: "capitol",
@@ -85,7 +89,7 @@ function LegislatorCharts({
         ),
       },
       {
-        display_name: "Capitol",
+        display_name: "Covid",
         name: "covid",
         max: Math.max(
           ...legScatterData.map((d) => d.covid).filter(Number.isFinite)
@@ -99,7 +103,7 @@ function LegislatorCharts({
         ),
       },
       {
-        display_name: "Immigration",
+        display_name: "Immigra",
         name: "immigra",
         max: Math.max(
           ...legScatterData.map((d) => d.immigra).filter(Number.isFinite)
@@ -112,7 +116,29 @@ function LegislatorCharts({
           ...legScatterData.map((d) => d.rights).filter(Number.isFinite)
         ),
       },
+      {
+        display_name: "Abortion",
+        name: "abortion",
+        max: Math.max(
+          ...legScatterData.map((d) => d.abortion).filter(Number.isFinite)
+        ),
+      },
+      {
+        display_name: "BLM",
+        name: "blacklivesmatter",
+        max: Math.max(
+          ...legScatterData
+            .map((d) => d.blacklivesmatter)
+            .filter(Number.isFinite)
+        ),
+      }
     ];
+
+    console.log("ACTIVE TOPICS", activeTopics)
+
+    return topics.filter((d) =>
+      activeTopics.includes(d.name.toLowerCase())
+    );
   });
   // [
   //   { name: "capitol", max: 244 },
@@ -185,19 +211,23 @@ function LegislatorCharts({
       <div ref={ref} className=" relative mt-4 overflow-y-auto min-h-[400px]">
         {dVal === 0 && (
           <>
-            {/* <LegislatorHeatMap
-              width={550}
-              height={400}
-              startDate={startDate}
-              endDate={endDate}
-              data={demData}
-              legScatterData={legScatterData}
-              setLegislatorClicked={setLegislatorClicked}
-              party={1}
-              legislatorClicked={legislatorClicked}
-            /> */}
-
             {bounds.width > 0 && (
+              <LegislatorHeatMap
+                width={bounds.width}
+                height={bounds.width * 1.75}
+                startDate={startDate}
+                endDate={endDate}
+                data={demData}
+                legScatterData={legScatterData}
+                setLegislatorClicked={setLegislatorClicked}
+                party={1}
+                legislatorClicked={legislatorClicked}
+                legislator={legislator}
+                setLegislator={setLegislator}
+              />
+            )}
+
+            {/* {bounds.width > 0 && (
               <ChordDiagram
                 width={bounds.width}
                 height={bounds.height}
@@ -207,7 +237,7 @@ function LegislatorCharts({
                 geojson={geojson}
                 setLegislator={setLegislator}
               />
-            )}
+            )} */}
           </>
 
           // <div className="relative">
@@ -216,8 +246,8 @@ function LegislatorCharts({
         )}
         {dVal === 1 && (
           <LegislatorHeatMap
-            width={550}
-            height={400}
+            width={bounds.width}
+            height={bounds.width * 1.75}
             startDate={startDate}
             endDate={endDate}
             data={repubData}
@@ -225,6 +255,8 @@ function LegislatorCharts({
             setLegislatorClicked={setLegislatorClicked}
             party={2}
             legislatorClicked={legislatorClicked}
+            legislator={legislator}
+            setLegislator={setLegislator}
           />
         )}
       </div>
@@ -269,6 +301,7 @@ function LegislatorCharts({
             width={500}
             height={400}
             data={legislatorClicked}
+            activeTopics={activeTopics}
           />
         )}
         {cVal === 1 && (
@@ -277,6 +310,7 @@ function LegislatorCharts({
             width={500}
             height={400}
             data={legislatorClicked}
+            activeTopics={activeTopics}
           />
         )}
         {cVal === 2 && (
@@ -286,11 +320,12 @@ function LegislatorCharts({
           //   height={300}
           // />
           <RidgeLinePlot
-            height={800}
-            width={500}
+            height={bounds.height / 2}
+            width={bounds.width}
             legislatorClicked={legislatorClicked}
             startDate={startDate}
             endDate={endDate}
+            activeTopics={activeTopics}
           />
         )}
       </div>

@@ -2,13 +2,15 @@ import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
 
 export const LegislatorHeatMap = ({
-  height = 600,
+  height = 900,
   width = 500,
   data,
   legScatterData,
   legislatorClicked,
   setLegislatorClicked,
   party,
+  legislator,
+  setLegislator
 }) => {
   const margin = { top: 50, right: 30, bottom: 50, left: 156 };
   const svgRef = useRef(null);
@@ -18,9 +20,25 @@ export const LegislatorHeatMap = ({
   const handleClick = (name) => {
     setLegislatorClicked(legScatterData.filter((d) => d.name === name));
   };
+  
+  useEffect(() => {
+  if (
+    legislator &&
+    legislator.name &&
+    (!legislatorClicked.length || legislator.name !== legislatorClicked[0].name)
+  ) {
+    const match = legScatterData.find((d) => d.name === legislator.name);
+    if (match) {
+      setLegislatorClicked([match]);
+    }
+  }
+}, [legislator, legScatterData]);
+
 
   useEffect(() => {
     console.log("DATA", data);
+    console.log("LEGISLATOR", legislator)
+    console.log("LEGISLATORCLICKED", legislatorClicked)
     if (!data.length) return;
     // Calculate needed height
     const neededHeight = margin.top + margin.bottom + data.length * rowHeight;
@@ -243,7 +261,7 @@ export const LegislatorHeatMap = ({
       .text("Monthly Post Count");
 
     console.log("Total cells:", processedData.length * allDates.length);
-  }, [data, height, width, margin, rowHeight, legislatorClicked]);
+  }, [data, height, width, margin, rowHeight, legislatorClicked, legislator]);
 
   if (!data?.length) {
     return (
@@ -255,17 +273,18 @@ export const LegislatorHeatMap = ({
     <div
       style={{
         width: "100%",
-        height: `${height}px`,
+        height: `auto`,
         overflowY: "auto",
         border: "1px solid #eee",
       }}
     >
       <svg
         ref={svgRef}
+        viewBox={`0 0 ${width} ${totalHeight}`}
         style={{
           display: "block",
           width: "100%",
-          height: `${totalHeight}px`,
+          height: `auto`,
         }}
       />
     </div>
