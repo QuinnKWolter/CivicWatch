@@ -3,8 +3,8 @@ import { useEffect, useMemo } from "react";
 import { INNER_RADIUS, RadarGrid } from "./RadarGrid";
 const MARGIN = 20;
 
-export const Radar = ({ width, height, data, axisConfig }) => {
-  if (!data || Object.keys(data).length === 0) {
+export const Radar = ({ width, height, data, axisConfig, activeTopics }) => {
+  if (!data || Object.keys(data).length === 0 || activeTopics.length < 1) {
     return (
       <div
         style={{ width, height }}

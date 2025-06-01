@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import dayjs from "dayjs";
 import { colorMap } from "../../utils/utils";
 
-export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, endDate }) => {
+export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, endDate, activeTopics}) => {
   const svgRef = useRef(null);
   const [testData, setTestData] = useState({});
   
@@ -11,6 +11,8 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
   const allPossibleTopics = ["capitol", "immigra", "abortion", "blacklivesmatter", "climate", "gun", "rights", "covid"];
 
   useEffect(() => {
+
+    if (legislatorClicked.length < 1) return;
     
 
     const url = "/api/legislator_posts/?"
@@ -40,7 +42,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
         );
 
         // Fill in missing topics with empty data
-        allPossibleTopics.forEach((topic) => {
+        activeTopics.forEach((topic) => {
           if (!updatedData[topic]) {
             updatedData[topic] = [];
           }
@@ -49,7 +51,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
         setTestData(updatedData);
       })
       .catch((error) => console.error("Error fetching data", error));
-  }, [legislatorClicked, startDate, endDate]); // Remove allDates from dependencies
+  }, [legislatorClicked, startDate, endDate, activeTopics]); // Remove allDates from dependencies
 
   useEffect(() => {
     if (Object.keys(testData).length === 0) return;
@@ -72,7 +74,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
     }
 
     
-    const topics = allPossibleTopics;
+    const topics = activeTopics;
     const x = d3
       .scaleTime()
       .domain(dateRange)

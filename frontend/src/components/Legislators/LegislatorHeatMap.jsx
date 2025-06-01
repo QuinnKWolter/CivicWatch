@@ -9,6 +9,8 @@ export const LegislatorHeatMap = ({
   legislatorClicked,
   setLegislatorClicked,
   party,
+  legislator,
+  setLegislator
 }) => {
   const margin = { top: 50, right: 30, bottom: 50, left: 156 };
   const svgRef = useRef(null);
@@ -18,9 +20,25 @@ export const LegislatorHeatMap = ({
   const handleClick = (name) => {
     setLegislatorClicked(legScatterData.filter((d) => d.name === name));
   };
+  
+  useEffect(() => {
+  if (
+    legislator &&
+    legislator.name &&
+    (!legislatorClicked.length || legislator.name !== legislatorClicked[0].name)
+  ) {
+    const match = legScatterData.find((d) => d.name === legislator.name);
+    if (match) {
+      setLegislatorClicked([match]);
+    }
+  }
+}, [legislator, legScatterData]);
+
 
   useEffect(() => {
     console.log("DATA", data);
+    console.log("LEGISLATOR", legislator)
+    console.log("LEGISLATORCLICKED", legislatorClicked)
     if (!data.length) return;
     // Calculate needed height
     const neededHeight = margin.top + margin.bottom + data.length * rowHeight;
@@ -243,7 +261,7 @@ export const LegislatorHeatMap = ({
       .text("Monthly Post Count");
 
     console.log("Total cells:", processedData.length * allDates.length);
-  }, [data, height, width, margin, rowHeight, legislatorClicked]);
+  }, [data, height, width, margin, rowHeight, legislatorClicked, legislator]);
 
   if (!data?.length) {
     return (
