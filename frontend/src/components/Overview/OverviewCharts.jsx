@@ -6,7 +6,7 @@ import {
   FaNewspaper,
   FaThumbsUp,
   FaRetweet,
-  FaExchangeAlt,
+  FaExchangeAlt, // Used for new section title
   FaDemocrat,
   FaRepublican,
   FaUserFriends,
@@ -21,15 +21,18 @@ import 'tippy.js/themes/light.css';
 import TrendLineChart from './TrendLineChart';
 import AccountabilityLineChart from './AccountabilityLineChart';
 import { colorMap, formatNumber } from '../../utils/utils';
+import { ChordDiagram } from "../Interactions/ChordDiagram";
+import useMeasure from "react-use-measure";
 
 const DEFAULT_START = '2020-01-01';
 const DEFAULT_END = '2021-12-31';
 const DEFAULT_TOPICS = Object.keys(colorMap);
 
-export default function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword = '', legislator = null }) {
+export default function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword = '', legislator = null, geojson, setLegislator }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [ref, bounds] = useMeasure(); // ref and bounds are for ChordDiagram
 
   useEffect(() => {
     const fetchOverview = async () => {
@@ -100,6 +103,25 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
         {Object.entries(summaryMetrics).map(([party, m]) => (
           <MetricsCard key={party} party={party} metrics={m} />
         ))}
+      </div>
+
+      <SectionTitle icon={<FaExchangeAlt />} text="Legislator Interactions" />
+      <div className="card shadow-md">
+        <div className="card-body p-2">
+          <div className="h-96" ref={ref}> 
+            {bounds.width > 0 && bounds.height > 0 && ( // Ensure bounds are measured before rendering ChordDiagram
+              <ChordDiagram
+                width={bounds.width}
+                height={bounds.height}
+                startDate={startDate}
+                endDate={endDate}
+                legislator={legislator}
+                geojson={geojson}
+                setLegislator={setLegislator}
+              />
+            )}
+          </div>
+        </div>
       </div>
 
       <SectionTitle icon={<FaBalanceScale />} text="Accountability" />

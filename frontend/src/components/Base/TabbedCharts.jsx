@@ -41,6 +41,7 @@ export default function TabbedCharts({
   keyword,
   legislator,
   setLegislator,
+  activeTopics
 }) {
   const [activeTab, setActiveTab] = useState(0);
   const [hoveredTab, setHoveredTab] = useState(null); // Tracks hovered tab value
@@ -152,6 +153,8 @@ useEffect(() => {
             selectedTopics={memoTopics}
             keyword={keyword}
             legislator={legislator}
+            geojson={geojson}
+            setLegislator={setLegislator}
           />
         );
       case 1:
@@ -167,6 +170,9 @@ useEffect(() => {
             hoveredSemanticDataRef={hoveredSemanticDataRef}
             keyword={keyword}
             legislator={legislator}
+            geojson={geojson}
+            setLegislator={setLegislator}
+            activeTopics={activeTopics}
           />
         );
       case 3:
