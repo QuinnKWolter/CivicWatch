@@ -260,6 +260,7 @@ export const ChordDiagram = ({
   }, [startDate, endDate, legislator]);
 
   const allNodes = useMemo(() => {
+    if (!legislator) return;
     if (!matrixChordData || matrixChordData.length === 0) return null;
 
     try {
@@ -417,7 +418,7 @@ export const ChordDiagram = ({
       console.error("Error generating chord diagram:", error);
       return null;
     }
-  }, [matrixChordData, matrixChordNames, height, width, setLegislator, legislator.name, legislator]);
+  }, [matrixChordData, matrixChordNames, height, width, setLegislator, legislator?.name, legislator]);
 
   const allConnections = useMemo(() => {
     if (!matrixChordData || matrixChordData.length === 0) return null;

@@ -248,6 +248,8 @@ function TabbedCharts({
             selectedTopics={memoizedSelectedTopics}
             keyword={keyword}
             legislator={legislator}
+            geojson={geojson}
+            setLegislator={setLegislator}
           />
         )}
         {value === 1 && (
