@@ -24,9 +24,11 @@ useEffect(() => {
 
   const hasKeyword = typeof keyword === "string" && keyword.trim() !== "";
   const hasLegislator = legislator && legislator.name && legislator.name.trim() !== "";
-
+  console.log("keyword", keyword)
   if (hasKeyword) {
     filtered = filtered.filter((d) => d.text.includes(keyword));
+    console.log("filtered", filtered)
+    
   }
 
   if (hasLegislator) {
@@ -38,6 +40,7 @@ useEffect(() => {
   }
 
   setFilteredData(filtered);
+  console.log("filtered", filtered)
 }, [keyword, legislator, semanticData]);
 
 

@@ -159,6 +159,8 @@ export default function Sidebar({
               {loading ? (
                 <li className="p-2 text-center">Loading...</li>
               ) : (
+                        
+                       
                 filtered.map(leg => (
                   <li
                     key={leg.legislator_id}
@@ -168,7 +170,9 @@ export default function Sidebar({
                     {leg.name} ({leg.party.charAt(0)} - {leg.state})
                   </li>
                 ))
-              )}
+                        
+                         
+              ) }
             </ul>
           )}
         </div>

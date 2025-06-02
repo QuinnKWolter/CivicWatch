@@ -47,7 +47,7 @@ export const SemanticScatterPlot = ({
   ];
 
   useEffect(() => {
-    if (!data || data.length === 0) return;
+   // if (!data || data.length === 0) return;
 
     console.log("DATA:", data);
 
@@ -235,6 +235,9 @@ export const SemanticScatterPlot = ({
               <strong style={{ fontSize: "0.5em", color: "white" }}>
                 Author: {d.name}
               </strong>
+              <strong style={{fontSize: "0.5em", color:"white"}}>
+                Post Text: {d.text}
+              </strong>
             </div>
           </div>
         );
@@ -288,7 +291,7 @@ export const SemanticScatterPlot = ({
       .append("circle")
       .attr("cx", 85)
       .attr("cy", function (d, i) {
-        return 20 + i * 15;
+        return 35 + i * 15;
       })
       .attr("r", 5)
       .style("fill", function (d) {
@@ -303,7 +306,7 @@ export const SemanticScatterPlot = ({
       .append("circle")
       .attr("cx", 70)
       .attr("cy", function (d, i) {
-        return 20 + i * 15;
+        return 35 + i * 15;
       })
       .attr("r", 5)
       .style("fill", function (d) {
@@ -317,11 +320,9 @@ export const SemanticScatterPlot = ({
       .append("text")
       .attr("x", 95)
       .attr("y", function (d, i) {
-        return 20 + i * 15;
+        return 35 + i * 15;
       })
-      .style("fill", function (d) {
-        return "gray";
-      })
+      .attr("fill", "currentColor")
       .attr("text-anchor", "left")
       .style("alignment-baseline", "middle")
       .style("font-size", "10px")
@@ -336,11 +337,9 @@ export const SemanticScatterPlot = ({
       .append("text")
       .attr("x", 83)
       .attr("y", function (d, i) {
-        return 10;
+        return 25;
       })
-      .style("fill", function (d) {
-        return "gray";
-      })
+      .attr("fill", "currentColor")
       .attr("text-anchor", "left")
       .style("alignment-baseline", "middle")
       .style("font-size", "10px")
@@ -355,11 +354,9 @@ export const SemanticScatterPlot = ({
       .append("text")
       .attr("x", 67)
       .attr("y", function (d, i) {
-        return 10;
+        return 25;
       })
-      .style("fill", function (d) {
-        return "gray";
-      })
+      .attr("fill", "currentColor")
       .attr("text-anchor", "left")
       .style("alignment-baseline", "middle")
       .style("font-size", "10px")
@@ -387,11 +384,30 @@ export const SemanticScatterPlot = ({
       <Tippy
         content={tooltipContent}
         visible={tooltipVisible}
-        arrow={false}
+        arrow={true}
         placement="top"
+        anmation="scale-subtle"
         followCursor={true}
         appendTo={() => document.body}
         plugins={[followCursor]}
+        popperOptions={{
+            strategy: 'fixed',
+            modifiers: [
+              {
+                name: 'preventOverflow',
+                options: {
+                  padding: 8,
+                  boundary: 'viewport',
+                },
+              },
+              {
+                name: 'flip',
+                options: {
+                  fallbackPlacements: ['bottom', 'right', 'left', 'top'],
+                },
+              },
+            ],
+          }}
       >
         <svg ref={svgRef} width={width} height={height}></svg>
       </Tippy>
@@ -405,16 +421,7 @@ export const SemanticScatterPlot = ({
           />
       )} */}
       {/* <SemanticTooltip width={width} height={height} data={tooltipData}  /> */}
-      {tooltipData === null ? (
-        <div>
-          <span className="font-bold text-xs">Post Text:</span> <br></br>
-        </div>
-      ) : (
-        <div>
-          <span className="font-bold text-lg">Post Text: </span>{" "}
-          <span className="text-lg"> {tooltipData.d.text} </span>{" "}
-        </div>
-      )}
+      
     </div>
   );
 };

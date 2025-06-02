@@ -549,7 +549,7 @@ export const ChordDiagram = ({
         width: `100%`,
         height: `${height}px`,
         position: "relative", // needed for absolute children
-        border: "1px solid #eee",
+        
       }}
     >
       {/* Translucent Map layer underneath */}
@@ -595,7 +595,7 @@ export const ChordDiagram = ({
             top: 0,
             left: 0,
             zIndex: 0,
-            border: "1px solid #fff",
+           
           }}
         >
           {matrixChordData.length > 0 && (
