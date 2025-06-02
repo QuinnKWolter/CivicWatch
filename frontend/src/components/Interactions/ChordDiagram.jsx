@@ -188,8 +188,9 @@ export const ChordDiagram = ({
 
         const idToMisinfo = {};
         filteredData.forEach((d) => {
-          idToMisinfo[d.source_legislator_id] = d.source_civility;
-          idToMisinfo[d.target_legislator_id] = d.target_civility;
+          console.log("D", d)
+          idToMisinfo[d.source_legislator_id] = d.source_misinfo_count;
+          idToMisinfo[d.target_legislator_id] = d.target_misinfo_count;
         });
 
         const allMisinfo = allIds.map((id) => idToMisinfo[id]);
@@ -260,6 +261,7 @@ export const ChordDiagram = ({
   }, [startDate, endDate, legislator]);
 
   const allNodes = useMemo(() => {
+    if (!legislator) return;
     if (!matrixChordData || matrixChordData.length === 0) return null;
 
     try {
@@ -417,7 +419,7 @@ export const ChordDiagram = ({
       console.error("Error generating chord diagram:", error);
       return null;
     }
-  }, [matrixChordData, matrixChordNames, height, width, setLegislator, legislator.name, legislator]);
+  }, [matrixChordData, matrixChordNames, height, width, setLegislator, legislator?.name, legislator]);
 
   const allConnections = useMemo(() => {
     if (!matrixChordData || matrixChordData.length === 0) return null;
@@ -547,7 +549,7 @@ export const ChordDiagram = ({
         width: `100%`,
         height: `${height}px`,
         position: "relative", // needed for absolute children
-        border: "1px solid #eee",
+        
       }}
     >
       {/* Translucent Map layer underneath */}
@@ -593,7 +595,7 @@ export const ChordDiagram = ({
             top: 0,
             left: 0,
             zIndex: 0,
-            border: "1px solid #fff",
+           
           }}
         >
           {matrixChordData.length > 0 && (

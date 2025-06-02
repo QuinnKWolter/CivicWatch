@@ -1,60 +1,72 @@
-import React, { useState, useEffect } from "react";
-import { FaChartBar, FaChartLine, FaSpinner, FaNewspaper, FaThumbsUp, FaRetweet, FaExchangeAlt, FaDemocrat, FaRepublican, FaUserFriends, FaExclamationTriangle, FaHandshakeSlash, FaMapMarkerAlt } from "react-icons/fa";
+import { useState, useEffect } from 'react';
+import {
+  FaChartBar,
+  FaChartLine,
+  FaSpinner,
+  FaNewspaper,
+  FaThumbsUp,
+  FaRetweet,
+  FaExchangeAlt, // Used for new section title
+  FaDemocrat,
+  FaRepublican,
+  FaUserFriends,
+  FaExclamationTriangle,
+  FaHandshakeSlash,
+  FaMapMarkerAlt,
+  FaBalanceScale
+} from 'react-icons/fa';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 import TrendLineChart from './TrendLineChart';
+import AccountabilityLineChart from './AccountabilityLineChart';
 import { colorMap, formatNumber } from '../../utils/utils';
+import { ChordDiagram } from "../Interactions/ChordDiagram";
+import useMeasure from "react-use-measure";
 
-function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword, legislator }) {
+const DEFAULT_START = '2020-01-01';
+const DEFAULT_END = '2021-12-31';
+const DEFAULT_TOPICS = Object.keys(colorMap);
+
+export default function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword = '', legislator = null, geojson, setLegislator }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
+  const [ref, bounds] = useMeasure(); // ref and bounds are for ChordDiagram
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchOverview = async () => {
       setLoading(true);
       try {
-        const defaultStartDate = '2020-01-01';
-        const defaultEndDate = '2021-12-31';
-        const defaultTopics = Object.keys(colorMap);
+        const isDefault =
+          startDate.format('YYYY-MM-DD') === DEFAULT_START &&
+          endDate.format('YYYY-MM-DD') === DEFAULT_END &&
+          selectedTopics.length === DEFAULT_TOPICS.length &&
+          selectedTopics.every(t => DEFAULT_TOPICS.includes(t)) &&
+          !keyword &&
+          !legislator;
+        
+        const url = isDefault
+          ? '/api/default_overview_data/'
+          : `/api/overview_metrics/?start_date=${startDate.format('YYYY-MM-DD')}` +
+            `&end_date=${endDate.format('YYYY-MM-DD')}` +
+            `&topics=${selectedTopics.join(',')}` +
+            (keyword ? `&keyword=${encodeURIComponent(keyword)}` : '') +
+            (legislator ? `&legislator=${encodeURIComponent(legislator.name)}` : '');
 
-        let response;
-        if (
-          startDate.format('YYYY-MM-DD') === defaultStartDate &&
-          endDate.format('YYYY-MM-DD') === defaultEndDate &&
-          selectedTopics.length === defaultTopics.length &&
-          selectedTopics.every(topic => defaultTopics.includes(topic)) &&
-          keyword === '' &&
-          legislator === null
-        ) {
-          // Fetch default data
-          console.log("Fetching default data");
-          response = await fetch('/api/default_overview_data/');
-        } else {
-          // Fetch regular data
-          console.log("keyword", keyword)
-          console.log("legislator", legislator)
-          const topicsParam = selectedTopics.join(',');
-          const keywordParam = keyword ? `&keyword=${encodeURIComponent(keyword)}` : '';
-          const legislatorParam = legislator ? `&legislator=${encodeURIComponent(legislator.name)}` : '';
-          response = await fetch(`/api/overview_metrics/?start_date=${startDate.format('YYYY-MM-DD')}&end_date=${endDate.format('YYYY-MM-DD')}&topics=${topicsParam}${keywordParam}${legislatorParam}`);
-        }
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('Network response was not ok');
 
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        // console.log("Overview data:", data);
-        setData(data);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching overview metrics:", err);
-        setError("Failed to load dashboard data. Please try again.");
+        setData(await resp.json());
+        setError('');
+      } catch {
+        setError('Failed to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchOverview();
   }, [startDate, endDate, selectedTopics, keyword, legislator]);
 
   if (loading) {
@@ -70,7 +82,9 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword, legi
     return (
       <div className="alert alert-error shadow-lg">
         <div>
-          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+          </svg>
           <span>{error}</span>
         </div>
       </div>
@@ -80,136 +94,46 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword, legi
   if (!data) return null;
 
   const { summaryMetrics } = data;
-  
-  // Determine if the date range is greater than 365 days
   const isWeekly = endDate.diff(startDate, 'days') > 365;
 
   return (
     <div className="flex flex-col space-y-4 p-2">
-      {/* Summary Metrics Cards */}
-      <h2 className="text-lg flex items-center">
-        <FaChartBar className="mr-1" />
-        Summary Metrics
-      </h2>
+      <SectionTitle icon={<FaChartBar />} text="Summary Metrics" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {Object.entries(summaryMetrics).map(([party, metrics]) => (
-          <div key={party} className="card shadow-md">
-            <div className="card-body p-2">
-              <h2 className="card-title text-lg flex items-center">
-                {party === 'Democratic' ? (
-                  <FaDemocrat className="text-blue-500 mr-1" />
-                ) : (
-                  <FaRepublican className="text-red-500 mr-1" />
-                )}
-                {party === 'Democratic' ? 'Democrats' : 'Republicans'}
-              </h2>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                <Tippy content="Total number of posts made by legislators in this party" animation="scale-subtle" arrow={true}>
-                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
-                    <span className="stat-value text-primary text-base font-bold">
-                      <FaNewspaper className="text-xl text-primary" />
-                      {formatNumber(metrics.totalPosts)}
-                    </span>
-                    <span className="ml-auto text-sm text-primary font-bold overflow-hidden whitespace-nowrap">
-                      Posts
-                    </span>
-                  </div>
-                </Tippy>
-                
-                <Tippy content="Number of legislators" animation="scale-subtle" arrow={true}>
-                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
-                    <span className="stat-value text-primary text-base font-bold">
-                      <FaUserFriends className="text-xl text-primary" />
-                      {metrics.numberLegislators}
-                    </span>
-                    <span className="ml-auto text-sm text-primary font-bold overflow-hidden whitespace-nowrap">
-                      Legislators
-                    </span>
-                  </div>
-                </Tippy>
-                
-                <Tippy content="Total likes for all posts" animation="scale-subtle" arrow={true}>
-                  <div className="stat bg-base-100 rounded-box p-2 flex items-center text-center">
-                    <span className="stat-value text-primary text-base font-bold">
-                      <FaThumbsUp className="text-xl text-primary" />
-                      {formatNumber(metrics.totalLikes)}
-                    </span>
-                    <span className="ml-auto text-sm text-primary font-bold overflow-hidden whitespace-nowrap">
-                      Likes
-                    </span>
-                  </div>
-                </Tippy>
-
-                <Tippy content="Total retweets for all posts" animation="scale-subtle" arrow={true}>
-                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
-                    <span className="stat-value text-primary text-base font-bold">
-                      <FaRetweet className="text-xl text-primary" />
-                      {formatNumber(metrics.totalRetweets)}
-                    </span>
-                    <span className="ml-auto text-sm text-primary font-bold overflow-hidden whitespace-nowrap">
-                      Retweets
-                    </span>
-                  </div>
-                </Tippy>
-
-                <Tippy content="Most active state" animation="scale-subtle" arrow={true}>
-                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
-                    <span className="stat-value text-primary text-base font-bold">
-                      <FaMapMarkerAlt className="text-xl text-primary" />
-                      {metrics.mostActiveState}
-                    </span>
-                    <span className="ml-auto text-sm text-primary font-bold overflow-hidden whitespace-nowrap">
-                      Top State
-                    </span>
-                  </div>
-                </Tippy>
-
-                <Tippy content="Average interaction score" animation="scale-subtle" arrow={true}>
-                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
-                    <span className="stat-value text-primary text-base font-bold">
-                      <FaExchangeAlt className="text-xl text-primary" />
-                      {metrics.avgInteractionScore?.toFixed(2)}
-                    </span>
-                    <span className="ml-auto text-sm text-primary font-bold overflow-hidden whitespace-nowrap">
-                      Top Topic
-                    </span>
-                  </div>
-                </Tippy>
-
-                <Tippy content="Number of uncivil posts" animation="scale-subtle" arrow={true}>
-                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
-                    <span className="stat-value text-error text-base font-bold">
-                      <FaHandshakeSlash className="text-xl text-error" />
-                      {metrics.numUncivilPosts}
-                    </span>
-                    <span className="ml-auto text-sm text-error font-bold overflow-hidden whitespace-nowrap">
-                      Uncivil Posts
-                    </span>
-                  </div>
-                </Tippy>
-
-                <Tippy content="Number of misinformation posts" animation="scale-subtle" arrow={true}>
-                  <div className="stat bg-base-100 rounded-box p-2 flex items-center">
-                    <span className="stat-value text-error text-base font-bold">
-                      <FaExclamationTriangle className="text-xl text-error" />
-                      {metrics.numMisinfoPosts}
-                    </span>
-                    <span className="ml-auto text-sm text-error font-bold overflow-hidden whitespace-nowrap">
-                      Misinfo Posts
-                    </span>
-                  </div>
-                </Tippy>
-              </div>
-            </div>
-          </div>
+        {Object.entries(summaryMetrics).map(([party, m]) => (
+          <MetricsCard key={party} party={party} metrics={m} />
         ))}
       </div>
 
-      {/* Line Chart Section */}
-      <h2 className="text-lg flex items-center">
-        <FaChartLine className="mr-1" />
-        Engagement Trends Over Time {isWeekly ? "(Weekly)" : "(Daily)"}
-      </h2>
+      <SectionTitle icon={<FaExchangeAlt />} text="Legislator Interactions" />
+      <div className="card shadow-md">
+        <div className="card-body p-2">
+          <div className="h-96" ref={ref}> 
+            {bounds.width > 0 && bounds.height > 0 && ( // Ensure bounds are measured before rendering ChordDiagram
+              <ChordDiagram
+                width={bounds.width}
+                height={bounds.height}
+                startDate={startDate}
+                endDate={endDate}
+                legislator={legislator}
+                geojson={geojson}
+                setLegislator={setLegislator}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      <SectionTitle icon={<FaBalanceScale />} text="Accountability" />
+      <div className="card shadow-md">
+        <div className="card-body p-2">
+          <div className="h-80">
+            <AccountabilityLineChart startDate={startDate} endDate={endDate} />
+          </div>
+        </div>
+      </div>
+
+      <SectionTitle icon={<FaChartLine />} text={`Engagement Trends Over Time ${isWeekly ? '(Weekly)' : '(Daily)'}`} />
       <div className="card shadow-md">
         <div className="card-body p-2">
           <div className="h-80">
@@ -221,4 +145,53 @@ function OverviewCharts({ startDate, endDate, selectedTopics = [], keyword, legi
   );
 }
 
-export default OverviewCharts; 
+function SectionTitle({ icon, text }) {
+  return (
+    <h2 className="text-lg flex items-center">
+      <span className="mr-1">{icon}</span>
+      {text}
+    </h2>
+  );
+}
+
+function MetricsCard({ party, metrics }) {
+  const isDem = party === 'Democratic';
+  const iconProps = isDem
+    ? { icon: <FaDemocrat className="text-blue-500 mr-1" />, label: 'Democrats' }
+    : { icon: <FaRepublican className="text-red-500 mr-1" />, label: 'Republicans' };
+
+  return (
+    <div className="card shadow-md">
+      <div className="card-body p-2">
+        <h3 className="card-title text-lg flex items-center">
+          {iconProps.icon}
+          {iconProps.label}
+        </h3>
+        <div className="grid grid-cols-2 gap-2 mt-1">
+          <Stat icon={<FaNewspaper className="text-primary" />} label="Posts" value={formatNumber(metrics.totalPosts)} />
+          <Stat icon={<FaUserFriends className="text-primary" />} label="Legislators" value={metrics.numberLegislators} />
+          <Stat icon={<FaThumbsUp className="text-primary" />} label="Likes" value={formatNumber(metrics.totalLikes)} />
+          <Stat icon={<FaRetweet className="text-primary" />} label="Retweets" value={formatNumber(metrics.totalRetweets)} />
+          <Stat icon={<FaMapMarkerAlt className="text-primary" />} label="Top State" value={metrics.mostActiveState} />
+          <Stat icon={<FaExchangeAlt className="text-primary" />} label="Avg Interaction" value={metrics.avgInteractionScore.toFixed(2)} />
+          <Stat icon={<FaHandshakeSlash className="text-error" />} label="Uncivil Posts" value={formatNumber(metrics.numUncivilPosts)} />
+          <Stat icon={<FaExclamationTriangle className="text-error" />} label="Misinfo Posts" value={formatNumber(metrics.numMisinfoPosts)} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ icon, label, value }) {
+  return (
+    <Tippy content={label} animation="scale-subtle" arrow>
+      <div className="stat bg-base-100 rounded-box p-2 flex items-center">
+        <div className="text-xl mr-2">{icon}</div>
+        <div>
+          <div className="stat-value text-base font-bold">{value}</div>
+          <div className="stat-desc text-xs font-semibold uppercase">{label}</div>
+        </div>
+      </div>
+    </Tippy>
+  );
+}
