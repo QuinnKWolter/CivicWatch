@@ -192,6 +192,7 @@ useEffect(() => {
               legislator,
               geojson,
               setLegislator,
+              activeTopics
             }}
           />
         );

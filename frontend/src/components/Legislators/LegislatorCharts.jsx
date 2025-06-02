@@ -266,7 +266,8 @@ function LegislatorCharts({
               legislatorClicked={legislatorClicked}
               legislator={legislator}
               setLegislator={setLegislator}
-              match={match}
+                match={match}
+                
             />
           )}
           </div>}
