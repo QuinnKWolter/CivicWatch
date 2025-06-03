@@ -618,6 +618,7 @@ import Tippy from "@tippyjs/react";
 import { followCursor } from "tippy.js";
 import { InteractionMap } from "./InteractionMap";
 import useMeasure from "react-use-measure";
+import { FiUserCheck } from 'react-icons/fi';
 
 const stateAbbrevToName = {
   AL: "Alabama",
@@ -1107,9 +1108,24 @@ export const ChordDiagram = ({
     setIsMapExpanded(!isMapExpanded);
   };
 
-  if (!legislator)
-  {
-    return <div>PICK A LEGISLATOR TO SEE DATA</div>
+  if (!legislator) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full p-6 text-center rounded-lg">
+        <div className="max-w-md">
+          <FiUserCheck
+            size={56}
+            className="text-primary dark:text-primary-focus mx-auto mb-5"
+            aria-hidden="true" 
+          />
+          <h2 className="text-2xl font-semibold text-base-content mb-3">
+            Legislator Interaction Data
+          </h2>
+          <p className="text-base text-base-content/80">
+            Please select a legislator from the sidebar to display detailed interaction data and analytics.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const mapSize = isMapExpanded 
