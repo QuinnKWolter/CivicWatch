@@ -12,7 +12,7 @@ const REGION_STATE_MAP = {
   West:      ['AZ','CO','ID','MT','NV','NM','UT','WY','AK','CA','HI','OR','WA']
 };
 
-function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric, legislator }) {
+function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric, legislator, keyword }) {
   const tooltipRef = useRef();
   const chartRef   = useRef();
   const [data, setData] = useState(null);
@@ -22,6 +22,104 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
   });
   const [hoveredChord, setHoveredChord] = useState(null);
   const [pinnedChord, setPinnedChord]   = useState(null);
+
+
+  function drawChord(matrix, nodes) {
+    const container = chartRef.current;
+    const W = container.offsetWidth;
+    const H = container.offsetHeight;
+    const margin = 100;
+    const r = Math.max(Math.min(W, H) / 2 - margin, 50);
+  
+    const tooltip = tooltipRef.current;
+  
+    d3.select(container).selectAll('*').remove();
+  
+    const svg = d3.select(container)
+      .append('svg')
+        .attr('width', W)
+        .attr('height', H)
+      .append('g')
+        .attr('transform', `translate(${W/2},${H/2})`);
+  
+    const chord = d3.chordDirected()
+      .padAngle(12 / r)
+      .sortSubgroups(d3.descending)
+      .sortChords(d3.descending)(matrix);
+  
+    const color = d3.scaleOrdinal(d3.schemeCategory10)
+      .domain(d3.range(nodes.length));
+  
+    const arc = d3.arc()
+      .innerRadius(r)
+      .outerRadius(r + 20);
+  
+    const group = svg.append('g')
+      .selectAll('g')
+      .data(chord.groups)
+      .join('g');
+  
+    group.append('path')
+      .attr('fill', d => color(d.index))
+      .attr('d', arc)
+      .on('mouseover', (_, d) => {
+        tooltip.style.display = 'block';
+        tooltip.innerHTML = `<strong>${nodes[d.index].name}</strong><br/>Total outgoing: ${d3.sum(matrix[d.index])}`;
+      })
+      .on('mousemove', e => {
+        const { left, top } = container.getBoundingClientRect();
+        tooltip.style.left = `${e.clientX - left + 10}px`;
+        tooltip.style.top  = `${e.clientY - top  + 10}px`;
+      })
+      .on('mouseout', () => {
+        tooltip.style.display = 'none';
+      });
+  
+    group.append('text')
+      .each(d => d.angle = (d.startAngle + d.endAngle) / 2)
+      .attr('dy', '.35em')
+      .attr('transform', d => `
+        rotate(${(d.angle * 180/Math.PI) - 90})
+        translate(${r + 25})
+        ${d.angle > Math.PI ? 'rotate(180)' : ''}
+      `)
+      .attr('text-anchor', d => d.angle > Math.PI ? 'end' : 'start')
+      .attr('fill', 'currentColor')
+      .text(d => nodes[d.index].name);
+  
+    // RIBBONS
+    const ribbon = d3.ribbonArrow()
+      .padAngle(1 / r)
+      .radius(r - 1);
+  
+    svg.append('g')
+      .attr('fill-opacity', 0.7)
+      .selectAll('path')
+      .data(chord)
+      .join('path')
+        .attr('d', ribbon)
+        .attr('fill', d => color(d.source.index))
+        .attr('stroke', d => d3.rgb(color(d.source.index)).darker())
+        .on('mouseover', (_, d) => {
+          const src = nodes[d.source.index].name;
+          const tgt = nodes[d.target.index].name;
+          const val = matrix[d.source.index][d.target.index];
+          tooltip.style.display = 'block';
+          tooltip.innerHTML = `<strong>${src} → ${tgt}</strong><br/>Interactions: ${val}`;
+        })
+        .on('mousemove', e => {
+          const { left, top } = container.getBoundingClientRect();
+          tooltip.style.left = `${e.clientX - left + 10}px`;
+          tooltip.style.top  = `${e.clientY - top  + 10}px`;
+        })
+        .on('mouseout', () => {
+          tooltip.style.display = 'none';
+        });
+  }
+
+
+
+  
 
   useEffect(() => {
     if (!legislator || legislator === 'all') {
@@ -66,19 +164,109 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
     console.log('🔍 redraw: legislator prop is:', legislator);
    console.log('🔍 redraw: selectedTopics, sliderRange:', selectedTopics, sliderRange);
 
-    if (!data || selectedTopics.length===0) return;
+    // if (!data || selectedTopics.length===0) return;
+    const chartContainer = chartRef.current;
+    
+    if (!data || selectedTopics.length === 0) {
+      d3.select(chartContainer).selectAll('*').remove();
+      return;
+    }
 
-    // 1) filter links by topics + date
-    let links = data.links.filter(l =>
-      selectedTopics.some(t=>l.topics?.includes(t)) &&
-      moment(l.date).isBetween(
-        selStart.format('YYYY-MM-DD'),
-        selEnd.clone().endOf('month').format('YYYY-MM-DD'),
-        undefined,'[]'
-      )
-    );
 
-    // 2) find nodes in any kept link
+    if (
+      filters.region === 'all' &&
+      filters.state  === 'all' &&
+      (!legislator || legislator==='all')
+    ) {
+      // 1) build a state→region lookup
+      const stateToRegion = Object.entries(REGION_STATE_MAP)
+        .flatMap(([reg, sts]) => sts.map(s => [s, reg]))
+        .reduce((acc, [s, r]) => (acc[s] = r, acc), {});
+
+      const regions = Object.keys(REGION_STATE_MAP);
+
+      // 3) zero out an R×R matrix
+      const R = regions.length;
+      const matrix = Array.from({ length: R }, () => Array(R).fill(0));
+
+      // 4) bucket every link into its src/tgt region cell
+      data.links.forEach(l => {
+        const src = data.nodes.find(n => n.legislator_id === l.source_legislator_id);
+        const tgt = data.nodes.find(n => n.legislator_id === l.target_legislator_id);
+        if (!src || !tgt) return;
+        const i = regions.indexOf(stateToRegion[src.state]);
+        const j = regions.indexOf(stateToRegion[tgt.state]);
+        matrix[i][j] += l.value;
+      });
+
+      drawChord(
+        matrix,
+        regions.map(r => ({ name: r }))
+      );
+
+      return;
+    }
+
+
+
+
+  const stateToRegion = Object.entries(REGION_STATE_MAP)
+    .flatMap(([reg, sts]) => sts.map(s => [s, reg]))
+    .reduce((acc, [s, r]) => {
+      acc[s] = r;
+      return acc;
+    }, {});
+
+
+      // 1) filter links by topics + date
+      let links = data.links.filter(l =>
+        selectedTopics.some(t=>l.topics?.includes(t)) &&
+        moment(l.date).isBetween(
+          selStart.format('YYYY-MM-DD'),
+          selEnd.clone().endOf('month').format('YYYY-MM-DD'),
+          undefined,'[]'
+        )
+      );
+
+
+    if (typeof keyword === "string" && keyword.trim() !== "") {
+        const lower = keyword.trim().toLowerCase();
+  
+        links = links.filter(l => {
+          if (l.text?.toLowerCase().includes(lower)) {
+            return true;
+          }
+          if (l.topics?.some(t => t.toLowerCase().includes(lower))) {
+            return true;
+          }
+          const src = data.nodes.find(n => n.legislator_id === l.source_legislator_id);
+          const tgt = data.nodes.find(n => n.legislator_id === l.target_legislator_id);
+  
+          if (src?.name.toLowerCase().includes(lower) || tgt?.name.toLowerCase().includes(lower)) {
+            return true;
+          }
+          if (src?.state.toLowerCase() === lower || tgt?.state.toLowerCase() === lower) {
+            return true;
+          }
+          if (
+            stateToRegion[src?.state]?.toLowerCase() === lower ||
+            stateToRegion[tgt?.state]?.toLowerCase() === lower
+          ) {
+            return true;
+          }
+          return false;
+        });
+      }
+      else {
+        if (selectedTopics.length > 0) {
+          links = links.filter(l =>
+            selectedTopics.some(t => l.topics?.includes(t))
+          );
+        }
+      }
+    
+
+
     const inIds = new Set();
     links.forEach(l => {
       inIds.add(l.source_legislator_id);
@@ -86,7 +274,29 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
     });
     let nodes = data.nodes.filter(n => inIds.has(n.legislator_id));
 
-    // // 3) if a specific legislator is pinned, further filter
+
+    nodes = nodes.filter(n =>
+      filters.party.includes(n.party) &&
+      (filters.state === 'all' || n.state === filters.state)
+    );
+
+    const nodeIndex = Object.fromEntries(nodes.map((n, i) => [n.legislator_id, i]));
+
+    links = links.filter(l =>
+      nodeIndex[l.source_legislator_id] != null &&
+      nodeIndex[l.target_legislator_id] != null &&
+      l.source_legislator_id !== l.target_legislator_id
+    );
+
+    const activeIds = new Set();
+    links.forEach(l => {
+      activeIds.add(l.source_legislator_id);
+      activeIds.add(l.target_legislator_id);
+    });
+    nodes = nodes.filter(n => activeIds.has(n.legislator_id));
+
+
+
       if (
         legislator !== null &&
         legislator !== undefined &&
@@ -106,12 +316,13 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
       nodes = nodes.filter(n => sub.has(n.legislator_id));
     }
 
-    // 4) apply party + state filters, and drop self-links
     nodes = nodes.filter(n =>
       filters.party.includes(n.party) &&
       (filters.state==='all' || n.state===filters.state)
     );
-    const nodeIndex = Object.fromEntries(nodes.map((n,i)=>[n.legislator_id,i]));
+
+    // let nodeIndex = Object.fromEntries(nodes.map((n, i) => [n.legislator_id, i]));
+
     links = links.filter(l =>
       nodeIndex[l.source_legislator_id]!=null &&
       nodeIndex[l.target_legislator_id]!=null &&
@@ -128,7 +339,6 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
    const prunedIndex = Object.fromEntries(nodes.map((n,i)=>[n.legislator_id,i]));
    Object.assign(nodeIndex, prunedIndex);
 
-    // 5) build directed matrix
     const N = nodes.length;
     const matrix = Array.from({length:N},()=>Array(N).fill(0));
     links.forEach(l => {
@@ -140,8 +350,7 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
         matrix[i][j] += v;
       }
     });
-
-    // 6) set up SVG & dimensions
+     
     const container = chartRef.current;
     const W = container.offsetWidth;
     const H = container.offsetHeight;
@@ -155,7 +364,6 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
       .append('g')
         .attr('transform', `translate(${W/2},${H/2})`);
 
-    // 7) define a fat arrowhead marker
     svg.append('defs').append('marker')
       .attr('id','arrowhead')
       .attr('viewBox','-10 -5 20 10')
@@ -169,7 +377,6 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
         .attr('d','M -10,-5 L 10,0 L -10,5 Z')
         .attr('fill','currentColor');        
 
-    // 8) compute directed chord layout
     const chord = d3.chordDirected()
       .padAngle(12 / r)               
       .sortSubgroups(d3.descending)
@@ -181,7 +388,7 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
       .range(['#60A5FA','#EF4444']);
     const arc = d3.arc().innerRadius(r).outerRadius(r+20);
 
-    // 9) draw outer arcs & labels
+
     const group = svg.append('g')
       .selectAll('g')
       .data(chord.groups)
@@ -209,7 +416,7 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
       `)
       .attr('text-anchor', d => d.angle > Math.PI ? 'end' : 'start')
       .text(d => nodes[d.index].name)
-      .style('fill','#fff')
+      .attr('fill', 'currentColor')
       .style('font-size','12px');
 
 
@@ -276,7 +483,7 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
   }, [
     data, filters, pinnedChord,
     sliderRange, legislator,
-    selectedTopics, selStart, selEnd
+    selectedTopics, selStart, selEnd, keyword
   ]);
 
  
@@ -291,7 +498,7 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
   return (
     <div className="relative h-[750px] w-full">
       {/* Date slider */}
-      <div className="px-4 pb-6">
+      {/* <div className="px-4 pb-6">
         <label>
           Date Range: {selStart.format('MMM YYYY')} – {selEnd.format('MMM YYYY')}
         </label>
@@ -308,17 +515,18 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
           step={1}
           allowCross={false}
         />
-      </div>
+      </div> */}
 
       {/* Filters (party, region, state, type) */}
       <div className="flex flex-wrap gap-4 items-center mb-4 px-4 text-white">
         {/* Party */}
         <div className="flex gap-2 items-center">
-          <span>Party:</span>
+          <span className="text-base-content">Party:</span>
           {['D','R'].map(p=>(
-            <label key={p} className="flex gap-1 items-center">
+            <label key={p} className="flex gap-1 items-cente text-base-content">
               <input
                 type="checkbox"
+                className="checkbox checkbox-primary"
                 checked={filters.party.includes(p)}
                 onChange={e=>
                   setFilters(f=>({
@@ -334,24 +542,26 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
           ))}
         </div>
         {/* Region */}
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center text-base-content">
           <span>Region:</span>
           <select
-            value={filters.region}
-            onChange={e=>
-              setFilters(f=>({ ...f, region:e.target.value, state:'all' }))
-            }
-          >
-            <option value="all">All</option>
-            {Object.keys(REGION_STATE_MAP).map(r=>(
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
+          className="select select-bordered w-full max-w-xs"
+          value={filters.region}
+          onChange={e => {
+            setFilters(f=>({ ...f, region: e.target.value, state: 'all' }));
+          }}
+        >
+          <option value="all">All Regions</option>
+          {Object.entries(REGION_STATE_MAP).map(([region, _])=>(
+            <option key={region} value={region}>{region}</option>
+          ))}
+        </select>
         </div>
         {/* State */}
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center text-base-content">
           <span>State:</span>
           <select
+            className="select select-bordered w-full max-w-xs"
             value={filters.state}
             onChange={e=>setFilters(f=>({ ...f, state:e.target.value }))}
           >
@@ -362,9 +572,9 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
           </select>
         </div>
         {/* Interaction Type */}
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center text-base-content">
           <span>Type:</span>
-          <select
+          <select className="select select-bordered w-full max-w-xs"
             value={filters.interactionType}
             onChange={e=>setFilters(f=>({ ...f, interactionType:e.target.value }))}
           >
