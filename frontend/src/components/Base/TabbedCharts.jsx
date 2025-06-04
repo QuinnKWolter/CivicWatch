@@ -226,6 +226,7 @@ useEffect(() => {
               selectedTopics: memoTopics,
               selectedMetric,
               legislator,
+              keyword,
             }}
           />
         );

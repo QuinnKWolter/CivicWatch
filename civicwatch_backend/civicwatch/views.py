@@ -330,7 +330,7 @@ def chord_interactions(request):
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-    
+
 
 # 🔹 Geographic Data API
 def geo_activity(request):
@@ -344,138 +344,181 @@ def geo_activity(request):
     return JsonResponse(list(geo_stats), safe=False)
 
 
-def geo_activity_topics(request):
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    metric = request.GET.get('metric', 'posts')
 
-    topics_param = request.GET.get('topics', '')
-    topic_list = [topic.strip() for topic in topics_param.split(',')] if topics_param else []
+
+DEFAULT_START = "2020-01-01"
+DEFAULT_END   = "2021-12-31"
+
+METRIC_FILE_MAP = {
+    "posts":       "defaultChoroplethPosts.json",
+    "legislators": "defaultChoroplethLegislators.json",
+    "engagement":  "defaultChoroplethEngagement.json",
+}
+DATA_DIR = os.path.join(settings.BASE_DIR, "static", "data")
+
+def geo_activity_topics(request):
+    metric     = request.GET.get("metric", "posts")
+    start_date = request.GET.get("start_date")
+    end_date   = request.GET.get("end_date")
+    topics_str = request.GET.get("topics", "")
+    topics     = [t.strip() for t in topics_str.split(",")] if topics_str else []
+    if metric not in METRIC_FILE_MAP:
+        return JsonResponse({"error": "Invalid metric."}, status=400)
+
+    use_static = (
+        start_date == DEFAULT_START
+        and end_date   == DEFAULT_END
+    )
+
+    if use_static:
+        data_file = os.path.join(DATA_DIR, METRIC_FILE_MAP[metric])
+        try:
+            with open(data_file, "r") as f:
+                all_states = json.load(f)
+        except FileNotFoundError:
+            return JsonResponse({"error": "Precomputed data not found."}, status=404)
     
-    posts = Post.objects.all()
+
+        if topics:
+            filtered_states = []
+            for state_data in all_states:
+                tb = state_data.get("topic_breakdown", {})
+                # 1) Pick only the selected topics
+                matched_tb = { t: counts for (t, counts) in tb.items() if t in topics }
+
+                if not matched_tb:
+                    continue
+
+                # 2) Recompute totals from those matched topics
+                dem_sum = sum(entry["Democratic"] for entry in matched_tb.values())
+                rep_sum = sum(entry["Republican"] for entry in matched_tb.values())
+                total_sum = dem_sum + rep_sum
+
+                new_state = state_data.copy()
+                new_state["topic_breakdown"] = matched_tb
+                new_state["Democratic"] = dem_sum
+                new_state["Republican"] = rep_sum
+                new_state["total"] = total_sum
+                filtered_states.append(new_state)
+
+            return JsonResponse(filtered_states, safe=False)
+
+        # If no topic-filtering, send everything
+        return JsonResponse(all_states, safe=False)
+
+
+    from civicwatch.models import Post
+
+    posts_qs = Post.objects.all()
 
     if start_date:
-        posts = posts.filter(created_at__gte=start_date)
+        posts_qs = posts_qs.filter(created_at__gte=start_date)
     if end_date:
-        posts = posts.filter(created_at__lte=end_date)
+        posts_qs = posts_qs.filter(created_at__lte=end_date)
 
-    if topic_list:
-        posts = posts.filter(topics__name__in=topic_list).distinct()
+    if topics:
+        posts_qs = posts_qs.filter(topics__name__in=topics).distinct()
 
     state_party_data = {}
 
-    if metric == 'posts':
-        base_data = posts.values('state', 'party').annotate(total=Count('post_id'))
-        topic_data = posts.values('state', 'party', 'topics__name').annotate(total=Count('post_id'))
+    if metric == "posts":
+        base_data  = posts_qs.values("state", "party").annotate(total=Count("post_id"))
+        topic_data = posts_qs.values("state", "party", "topics__name").annotate(total=Count("post_id"))
 
-    elif metric == 'legislators':
-        # Base: get unique legislators per (state, party)
-        base_legislators = posts.values('state', 'party', 'legislator_id').distinct()
-        base_data_dict = {}
+    elif metric == "legislators":
+
+        base_legislators = posts_qs.values("state", "party", "legislator_id").distinct()
+        base_data_list = []
+        tmp_dict = {}
         for entry in base_legislators:
-            key = (entry['state'], entry['party'])
-            base_data_dict.setdefault(key, set()).add(entry['legislator_id'])
+            key = (entry["state"], entry["party"])
+            tmp_dict.setdefault(key, set()).add(entry["legislator_id"])
+        base_data = [
+            {"state": s, "party": p, "total": len(legislators)}
+            for ((s, p), legislators) in tmp_dict.items()
+        ]
 
-        base_data = []
-        for (state, party), legislators in base_data_dict.items():
-            base_data.append({
-                'state': state,
-                'party': party,
-                'total': len(legislators)
-            })
-
-        # Topic-wise unique legislators
-        topic_legislators = posts.values('state', 'party', 'topics__name', 'legislator_id').distinct()
-        topic_data_dict = {}
+        # Topic‐wise unique legislators
+        topic_legislators = posts_qs.values("state", "party", "topics__name", "legislator_id").distinct()
+        tmp_topic = {}
         for entry in topic_legislators:
-            key = (entry['state'], entry['party'], entry['topics__name'])
-            topic_data_dict.setdefault(key, set()).add(entry['legislator_id'])
+            key = (entry["state"], entry["party"], entry["topics__name"])
+            tmp_topic.setdefault(key, set()).add(entry["legislator_id"])
+        topic_data = [
+            {"state": s, "party": p, "topics__name": t, "total": len(legislators)}
+            for ((s, p, t), legislators) in tmp_topic.items()
+        ]
 
-        topic_data = []
-        for (state, party, topic), legislators in topic_data_dict.items():
-            topic_data.append({
-                'state': state,
-                'party': party,
-                'topics__name': topic,
-                'total': len(legislators)
-            })
+    elif metric == "engagement":
+        # Sum of like_count + retweet_count per (state, party) and per (state, party, topic)
+        filtered_posts = posts_qs 
 
-    elif metric == 'engagement':
-        filtered_posts = posts
-
-        base_data = filtered_posts.values('state', 'party').annotate(
-            total=Sum(F('like_count') + F('retweet_count'))
+        base_data = filtered_posts.values("state", "party").annotate(
+            total=Sum(F("like_count") + F("retweet_count"))
         )
-        topic_data = filtered_posts.values('state', 'party', 'topics__name').annotate(
-            total=Sum(F('like_count') + F('retweet_count'))
+        topic_data = filtered_posts.values("state", "party", "topics__name").annotate(
+            total=Sum(F("like_count") + F("retweet_count"))
         )
-
     else:
-        return JsonResponse({"error": "Unsupported metric"}, status=400)
+        return JsonResponse({"error": "Unsupported metric."}, status=400)
 
-    # Base aggregation population
     for entry in base_data:
-        state = entry['state']
-        party = entry['party']
-        total = entry['total']
+        state = entry["state"]
+        party = entry["party"]
+        total = entry["total"]
 
-        if party not in ['Democratic', 'Republican']:
+        if party not in ["Democratic", "Republican"]:
             continue
 
         if state not in state_party_data:
             state_party_data[state] = {
-                'state': state,
-                'Democratic': 0,
-                'Republican': 0,
-                'total': 0,
-                'topic_breakdown': {},
-                'legislator_breakdown': {}
+                "state": state,
+                "Democratic": 0,
+                "Republican": 0,
+                "total": 0,
+                "topic_breakdown": {},
+                "legislator_breakdown": {},
             }
 
         state_party_data[state][party] += total
-        state_party_data[state]['total'] += total
+        state_party_data[state]["total"] += total
 
-    # Topic-wise aggregation
     for entry in topic_data:
-        state = entry['state']
-        party = entry['party']
-        topic = entry.get('topics__name')
-        total = entry['total']
+        state = entry["state"]
+        party = entry["party"]
+        topic = entry.get("topics__name")
+        total = entry["total"]
 
-        if not state or not topic or party not in ['Democratic', 'Republican']:
+        if not state or not topic or party not in ["Democratic", "Republican"]:
             continue
 
         if state not in state_party_data:
             state_party_data[state] = {
-                'state': state,
-                'Democratic': 0,
-                'Republican': 0,
-                'total': 0,
-                'topic_breakdown': {},
-                'legislator_breakdown': {}
+                "state": state,
+                "Democratic": 0,
+                "Republican": 0,
+                "total": 0,
+                "topic_breakdown": {},
+                "legislator_breakdown": {},
             }
 
-        if topic not in state_party_data[state]['topic_breakdown']:
-            state_party_data[state]['topic_breakdown'][topic] = {
-                'Democratic': 0,
-                'Republican': 0,
-                'total': 0
-            }
+        tb = state_party_data[state]["topic_breakdown"]
+        if topic not in tb:
+            tb[topic] = {"Democratic": 0, "Republican": 0, "total": 0}
+        tb[topic][party] += total
+        tb[topic]["total"] += total
 
-        state_party_data[state]['topic_breakdown'][topic][party] += total
-        state_party_data[state]['topic_breakdown'][topic]['total'] += total
-
-        if topic not in state_party_data[state]['legislator_breakdown']:
-            state_party_data[state]['legislator_breakdown'][topic] = {
-                'Democratic': 0,
-                'Republican': 0,
-                'total': 0
-            }
-
-        state_party_data[state]['legislator_breakdown'][topic][party] += total
-        state_party_data[state]['legislator_breakdown'][topic]['total'] += total
-
+        if metric == "legislators":
+            lb = state_party_data[state]["legislator_breakdown"]
+            if topic not in lb:
+                lb[topic] = {"Democratic": 0, "Republican": 0, "total": 0}
+            lb[topic][party] += total
+            lb[topic]["total"] += total
+ 
     return JsonResponse(list(state_party_data.values()), safe=False)
+
+
+
 def post_semantic_similarity(request):
     posts_query = filter_posts(request)
     posts_list = posts_query.values("post_id", "topics__name", "name", "party", "text", "created_at", "like_count", "retweet_count", "civility_score", "count_misinfo", "pca_x", "pca_y")
