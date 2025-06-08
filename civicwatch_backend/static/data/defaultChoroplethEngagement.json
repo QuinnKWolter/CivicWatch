@@ -1,302 +1,4002 @@
 [
     {
-        "state": "AK",
-        "Democratic": 932627,
-        "Republican": 8986,
-        "total": 941613
+      "state": "AK",
+      "Democratic": 932660,
+      "Republican": 8984,
+      "total": 941644,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 1,
+          "Republican": 0,
+          "total": 1
+        },
+        "capitol": {
+          "Democratic": 343758,
+          "Republican": 5,
+          "total": 343763
+        },
+        "climate": {
+          "Democratic": 124,
+          "Republican": 0,
+          "total": 124
+        },
+        "covid": {
+          "Democratic": 513935,
+          "Republican": 8979,
+          "total": 522914
+        },
+        "gun": {
+          "Democratic": 91,
+          "Republican": 0,
+          "total": 91
+        },
+        "immigra": {
+          "Democratic": 2,
+          "Republican": 0,
+          "total": 2
+        },
+        "rights": {
+          "Democratic": 74749,
+          "Republican": 0,
+          "total": 74749
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 1,
+          "Republican": 0,
+          "total": 1
+        },
+        "capitol": {
+          "Democratic": 343758,
+          "Republican": 5,
+          "total": 343763
+        },
+        "climate": {
+          "Democratic": 124,
+          "Republican": 0,
+          "total": 124
+        },
+        "covid": {
+          "Democratic": 513935,
+          "Republican": 8979,
+          "total": 522914
+        },
+        "gun": {
+          "Democratic": 91,
+          "Republican": 0,
+          "total": 91
+        },
+        "immigra": {
+          "Democratic": 2,
+          "Republican": 0,
+          "total": 2
+        },
+        "rights": {
+          "Democratic": 74749,
+          "Republican": 0,
+          "total": 74749
+        }
+      }
     },
     {
-        "state": "AL",
-        "Democratic": 852094,
-        "Republican": 4905775,
-        "total": 5757869
+      "state": "AL",
+      "Democratic": 804589,
+      "Republican": 3639191,
+      "total": 4443780,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 382,
+          "Republican": 69391,
+          "total": 69773
+        },
+        "capitol": {
+          "Democratic": 1931,
+          "Republican": 81654,
+          "total": 83585
+        },
+        "climate": {
+          "Democratic": 1,
+          "Republican": 70635,
+          "total": 70636
+        },
+        "covid": {
+          "Democratic": 552993,
+          "Republican": 2843942,
+          "total": 3396935
+        },
+        "gun": {
+          "Democratic": 131306,
+          "Republican": 288030,
+          "total": 419336
+        },
+        "immigra": {
+          "Democratic": 54151,
+          "Republican": 64376,
+          "total": 118527
+        },
+        "rights": {
+          "Democratic": 63825,
+          "Republican": 221163,
+          "total": 284988
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 382,
+          "Republican": 69391,
+          "total": 69773
+        },
+        "capitol": {
+          "Democratic": 1931,
+          "Republican": 81654,
+          "total": 83585
+        },
+        "climate": {
+          "Democratic": 1,
+          "Republican": 70635,
+          "total": 70636
+        },
+        "covid": {
+          "Democratic": 552993,
+          "Republican": 2843942,
+          "total": 3396935
+        },
+        "gun": {
+          "Democratic": 131306,
+          "Republican": 288030,
+          "total": 419336
+        },
+        "immigra": {
+          "Democratic": 54151,
+          "Republican": 64376,
+          "total": 118527
+        },
+        "rights": {
+          "Democratic": 63825,
+          "Republican": 221163,
+          "total": 284988
+        }
+      }
     },
     {
-        "state": "AR",
-        "Democratic": 1537046,
-        "Republican": 2778859,
-        "total": 4315905
+      "state": "AR",
+      "Democratic": 1455890,
+      "Republican": 2345717,
+      "total": 3801607,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 1549,
+          "Republican": 258823,
+          "total": 260372
+        },
+        "capitol": {
+          "Democratic": 369726,
+          "Republican": 36082,
+          "total": 405808
+        },
+        "climate": {
+          "Democratic": 37276,
+          "Republican": 13344,
+          "total": 50620
+        },
+        "covid": {
+          "Democratic": 803302,
+          "Republican": 1265859,
+          "total": 2069161
+        },
+        "gun": {
+          "Democratic": 66475,
+          "Republican": 602476,
+          "total": 668951
+        },
+        "immigra": {
+          "Democratic": 42175,
+          "Republican": 25905,
+          "total": 68080
+        },
+        "rights": {
+          "Democratic": 135387,
+          "Republican": 143228,
+          "total": 278615
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 1549,
+          "Republican": 258823,
+          "total": 260372
+        },
+        "capitol": {
+          "Democratic": 369726,
+          "Republican": 36082,
+          "total": 405808
+        },
+        "climate": {
+          "Democratic": 37276,
+          "Republican": 13344,
+          "total": 50620
+        },
+        "covid": {
+          "Democratic": 803302,
+          "Republican": 1265859,
+          "total": 2069161
+        },
+        "gun": {
+          "Democratic": 66475,
+          "Republican": 602476,
+          "total": 668951
+        },
+        "immigra": {
+          "Democratic": 42175,
+          "Republican": 25905,
+          "total": 68080
+        },
+        "rights": {
+          "Democratic": 135387,
+          "Republican": 143228,
+          "total": 278615
+        }
+      }
     },
     {
-        "state": "AZ",
-        "Democratic": 16521994,
-        "Republican": 8536567,
-        "total": 25058561
+      "state": "AZ",
+      "Democratic": 14466685,
+      "Republican": 7952641,
+      "total": 22419326,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 300064,
+          "Republican": 495222,
+          "total": 795286
+        },
+        "capitol": {
+          "Democratic": 3320379,
+          "Republican": 682907,
+          "total": 4003286
+        },
+        "climate": {
+          "Democratic": 572936,
+          "Republican": 238248,
+          "total": 811184
+        },
+        "covid": {
+          "Democratic": 7959154,
+          "Republican": 4291442,
+          "total": 12250596
+        },
+        "gun": {
+          "Democratic": 667026,
+          "Republican": 1073917,
+          "total": 1740943
+        },
+        "immigra": {
+          "Democratic": 537766,
+          "Republican": 676137,
+          "total": 1213903
+        },
+        "rights": {
+          "Democratic": 1109360,
+          "Republican": 494768,
+          "total": 1604128
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 300064,
+          "Republican": 495222,
+          "total": 795286
+        },
+        "capitol": {
+          "Democratic": 3320379,
+          "Republican": 682907,
+          "total": 4003286
+        },
+        "climate": {
+          "Democratic": 572936,
+          "Republican": 238248,
+          "total": 811184
+        },
+        "covid": {
+          "Democratic": 7959154,
+          "Republican": 4291442,
+          "total": 12250596
+        },
+        "gun": {
+          "Democratic": 667026,
+          "Republican": 1073917,
+          "total": 1740943
+        },
+        "immigra": {
+          "Democratic": 537766,
+          "Republican": 676137,
+          "total": 1213903
+        },
+        "rights": {
+          "Democratic": 1109360,
+          "Republican": 494768,
+          "total": 1604128
+        }
+      }
     },
     {
-        "state": "CA",
-        "Democratic": 13199179,
-        "Republican": 1055083,
-        "total": 14254262
+      "state": "CA",
+      "Democratic": 10175223,
+      "Republican": 1045126,
+      "total": 11220349,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 232663,
+          "Republican": 0,
+          "total": 232663
+        },
+        "capitol": {
+          "Democratic": 753075,
+          "Republican": 352860,
+          "total": 1105935
+        },
+        "climate": {
+          "Democratic": 868236,
+          "Republican": 15872,
+          "total": 884108
+        },
+        "covid": {
+          "Democratic": 6263091,
+          "Republican": 592849,
+          "total": 6855940
+        },
+        "gun": {
+          "Democratic": 951401,
+          "Republican": 12768,
+          "total": 964169
+        },
+        "immigra": {
+          "Democratic": 294487,
+          "Republican": 1008,
+          "total": 295495
+        },
+        "rights": {
+          "Democratic": 812270,
+          "Republican": 69769,
+          "total": 882039
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 232663,
+          "Republican": 0,
+          "total": 232663
+        },
+        "capitol": {
+          "Democratic": 753075,
+          "Republican": 352860,
+          "total": 1105935
+        },
+        "climate": {
+          "Democratic": 868236,
+          "Republican": 15872,
+          "total": 884108
+        },
+        "covid": {
+          "Democratic": 6263091,
+          "Republican": 592849,
+          "total": 6855940
+        },
+        "gun": {
+          "Democratic": 951401,
+          "Republican": 12768,
+          "total": 964169
+        },
+        "immigra": {
+          "Democratic": 294487,
+          "Republican": 1008,
+          "total": 295495
+        },
+        "rights": {
+          "Democratic": 812270,
+          "Republican": 69769,
+          "total": 882039
+        }
+      }
     },
     {
-        "state": "CO",
-        "Democratic": 6922931,
-        "Republican": 396076,
-        "total": 7319007
+      "state": "CO",
+      "Democratic": 4559274,
+      "Republican": 857596,
+      "total": 5416870,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 76734,
+          "Republican": 97,
+          "total": 76831
+        },
+        "capitol": {
+          "Democratic": 1233592,
+          "Republican": 363846,
+          "total": 1597438
+        },
+        "climate": {
+          "Democratic": 290911,
+          "Republican": 70,
+          "total": 290981
+        },
+        "covid": {
+          "Democratic": 2360619,
+          "Republican": 203431,
+          "total": 2564050
+        },
+        "gun": {
+          "Democratic": 250700,
+          "Republican": 72287,
+          "total": 322987
+        },
+        "immigra": {
+          "Democratic": 151290,
+          "Republican": 150154,
+          "total": 301444
+        },
+        "rights": {
+          "Democratic": 195428,
+          "Republican": 67711,
+          "total": 263139
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 76734,
+          "Republican": 97,
+          "total": 76831
+        },
+        "capitol": {
+          "Democratic": 1233592,
+          "Republican": 363846,
+          "total": 1597438
+        },
+        "climate": {
+          "Democratic": 290911,
+          "Republican": 70,
+          "total": 290981
+        },
+        "covid": {
+          "Democratic": 2360619,
+          "Republican": 203431,
+          "total": 2564050
+        },
+        "gun": {
+          "Democratic": 250700,
+          "Republican": 72287,
+          "total": 322987
+        },
+        "immigra": {
+          "Democratic": 151290,
+          "Republican": 150154,
+          "total": 301444
+        },
+        "rights": {
+          "Democratic": 195428,
+          "Republican": 67711,
+          "total": 263139
+        }
+      }
     },
     {
-        "state": "CT",
-        "Democratic": 3184399,
-        "Republican": 174032,
-        "total": 3358431
+      "state": "CT",
+      "Democratic": 2636162,
+      "Republican": 170492,
+      "total": 2806654,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 16755,
+          "Republican": 0,
+          "total": 16755
+        },
+        "capitol": {
+          "Democratic": 151860,
+          "Republican": 5016,
+          "total": 156876
+        },
+        "climate": {
+          "Democratic": 211125,
+          "Republican": 42,
+          "total": 211167
+        },
+        "covid": {
+          "Democratic": 2022634,
+          "Republican": 165287,
+          "total": 2187921
+        },
+        "gun": {
+          "Democratic": 44287,
+          "Republican": 26,
+          "total": 44313
+        },
+        "immigra": {
+          "Democratic": 7186,
+          "Republican": 3,
+          "total": 7189
+        },
+        "rights": {
+          "Democratic": 182315,
+          "Republican": 118,
+          "total": 182433
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 16755,
+          "Republican": 0,
+          "total": 16755
+        },
+        "capitol": {
+          "Democratic": 151860,
+          "Republican": 5016,
+          "total": 156876
+        },
+        "climate": {
+          "Democratic": 211125,
+          "Republican": 42,
+          "total": 211167
+        },
+        "covid": {
+          "Democratic": 2022634,
+          "Republican": 165287,
+          "total": 2187921
+        },
+        "gun": {
+          "Democratic": 44287,
+          "Republican": 26,
+          "total": 44313
+        },
+        "immigra": {
+          "Democratic": 7186,
+          "Republican": 3,
+          "total": 7189
+        },
+        "rights": {
+          "Democratic": 182315,
+          "Republican": 118,
+          "total": 182433
+        }
+      }
     },
     {
-        "state": "DE",
-        "Democratic": 6946458,
-        "Republican": 27,
-        "total": 6946485
+      "state": "DE",
+      "Democratic": 6240159,
+      "Republican": 27,
+      "total": 6240186,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 98152,
+          "Republican": 0,
+          "total": 98152
+        },
+        "capitol": {
+          "Democratic": 1205569,
+          "Republican": 0,
+          "total": 1205569
+        },
+        "climate": {
+          "Democratic": 195580,
+          "Republican": 0,
+          "total": 195580
+        },
+        "covid": {
+          "Democratic": 3384514,
+          "Republican": 27,
+          "total": 3384541
+        },
+        "gun": {
+          "Democratic": 612297,
+          "Republican": 0,
+          "total": 612297
+        },
+        "immigra": {
+          "Democratic": 170851,
+          "Republican": 0,
+          "total": 170851
+        },
+        "rights": {
+          "Democratic": 573196,
+          "Republican": 0,
+          "total": 573196
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 98152,
+          "Republican": 0,
+          "total": 98152
+        },
+        "capitol": {
+          "Democratic": 1205569,
+          "Republican": 0,
+          "total": 1205569
+        },
+        "climate": {
+          "Democratic": 195580,
+          "Republican": 0,
+          "total": 195580
+        },
+        "covid": {
+          "Democratic": 3384514,
+          "Republican": 27,
+          "total": 3384541
+        },
+        "gun": {
+          "Democratic": 612297,
+          "Republican": 0,
+          "total": 612297
+        },
+        "immigra": {
+          "Democratic": 170851,
+          "Republican": 0,
+          "total": 170851
+        },
+        "rights": {
+          "Democratic": 573196,
+          "Republican": 0,
+          "total": 573196
+        }
+      }
     },
     {
-        "state": "FL",
-        "Democratic": 4907957,
-        "Republican": 2419056,
-        "total": 7327013
+      "state": "FL",
+      "Democratic": 4285982,
+      "Republican": 2336411,
+      "total": 6622393,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 78941,
+          "Republican": 53439,
+          "total": 132380
+        },
+        "capitol": {
+          "Democratic": 242367,
+          "Republican": 115233,
+          "total": 357600
+        },
+        "climate": {
+          "Democratic": 202790,
+          "Republican": 55465,
+          "total": 258255
+        },
+        "covid": {
+          "Democratic": 2871859,
+          "Republican": 1839089,
+          "total": 4710948
+        },
+        "gun": {
+          "Democratic": 293164,
+          "Republican": 74673,
+          "total": 367837
+        },
+        "immigra": {
+          "Democratic": 22782,
+          "Republican": 126448,
+          "total": 149230
+        },
+        "rights": {
+          "Democratic": 574079,
+          "Republican": 72064,
+          "total": 646143
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 78941,
+          "Republican": 53439,
+          "total": 132380
+        },
+        "capitol": {
+          "Democratic": 242367,
+          "Republican": 115233,
+          "total": 357600
+        },
+        "climate": {
+          "Democratic": 202790,
+          "Republican": 55465,
+          "total": 258255
+        },
+        "covid": {
+          "Democratic": 2871859,
+          "Republican": 1839089,
+          "total": 4710948
+        },
+        "gun": {
+          "Democratic": 293164,
+          "Republican": 74673,
+          "total": 367837
+        },
+        "immigra": {
+          "Democratic": 22782,
+          "Republican": 126448,
+          "total": 149230
+        },
+        "rights": {
+          "Democratic": 574079,
+          "Republican": 72064,
+          "total": 646143
+        }
+      }
     },
     {
-        "state": "GA",
-        "Democratic": 5873572,
-        "Republican": 892333,
-        "total": 6765905
+      "state": "GA",
+      "Democratic": 5176048,
+      "Republican": 870054,
+      "total": 6046102,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 83279,
+          "Republican": 50074,
+          "total": 133353
+        },
+        "capitol": {
+          "Democratic": 744258,
+          "Republican": 21515,
+          "total": 765773
+        },
+        "climate": {
+          "Democratic": 235038,
+          "Republican": 40788,
+          "total": 275826
+        },
+        "covid": {
+          "Democratic": 3299993,
+          "Republican": 530840,
+          "total": 3830833
+        },
+        "gun": {
+          "Democratic": 268517,
+          "Republican": 66910,
+          "total": 335427
+        },
+        "immigra": {
+          "Democratic": 107883,
+          "Republican": 31514,
+          "total": 139397
+        },
+        "rights": {
+          "Democratic": 437080,
+          "Republican": 128413,
+          "total": 565493
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 83279,
+          "Republican": 50074,
+          "total": 133353
+        },
+        "capitol": {
+          "Democratic": 744258,
+          "Republican": 21515,
+          "total": 765773
+        },
+        "climate": {
+          "Democratic": 235038,
+          "Republican": 40788,
+          "total": 275826
+        },
+        "covid": {
+          "Democratic": 3299993,
+          "Republican": 530840,
+          "total": 3830833
+        },
+        "gun": {
+          "Democratic": 268517,
+          "Republican": 66910,
+          "total": 335427
+        },
+        "immigra": {
+          "Democratic": 107883,
+          "Republican": 31514,
+          "total": 139397
+        },
+        "rights": {
+          "Democratic": 437080,
+          "Republican": 128413,
+          "total": 565493
+        }
+      }
     },
     {
-        "state": "HI",
-        "Democratic": 411236,
-        "Republican": 649,
-        "total": 411885
+      "state": "HI",
+      "Democratic": 362361,
+      "Republican": 632,
+      "total": 362993,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 19,
+          "Republican": 2,
+          "total": 21
+        },
+        "capitol": {
+          "Democratic": 151797,
+          "Republican": 0,
+          "total": 151797
+        },
+        "climate": {
+          "Democratic": 22461,
+          "Republican": 0,
+          "total": 22461
+        },
+        "covid": {
+          "Democratic": 141137,
+          "Republican": 602,
+          "total": 141739
+        },
+        "gun": {
+          "Democratic": 12527,
+          "Republican": 1,
+          "total": 12528
+        },
+        "immigra": {
+          "Democratic": 960,
+          "Republican": 0,
+          "total": 960
+        },
+        "rights": {
+          "Democratic": 33460,
+          "Republican": 27,
+          "total": 33487
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 19,
+          "Republican": 2,
+          "total": 21
+        },
+        "capitol": {
+          "Democratic": 151797,
+          "Republican": 0,
+          "total": 151797
+        },
+        "climate": {
+          "Democratic": 22461,
+          "Republican": 0,
+          "total": 22461
+        },
+        "covid": {
+          "Democratic": 141137,
+          "Republican": 602,
+          "total": 141739
+        },
+        "gun": {
+          "Democratic": 12527,
+          "Republican": 1,
+          "total": 12528
+        },
+        "immigra": {
+          "Democratic": 960,
+          "Republican": 0,
+          "total": 960
+        },
+        "rights": {
+          "Democratic": 33460,
+          "Republican": 27,
+          "total": 33487
+        }
+      }
     },
     {
-        "state": "IA",
-        "Democratic": 1676262,
-        "Republican": 110162,
-        "total": 1786424
+      "state": "IA",
+      "Democratic": 1137355,
+      "Republican": 109309,
+      "total": 1246664,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 11098,
+          "Republican": 1392,
+          "total": 12490
+        },
+        "capitol": {
+          "Democratic": 213303,
+          "Republican": 88,
+          "total": 213391
+        },
+        "climate": {
+          "Democratic": 134893,
+          "Republican": 698,
+          "total": 135591
+        },
+        "covid": {
+          "Democratic": 600624,
+          "Republican": 103836,
+          "total": 704460
+        },
+        "gun": {
+          "Democratic": 55423,
+          "Republican": 1646,
+          "total": 57069
+        },
+        "immigra": {
+          "Democratic": 26607,
+          "Republican": 945,
+          "total": 27552
+        },
+        "rights": {
+          "Democratic": 95407,
+          "Republican": 704,
+          "total": 96111
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 11098,
+          "Republican": 1392,
+          "total": 12490
+        },
+        "capitol": {
+          "Democratic": 213303,
+          "Republican": 88,
+          "total": 213391
+        },
+        "climate": {
+          "Democratic": 134893,
+          "Republican": 698,
+          "total": 135591
+        },
+        "covid": {
+          "Democratic": 600624,
+          "Republican": 103836,
+          "total": 704460
+        },
+        "gun": {
+          "Democratic": 55423,
+          "Republican": 1646,
+          "total": 57069
+        },
+        "immigra": {
+          "Democratic": 26607,
+          "Republican": 945,
+          "total": 27552
+        },
+        "rights": {
+          "Democratic": 95407,
+          "Republican": 704,
+          "total": 96111
+        }
+      }
     },
     {
-        "state": "ID",
-        "Democratic": 430739,
-        "Republican": 146306,
-        "total": 577045
+      "state": "ID",
+      "Democratic": 793336,
+      "Republican": 146145,
+      "total": 939481,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 625,
+          "Republican": 3,
+          "total": 628
+        },
+        "capitol": {
+          "Democratic": 44738,
+          "Republican": 10138,
+          "total": 54876
+        },
+        "climate": {
+          "Democratic": 512967,
+          "Republican": 61,
+          "total": 513028
+        },
+        "covid": {
+          "Democratic": 206913,
+          "Republican": 120799,
+          "total": 327712
+        },
+        "gun": {
+          "Democratic": 15196,
+          "Republican": 697,
+          "total": 15893
+        },
+        "immigra": {
+          "Democratic": 723,
+          "Republican": 11706,
+          "total": 12429
+        },
+        "rights": {
+          "Democratic": 12174,
+          "Republican": 2741,
+          "total": 14915
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 625,
+          "Republican": 3,
+          "total": 628
+        },
+        "capitol": {
+          "Democratic": 44738,
+          "Republican": 10138,
+          "total": 54876
+        },
+        "climate": {
+          "Democratic": 512967,
+          "Republican": 61,
+          "total": 513028
+        },
+        "covid": {
+          "Democratic": 206913,
+          "Republican": 120799,
+          "total": 327712
+        },
+        "gun": {
+          "Democratic": 15196,
+          "Republican": 697,
+          "total": 15893
+        },
+        "immigra": {
+          "Democratic": 723,
+          "Republican": 11706,
+          "total": 12429
+        },
+        "rights": {
+          "Democratic": 12174,
+          "Republican": 2741,
+          "total": 14915
+        }
+      }
     },
     {
-        "state": "IL",
-        "Democratic": 1651306,
-        "Republican": 490092,
-        "total": 2141398
+      "state": "IL",
+      "Democratic": 1409670,
+      "Republican": 467842,
+      "total": 1877512,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 16991,
+          "Republican": 34202,
+          "total": 51193
+        },
+        "capitol": {
+          "Democratic": 26635,
+          "Republican": 84956,
+          "total": 111591
+        },
+        "climate": {
+          "Democratic": 62157,
+          "Republican": 2121,
+          "total": 64278
+        },
+        "covid": {
+          "Democratic": 1171164,
+          "Republican": 309136,
+          "total": 1480300
+        },
+        "gun": {
+          "Democratic": 94533,
+          "Republican": 22329,
+          "total": 116862
+        },
+        "immigra": {
+          "Democratic": 1150,
+          "Republican": 5209,
+          "total": 6359
+        },
+        "rights": {
+          "Democratic": 37040,
+          "Republican": 9889,
+          "total": 46929
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 16991,
+          "Republican": 34202,
+          "total": 51193
+        },
+        "capitol": {
+          "Democratic": 26635,
+          "Republican": 84956,
+          "total": 111591
+        },
+        "climate": {
+          "Democratic": 62157,
+          "Republican": 2121,
+          "total": 64278
+        },
+        "covid": {
+          "Democratic": 1171164,
+          "Republican": 309136,
+          "total": 1480300
+        },
+        "gun": {
+          "Democratic": 94533,
+          "Republican": 22329,
+          "total": 116862
+        },
+        "immigra": {
+          "Democratic": 1150,
+          "Republican": 5209,
+          "total": 6359
+        },
+        "rights": {
+          "Democratic": 37040,
+          "Republican": 9889,
+          "total": 46929
+        }
+      }
     },
     {
-        "state": "IN",
-        "Democratic": 388342,
-        "Republican": 1045284,
-        "total": 1433626
+      "state": "IN",
+      "Democratic": 323224,
+      "Republican": 967052,
+      "total": 1290276,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 34,
+          "Republican": 57053,
+          "total": 57087
+        },
+        "capitol": {
+          "Democratic": 1,
+          "Republican": 10304,
+          "total": 10305
+        },
+        "climate": {
+          "Democratic": 419,
+          "Republican": 11021,
+          "total": 11440
+        },
+        "covid": {
+          "Democratic": 302337,
+          "Republican": 813457,
+          "total": 1115794
+        },
+        "gun": {
+          "Democratic": 622,
+          "Republican": 35315,
+          "total": 35937
+        },
+        "immigra": {
+          "Democratic": 175,
+          "Republican": 7838,
+          "total": 8013
+        },
+        "rights": {
+          "Democratic": 19636,
+          "Republican": 32064,
+          "total": 51700
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 34,
+          "Republican": 57053,
+          "total": 57087
+        },
+        "capitol": {
+          "Democratic": 1,
+          "Republican": 10304,
+          "total": 10305
+        },
+        "climate": {
+          "Democratic": 419,
+          "Republican": 11021,
+          "total": 11440
+        },
+        "covid": {
+          "Democratic": 302337,
+          "Republican": 813457,
+          "total": 1115794
+        },
+        "gun": {
+          "Democratic": 622,
+          "Republican": 35315,
+          "total": 35937
+        },
+        "immigra": {
+          "Democratic": 175,
+          "Republican": 7838,
+          "total": 8013
+        },
+        "rights": {
+          "Democratic": 19636,
+          "Republican": 32064,
+          "total": 51700
+        }
+      }
     },
     {
-        "state": "KS",
-        "Democratic": 1384442,
-        "Republican": 472885,
-        "total": 1857327
+      "state": "KS",
+      "Democratic": 1098712,
+      "Republican": 470240,
+      "total": 1568952,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 24375,
+          "Republican": 3520,
+          "total": 27895
+        },
+        "capitol": {
+          "Democratic": 306516,
+          "Republican": 6,
+          "total": 306522
+        },
+        "climate": {
+          "Democratic": 85664,
+          "Republican": 11461,
+          "total": 97125
+        },
+        "covid": {
+          "Democratic": 450236,
+          "Republican": 449388,
+          "total": 899624
+        },
+        "gun": {
+          "Democratic": 131213,
+          "Republican": 3950,
+          "total": 135163
+        },
+        "immigra": {
+          "Democratic": 14014,
+          "Republican": 1551,
+          "total": 15565
+        },
+        "rights": {
+          "Democratic": 86694,
+          "Republican": 364,
+          "total": 87058
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 24375,
+          "Republican": 3520,
+          "total": 27895
+        },
+        "capitol": {
+          "Democratic": 306516,
+          "Republican": 6,
+          "total": 306522
+        },
+        "climate": {
+          "Democratic": 85664,
+          "Republican": 11461,
+          "total": 97125
+        },
+        "covid": {
+          "Democratic": 450236,
+          "Republican": 449388,
+          "total": 899624
+        },
+        "gun": {
+          "Democratic": 131213,
+          "Republican": 3950,
+          "total": 135163
+        },
+        "immigra": {
+          "Democratic": 14014,
+          "Republican": 1551,
+          "total": 15565
+        },
+        "rights": {
+          "Democratic": 86694,
+          "Republican": 364,
+          "total": 87058
+        }
+      }
     },
     {
-        "state": "KY",
-        "Democratic": 4329135,
-        "Republican": 682223,
-        "total": 5011358
+      "state": "KY",
+      "Democratic": 3568253,
+      "Republican": 679212,
+      "total": 4247465,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 46396,
+          "Republican": 39606,
+          "total": 86002
+        },
+        "capitol": {
+          "Democratic": 523253,
+          "Republican": 28407,
+          "total": 551660
+        },
+        "climate": {
+          "Democratic": 140784,
+          "Republican": 1178,
+          "total": 141962
+        },
+        "covid": {
+          "Democratic": 1616773,
+          "Republican": 550020,
+          "total": 2166793
+        },
+        "gun": {
+          "Democratic": 312940,
+          "Republican": 37514,
+          "total": 350454
+        },
+        "immigra": {
+          "Democratic": 329206,
+          "Republican": 16329,
+          "total": 345535
+        },
+        "rights": {
+          "Democratic": 598901,
+          "Republican": 6158,
+          "total": 605059
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 46396,
+          "Republican": 39606,
+          "total": 86002
+        },
+        "capitol": {
+          "Democratic": 523253,
+          "Republican": 28407,
+          "total": 551660
+        },
+        "climate": {
+          "Democratic": 140784,
+          "Republican": 1178,
+          "total": 141962
+        },
+        "covid": {
+          "Democratic": 1616773,
+          "Republican": 550020,
+          "total": 2166793
+        },
+        "gun": {
+          "Democratic": 312940,
+          "Republican": 37514,
+          "total": 350454
+        },
+        "immigra": {
+          "Democratic": 329206,
+          "Republican": 16329,
+          "total": 345535
+        },
+        "rights": {
+          "Democratic": 598901,
+          "Republican": 6158,
+          "total": 605059
+        }
+      }
     },
     {
-        "state": "LA",
-        "Democratic": 1271926,
-        "Republican": 299815,
-        "total": 1571741
+      "state": "LA",
+      "Democratic": 970142,
+      "Republican": 302092,
+      "total": 1272234,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 8400,
+          "Republican": 4231,
+          "total": 12631
+        },
+        "capitol": {
+          "Democratic": 4177,
+          "Republican": 43997,
+          "total": 48174
+        },
+        "climate": {
+          "Democratic": 55881,
+          "Republican": 12451,
+          "total": 68332
+        },
+        "covid": {
+          "Democratic": 689483,
+          "Republican": 214632,
+          "total": 904115
+        },
+        "gun": {
+          "Democratic": 23254,
+          "Republican": 10373,
+          "total": 33627
+        },
+        "immigra": {
+          "Democratic": 25763,
+          "Republican": 695,
+          "total": 26458
+        },
+        "rights": {
+          "Democratic": 163184,
+          "Republican": 15713,
+          "total": 178897
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 8400,
+          "Republican": 4231,
+          "total": 12631
+        },
+        "capitol": {
+          "Democratic": 4177,
+          "Republican": 43997,
+          "total": 48174
+        },
+        "climate": {
+          "Democratic": 55881,
+          "Republican": 12451,
+          "total": 68332
+        },
+        "covid": {
+          "Democratic": 689483,
+          "Republican": 214632,
+          "total": 904115
+        },
+        "gun": {
+          "Democratic": 23254,
+          "Republican": 10373,
+          "total": 33627
+        },
+        "immigra": {
+          "Democratic": 25763,
+          "Republican": 695,
+          "total": 26458
+        },
+        "rights": {
+          "Democratic": 163184,
+          "Republican": 15713,
+          "total": 178897
+        }
+      }
     },
     {
-        "state": "MA",
-        "Democratic": 9966569,
-        "Republican": 150793,
-        "total": 10117362
+      "state": "MA",
+      "Democratic": 9185694,
+      "Republican": 148886,
+      "total": 9334580,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 65354,
+          "Republican": 1,
+          "total": 65355
+        },
+        "capitol": {
+          "Democratic": 134241,
+          "Republican": 2,
+          "total": 134243
+        },
+        "climate": {
+          "Democratic": 781101,
+          "Republican": 3553,
+          "total": 784654
+        },
+        "covid": {
+          "Democratic": 7180999,
+          "Republican": 144714,
+          "total": 7325713
+        },
+        "gun": {
+          "Democratic": 211367,
+          "Republican": 207,
+          "total": 211574
+        },
+        "immigra": {
+          "Democratic": 369252,
+          "Republican": 83,
+          "total": 369335
+        },
+        "rights": {
+          "Democratic": 443380,
+          "Republican": 326,
+          "total": 443706
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 65354,
+          "Republican": 1,
+          "total": 65355
+        },
+        "capitol": {
+          "Democratic": 134241,
+          "Republican": 2,
+          "total": 134243
+        },
+        "climate": {
+          "Democratic": 781101,
+          "Republican": 3553,
+          "total": 784654
+        },
+        "covid": {
+          "Democratic": 7180999,
+          "Republican": 144714,
+          "total": 7325713
+        },
+        "gun": {
+          "Democratic": 211367,
+          "Republican": 207,
+          "total": 211574
+        },
+        "immigra": {
+          "Democratic": 369252,
+          "Republican": 83,
+          "total": 369335
+        },
+        "rights": {
+          "Democratic": 443380,
+          "Republican": 326,
+          "total": 443706
+        }
+      }
     },
     {
-        "state": "MD",
-        "Democratic": 9690524,
-        "Republican": 1019461,
-        "total": 10709985
+      "state": "MD",
+      "Democratic": 7541218,
+      "Republican": 908500,
+      "total": 8449718,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 123498,
+          "Republican": 22700,
+          "total": 146198
+        },
+        "capitol": {
+          "Democratic": 1695458,
+          "Republican": 55573,
+          "total": 1751031
+        },
+        "climate": {
+          "Democratic": 431040,
+          "Republican": 4020,
+          "total": 435060
+        },
+        "covid": {
+          "Democratic": 3749202,
+          "Republican": 727643,
+          "total": 4476845
+        },
+        "gun": {
+          "Democratic": 380007,
+          "Republican": 50096,
+          "total": 430103
+        },
+        "immigra": {
+          "Democratic": 460438,
+          "Republican": 22558,
+          "total": 482996
+        },
+        "rights": {
+          "Democratic": 701575,
+          "Republican": 25910,
+          "total": 727485
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 123498,
+          "Republican": 22700,
+          "total": 146198
+        },
+        "capitol": {
+          "Democratic": 1695458,
+          "Republican": 55573,
+          "total": 1751031
+        },
+        "climate": {
+          "Democratic": 431040,
+          "Republican": 4020,
+          "total": 435060
+        },
+        "covid": {
+          "Democratic": 3749202,
+          "Republican": 727643,
+          "total": 4476845
+        },
+        "gun": {
+          "Democratic": 380007,
+          "Republican": 50096,
+          "total": 430103
+        },
+        "immigra": {
+          "Democratic": 460438,
+          "Republican": 22558,
+          "total": 482996
+        },
+        "rights": {
+          "Democratic": 701575,
+          "Republican": 25910,
+          "total": 727485
+        }
+      }
     },
     {
-        "state": "ME",
-        "Democratic": 4910581,
-        "Republican": 33190,
-        "total": 4943771
+      "state": "ME",
+      "Democratic": 3698995,
+      "Republican": 33187,
+      "total": 3732182,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 46482,
+          "Republican": 0,
+          "total": 46482
+        },
+        "capitol": {
+          "Democratic": 469213,
+          "Republican": 30106,
+          "total": 499319
+        },
+        "climate": {
+          "Democratic": 365466,
+          "Republican": 3,
+          "total": 365469
+        },
+        "covid": {
+          "Democratic": 2157919,
+          "Republican": 3067,
+          "total": 2160986
+        },
+        "gun": {
+          "Democratic": 113366,
+          "Republican": 11,
+          "total": 113377
+        },
+        "immigra": {
+          "Democratic": 61271,
+          "Republican": 0,
+          "total": 61271
+        },
+        "rights": {
+          "Democratic": 485278,
+          "Republican": 0,
+          "total": 485278
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 46482,
+          "Republican": 0,
+          "total": 46482
+        },
+        "capitol": {
+          "Democratic": 469213,
+          "Republican": 30106,
+          "total": 499319
+        },
+        "climate": {
+          "Democratic": 365466,
+          "Republican": 3,
+          "total": 365469
+        },
+        "covid": {
+          "Democratic": 2157919,
+          "Republican": 3067,
+          "total": 2160986
+        },
+        "gun": {
+          "Democratic": 113366,
+          "Republican": 11,
+          "total": 113377
+        },
+        "immigra": {
+          "Democratic": 61271,
+          "Republican": 0,
+          "total": 61271
+        },
+        "rights": {
+          "Democratic": 485278,
+          "Republican": 0,
+          "total": 485278
+        }
+      }
     },
     {
-        "state": "MI",
-        "Democratic": 7517204,
-        "Republican": 329739,
-        "total": 7846943
+      "state": "MI",
+      "Democratic": 4587825,
+      "Republican": 305690,
+      "total": 4893515,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 58675,
+          "Republican": 3636,
+          "total": 62311
+        },
+        "capitol": {
+          "Democratic": 364075,
+          "Republican": 3295,
+          "total": 367370
+        },
+        "climate": {
+          "Democratic": 231253,
+          "Republican": 5091,
+          "total": 236344
+        },
+        "covid": {
+          "Democratic": 3220089,
+          "Republican": 187358,
+          "total": 3407447
+        },
+        "gun": {
+          "Democratic": 182302,
+          "Republican": 75685,
+          "total": 257987
+        },
+        "immigra": {
+          "Democratic": 146908,
+          "Republican": 215,
+          "total": 147123
+        },
+        "rights": {
+          "Democratic": 384523,
+          "Republican": 30410,
+          "total": 414933
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 58675,
+          "Republican": 3636,
+          "total": 62311
+        },
+        "capitol": {
+          "Democratic": 364075,
+          "Republican": 3295,
+          "total": 367370
+        },
+        "climate": {
+          "Democratic": 231253,
+          "Republican": 5091,
+          "total": 236344
+        },
+        "covid": {
+          "Democratic": 3220089,
+          "Republican": 187358,
+          "total": 3407447
+        },
+        "gun": {
+          "Democratic": 182302,
+          "Republican": 75685,
+          "total": 257987
+        },
+        "immigra": {
+          "Democratic": 146908,
+          "Republican": 215,
+          "total": 147123
+        },
+        "rights": {
+          "Democratic": 384523,
+          "Republican": 30410,
+          "total": 414933
+        }
+      }
     },
     {
-        "state": "MN",
-        "Democratic": 18535198,
-        "Republican": 808514,
-        "total": 19343712
+      "state": "MN",
+      "Democratic": 16045278,
+      "Republican": 740535,
+      "total": 16785813,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 222545,
+          "Republican": 12163,
+          "total": 234708
+        },
+        "capitol": {
+          "Democratic": 3093010,
+          "Republican": 24534,
+          "total": 3117544
+        },
+        "climate": {
+          "Democratic": 1079481,
+          "Republican": 9742,
+          "total": 1089223
+        },
+        "covid": {
+          "Democratic": 9358031,
+          "Republican": 591670,
+          "total": 9949701
+        },
+        "gun": {
+          "Democratic": 659568,
+          "Republican": 32324,
+          "total": 691892
+        },
+        "immigra": {
+          "Democratic": 546589,
+          "Republican": 26332,
+          "total": 572921
+        },
+        "rights": {
+          "Democratic": 1086054,
+          "Republican": 43770,
+          "total": 1129824
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 222545,
+          "Republican": 12163,
+          "total": 234708
+        },
+        "capitol": {
+          "Democratic": 3093010,
+          "Republican": 24534,
+          "total": 3117544
+        },
+        "climate": {
+          "Democratic": 1079481,
+          "Republican": 9742,
+          "total": 1089223
+        },
+        "covid": {
+          "Democratic": 9358031,
+          "Republican": 591670,
+          "total": 9949701
+        },
+        "gun": {
+          "Democratic": 659568,
+          "Republican": 32324,
+          "total": 691892
+        },
+        "immigra": {
+          "Democratic": 546589,
+          "Republican": 26332,
+          "total": 572921
+        },
+        "rights": {
+          "Democratic": 1086054,
+          "Republican": 43770,
+          "total": 1129824
+        }
+      }
     },
     {
-        "state": "MO",
-        "Democratic": 8106068,
-        "Republican": 1655738,
-        "total": 9761806
+      "state": "MO",
+      "Democratic": 5518698,
+      "Republican": 1526244,
+      "total": 7044942,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 116413,
+          "Republican": 65837,
+          "total": 182250
+        },
+        "capitol": {
+          "Democratic": 510005,
+          "Republican": 6541,
+          "total": 516546
+        },
+        "climate": {
+          "Democratic": 135216,
+          "Republican": 4885,
+          "total": 140101
+        },
+        "covid": {
+          "Democratic": 4204332,
+          "Republican": 939463,
+          "total": 5143795
+        },
+        "gun": {
+          "Democratic": 206178,
+          "Republican": 297953,
+          "total": 504131
+        },
+        "immigra": {
+          "Democratic": 93540,
+          "Republican": 78508,
+          "total": 172048
+        },
+        "rights": {
+          "Democratic": 253014,
+          "Republican": 133057,
+          "total": 386071
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 116413,
+          "Republican": 65837,
+          "total": 182250
+        },
+        "capitol": {
+          "Democratic": 510005,
+          "Republican": 6541,
+          "total": 516546
+        },
+        "climate": {
+          "Democratic": 135216,
+          "Republican": 4885,
+          "total": 140101
+        },
+        "covid": {
+          "Democratic": 4204332,
+          "Republican": 939463,
+          "total": 5143795
+        },
+        "gun": {
+          "Democratic": 206178,
+          "Republican": 297953,
+          "total": 504131
+        },
+        "immigra": {
+          "Democratic": 93540,
+          "Republican": 78508,
+          "total": 172048
+        },
+        "rights": {
+          "Democratic": 253014,
+          "Republican": 133057,
+          "total": 386071
+        }
+      }
     },
     {
-        "state": "MS",
-        "Democratic": 1493838,
-        "Republican": 510949,
-        "total": 2004787
+      "state": "MS",
+      "Democratic": 522182,
+      "Republican": 518954,
+      "total": 1041136,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 4,
+          "Republican": 56,
+          "total": 60
+        },
+        "capitol": {
+          "Democratic": 180567,
+          "Republican": 47382,
+          "total": 227949
+        },
+        "covid": {
+          "Democratic": 259587,
+          "Republican": 461078,
+          "total": 720665
+        },
+        "gun": {
+          "Democratic": 5262,
+          "Republican": 2110,
+          "total": 7372
+        },
+        "immigra": {
+          "Democratic": 33939,
+          "Republican": 2835,
+          "total": 36774
+        },
+        "rights": {
+          "Democratic": 42823,
+          "Republican": 5493,
+          "total": 48316
+        },
+        "climate": {
+          "Democratic": 0,
+          "Republican": 0,
+          "total": 0
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 4,
+          "Republican": 56,
+          "total": 60
+        },
+        "capitol": {
+          "Democratic": 180567,
+          "Republican": 47382,
+          "total": 227949
+        },
+        "covid": {
+          "Democratic": 259587,
+          "Republican": 461078,
+          "total": 720665
+        },
+        "gun": {
+          "Democratic": 5262,
+          "Republican": 2110,
+          "total": 7372
+        },
+        "immigra": {
+          "Democratic": 33939,
+          "Republican": 2835,
+          "total": 36774
+        },
+        "rights": {
+          "Democratic": 42823,
+          "Republican": 5493,
+          "total": 48316
+        },
+        "climate": {
+          "Democratic": 0,
+          "Republican": 0,
+          "total": 0
+        }
+      }
     },
     {
-        "state": "MT",
-        "Democratic": 2819205,
-        "Republican": 468421,
-        "total": 3287626
+      "state": "MT",
+      "Democratic": 2228554,
+      "Republican": 468412,
+      "total": 2696966,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 70509,
+          "Republican": 1,
+          "total": 70510
+        },
+        "capitol": {
+          "Democratic": 1002547,
+          "Republican": 22994,
+          "total": 1025541
+        },
+        "climate": {
+          "Democratic": 64763,
+          "Republican": 1494,
+          "total": 66257
+        },
+        "covid": {
+          "Democratic": 819182,
+          "Republican": 367198,
+          "total": 1186380
+        },
+        "gun": {
+          "Democratic": 68641,
+          "Republican": 31493,
+          "total": 100134
+        },
+        "immigra": {
+          "Democratic": 43404,
+          "Republican": 23,
+          "total": 43427
+        },
+        "rights": {
+          "Democratic": 159508,
+          "Republican": 45209,
+          "total": 204717
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 70509,
+          "Republican": 1,
+          "total": 70510
+        },
+        "capitol": {
+          "Democratic": 1002547,
+          "Republican": 22994,
+          "total": 1025541
+        },
+        "climate": {
+          "Democratic": 64763,
+          "Republican": 1494,
+          "total": 66257
+        },
+        "covid": {
+          "Democratic": 819182,
+          "Republican": 367198,
+          "total": 1186380
+        },
+        "gun": {
+          "Democratic": 68641,
+          "Republican": 31493,
+          "total": 100134
+        },
+        "immigra": {
+          "Democratic": 43404,
+          "Republican": 23,
+          "total": 43427
+        },
+        "rights": {
+          "Democratic": 159508,
+          "Republican": 45209,
+          "total": 204717
+        }
+      }
     },
     {
-        "state": "NC",
-        "Democratic": 6575222,
-        "Republican": 3693032,
-        "total": 10268254
+      "state": "NC",
+      "Democratic": 5443757,
+      "Republican": 2912566,
+      "total": 8356323,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 63020,
+          "Republican": 23357,
+          "total": 86377
+        },
+        "capitol": {
+          "Democratic": 1632708,
+          "Republican": 138485,
+          "total": 1771193
+        },
+        "climate": {
+          "Democratic": 337638,
+          "Republican": 92605,
+          "total": 430243
+        },
+        "covid": {
+          "Democratic": 2739670,
+          "Republican": 1800130,
+          "total": 4539800
+        },
+        "gun": {
+          "Democratic": 221056,
+          "Republican": 326949,
+          "total": 548005
+        },
+        "immigra": {
+          "Democratic": 126370,
+          "Republican": 118,
+          "total": 126488
+        },
+        "rights": {
+          "Democratic": 323295,
+          "Republican": 530922,
+          "total": 854217
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 63020,
+          "Republican": 23357,
+          "total": 86377
+        },
+        "capitol": {
+          "Democratic": 1632708,
+          "Republican": 138485,
+          "total": 1771193
+        },
+        "climate": {
+          "Democratic": 337638,
+          "Republican": 92605,
+          "total": 430243
+        },
+        "covid": {
+          "Democratic": 2739670,
+          "Republican": 1800130,
+          "total": 4539800
+        },
+        "gun": {
+          "Democratic": 221056,
+          "Republican": 326949,
+          "total": 548005
+        },
+        "immigra": {
+          "Democratic": 126370,
+          "Republican": 118,
+          "total": 126488
+        },
+        "rights": {
+          "Democratic": 323295,
+          "Republican": 530922,
+          "total": 854217
+        }
+      }
     },
     {
-        "state": "ND",
-        "Democratic": 297978,
-        "Republican": 51646,
-        "total": 349624
+      "state": "ND",
+      "Democratic": 301802,
+      "Republican": 51565,
+      "total": 353367,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 4680,
+          "Republican": 3316,
+          "total": 7996
+        },
+        "capitol": {
+          "Democratic": 72,
+          "Republican": 2932,
+          "total": 3004
+        },
+        "climate": {
+          "Democratic": 6663,
+          "Republican": 7,
+          "total": 6670
+        },
+        "covid": {
+          "Democratic": 276252,
+          "Republican": 17276,
+          "total": 293528
+        },
+        "gun": {
+          "Democratic": 362,
+          "Republican": 27606,
+          "total": 27968
+        },
+        "immigra": {
+          "Democratic": 397,
+          "Republican": 0,
+          "total": 397
+        },
+        "rights": {
+          "Democratic": 13376,
+          "Republican": 428,
+          "total": 13804
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 4680,
+          "Republican": 3316,
+          "total": 7996
+        },
+        "capitol": {
+          "Democratic": 72,
+          "Republican": 2932,
+          "total": 3004
+        },
+        "climate": {
+          "Democratic": 6663,
+          "Republican": 7,
+          "total": 6670
+        },
+        "covid": {
+          "Democratic": 276252,
+          "Republican": 17276,
+          "total": 293528
+        },
+        "gun": {
+          "Democratic": 362,
+          "Republican": 27606,
+          "total": 27968
+        },
+        "immigra": {
+          "Democratic": 397,
+          "Republican": 0,
+          "total": 397
+        },
+        "rights": {
+          "Democratic": 13376,
+          "Republican": 428,
+          "total": 13804
+        }
+      }
     },
     {
-        "state": "NE",
-        "Democratic": 1553529,
-        "Republican": 120,
-        "total": 1553649
+      "state": "NE",
+      "Democratic": 1558544,
+      "Republican": 120,
+      "total": 1558664,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 2938,
+          "Republican": 0,
+          "total": 2938
+        },
+        "capitol": {
+          "Democratic": 9730,
+          "Republican": 0,
+          "total": 9730
+        },
+        "climate": {
+          "Democratic": 63967,
+          "Republican": 0,
+          "total": 63967
+        },
+        "covid": {
+          "Democratic": 1460194,
+          "Republican": 120,
+          "total": 1460314
+        },
+        "gun": {
+          "Democratic": 6240,
+          "Republican": 0,
+          "total": 6240
+        },
+        "immigra": {
+          "Democratic": 4811,
+          "Republican": 0,
+          "total": 4811
+        },
+        "rights": {
+          "Democratic": 10664,
+          "Republican": 0,
+          "total": 10664
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 2938,
+          "Republican": 0,
+          "total": 2938
+        },
+        "capitol": {
+          "Democratic": 9730,
+          "Republican": 0,
+          "total": 9730
+        },
+        "climate": {
+          "Democratic": 63967,
+          "Republican": 0,
+          "total": 63967
+        },
+        "covid": {
+          "Democratic": 1460194,
+          "Republican": 120,
+          "total": 1460314
+        },
+        "gun": {
+          "Democratic": 6240,
+          "Republican": 0,
+          "total": 6240
+        },
+        "immigra": {
+          "Democratic": 4811,
+          "Republican": 0,
+          "total": 4811
+        },
+        "rights": {
+          "Democratic": 10664,
+          "Republican": 0,
+          "total": 10664
+        }
+      }
     },
     {
-        "state": "NH",
-        "Democratic": 43774957,
-        "Republican": 1108722,
-        "total": 44883679
+      "state": "NH",
+      "Democratic": 38717038,
+      "Republican": 948553,
+      "total": 39665591,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 712586,
+          "Republican": 34724,
+          "total": 747310
+        },
+        "capitol": {
+          "Democratic": 6027978,
+          "Republican": 63514,
+          "total": 6091492
+        },
+        "climate": {
+          "Democratic": 1364142,
+          "Republican": 23937,
+          "total": 1388079
+        },
+        "covid": {
+          "Democratic": 25538470,
+          "Republican": 417511,
+          "total": 25955981
+        },
+        "gun": {
+          "Democratic": 1824773,
+          "Republican": 192339,
+          "total": 2017112
+        },
+        "immigra": {
+          "Democratic": 956347,
+          "Republican": 81844,
+          "total": 1038191
+        },
+        "rights": {
+          "Democratic": 2292742,
+          "Republican": 134684,
+          "total": 2427426
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 712586,
+          "Republican": 34724,
+          "total": 747310
+        },
+        "capitol": {
+          "Democratic": 6027978,
+          "Republican": 63514,
+          "total": 6091492
+        },
+        "climate": {
+          "Democratic": 1364142,
+          "Republican": 23937,
+          "total": 1388079
+        },
+        "covid": {
+          "Democratic": 25538470,
+          "Republican": 417511,
+          "total": 25955981
+        },
+        "gun": {
+          "Democratic": 1824773,
+          "Republican": 192339,
+          "total": 2017112
+        },
+        "immigra": {
+          "Democratic": 956347,
+          "Republican": 81844,
+          "total": 1038191
+        },
+        "rights": {
+          "Democratic": 2292742,
+          "Republican": 134684,
+          "total": 2427426
+        }
+      }
     },
     {
-        "state": "NJ",
-        "Democratic": 1198696,
-        "Republican": 162722,
-        "total": 1361418
+      "state": "NJ",
+      "Democratic": 644771,
+      "Republican": 165475,
+      "total": 810246,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 157,
+          "Republican": 29,
+          "total": 186
+        },
+        "capitol": {
+          "Democratic": 22816,
+          "Republican": 6,
+          "total": 22822
+        },
+        "climate": {
+          "Democratic": 8847,
+          "Republican": 3085,
+          "total": 11932
+        },
+        "covid": {
+          "Democratic": 449417,
+          "Republican": 155086,
+          "total": 604503
+        },
+        "gun": {
+          "Democratic": 66957,
+          "Republican": 312,
+          "total": 67269
+        },
+        "immigra": {
+          "Democratic": 878,
+          "Republican": 118,
+          "total": 996
+        },
+        "rights": {
+          "Democratic": 95699,
+          "Republican": 6839,
+          "total": 102538
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 157,
+          "Republican": 29,
+          "total": 186
+        },
+        "capitol": {
+          "Democratic": 22816,
+          "Republican": 6,
+          "total": 22822
+        },
+        "climate": {
+          "Democratic": 8847,
+          "Republican": 3085,
+          "total": 11932
+        },
+        "covid": {
+          "Democratic": 449417,
+          "Republican": 155086,
+          "total": 604503
+        },
+        "gun": {
+          "Democratic": 66957,
+          "Republican": 312,
+          "total": 67269
+        },
+        "immigra": {
+          "Democratic": 878,
+          "Republican": 118,
+          "total": 996
+        },
+        "rights": {
+          "Democratic": 95699,
+          "Republican": 6839,
+          "total": 102538
+        }
+      }
     },
     {
-        "state": "NM",
-        "Democratic": 25246174,
-        "Republican": 14520,
-        "total": 25260694
+      "state": "NM",
+      "Democratic": 23114621,
+      "Republican": 14564,
+      "total": 23129185,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 776671,
+          "Republican": 2088,
+          "total": 778759
+        },
+        "capitol": {
+          "Democratic": 3286527,
+          "Republican": 10,
+          "total": 3286537
+        },
+        "climate": {
+          "Democratic": 772070,
+          "Republican": 0,
+          "total": 772070
+        },
+        "covid": {
+          "Democratic": 13754156,
+          "Republican": 2274,
+          "total": 13756430
+        },
+        "gun": {
+          "Democratic": 2078371,
+          "Republican": 9738,
+          "total": 2088109
+        },
+        "immigra": {
+          "Democratic": 634275,
+          "Republican": 4,
+          "total": 634279
+        },
+        "rights": {
+          "Democratic": 1812551,
+          "Republican": 450,
+          "total": 1813001
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 776671,
+          "Republican": 2088,
+          "total": 778759
+        },
+        "capitol": {
+          "Democratic": 3286527,
+          "Republican": 10,
+          "total": 3286537
+        },
+        "climate": {
+          "Democratic": 772070,
+          "Republican": 0,
+          "total": 772070
+        },
+        "covid": {
+          "Democratic": 13754156,
+          "Republican": 2274,
+          "total": 13756430
+        },
+        "gun": {
+          "Democratic": 2078371,
+          "Republican": 9738,
+          "total": 2088109
+        },
+        "immigra": {
+          "Democratic": 634275,
+          "Republican": 4,
+          "total": 634279
+        },
+        "rights": {
+          "Democratic": 1812551,
+          "Republican": 450,
+          "total": 1813001
+        }
+      }
     },
     {
-        "state": "NV",
-        "Democratic": 5048578,
-        "Republican": 232595,
-        "total": 5281173
+      "state": "NV",
+      "Democratic": 4541368,
+      "Republican": 200826,
+      "total": 4742194,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 215390,
+          "Republican": 21,
+          "total": 215411
+        },
+        "capitol": {
+          "Democratic": 1352337,
+          "Republican": 12758,
+          "total": 1365095
+        },
+        "climate": {
+          "Democratic": 147230,
+          "Republican": 5,
+          "total": 147235
+        },
+        "covid": {
+          "Democratic": 2424476,
+          "Republican": 127500,
+          "total": 2551976
+        },
+        "gun": {
+          "Democratic": 178138,
+          "Republican": 44183,
+          "total": 222321
+        },
+        "immigra": {
+          "Democratic": 72304,
+          "Republican": 5452,
+          "total": 77756
+        },
+        "rights": {
+          "Democratic": 151493,
+          "Republican": 10907,
+          "total": 162400
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 215390,
+          "Republican": 21,
+          "total": 215411
+        },
+        "capitol": {
+          "Democratic": 1352337,
+          "Republican": 12758,
+          "total": 1365095
+        },
+        "climate": {
+          "Democratic": 147230,
+          "Republican": 5,
+          "total": 147235
+        },
+        "covid": {
+          "Democratic": 2424476,
+          "Republican": 127500,
+          "total": 2551976
+        },
+        "gun": {
+          "Democratic": 178138,
+          "Republican": 44183,
+          "total": 222321
+        },
+        "immigra": {
+          "Democratic": 72304,
+          "Republican": 5452,
+          "total": 77756
+        },
+        "rights": {
+          "Democratic": 151493,
+          "Republican": 10907,
+          "total": 162400
+        }
+      }
     },
     {
-        "state": "NY",
-        "Democratic": 15815791,
-        "Republican": 825472,
-        "total": 16641263
+      "state": "NY",
+      "Democratic": 12778735,
+      "Republican": 847520,
+      "total": 13626255,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 306445,
+          "Republican": 1515,
+          "total": 307960
+        },
+        "capitol": {
+          "Democratic": 958884,
+          "Republican": 44668,
+          "total": 1003552
+        },
+        "climate": {
+          "Democratic": 542214,
+          "Republican": 11722,
+          "total": 553936
+        },
+        "covid": {
+          "Democratic": 8039043,
+          "Republican": 576270,
+          "total": 8615313
+        },
+        "gun": {
+          "Democratic": 796917,
+          "Republican": 92842,
+          "total": 889759
+        },
+        "immigra": {
+          "Democratic": 618146,
+          "Republican": 79401,
+          "total": 697547
+        },
+        "rights": {
+          "Democratic": 1517086,
+          "Republican": 41102,
+          "total": 1558188
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 306445,
+          "Republican": 1515,
+          "total": 307960
+        },
+        "capitol": {
+          "Democratic": 958884,
+          "Republican": 44668,
+          "total": 1003552
+        },
+        "climate": {
+          "Democratic": 542214,
+          "Republican": 11722,
+          "total": 553936
+        },
+        "covid": {
+          "Democratic": 8039043,
+          "Republican": 576270,
+          "total": 8615313
+        },
+        "gun": {
+          "Democratic": 796917,
+          "Republican": 92842,
+          "total": 889759
+        },
+        "immigra": {
+          "Democratic": 618146,
+          "Republican": 79401,
+          "total": 697547
+        },
+        "rights": {
+          "Democratic": 1517086,
+          "Republican": 41102,
+          "total": 1558188
+        }
+      }
     },
     {
-        "state": "OH",
-        "Democratic": 4881754,
-        "Republican": 673104,
-        "total": 5554858
+      "state": "OH",
+      "Democratic": 3743333,
+      "Republican": 674633,
+      "total": 4417966,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 53331,
+          "Republican": 1207,
+          "total": 54538
+        },
+        "capitol": {
+          "Democratic": 902244,
+          "Republican": 22042,
+          "total": 924286
+        },
+        "climate": {
+          "Democratic": 111524,
+          "Republican": 594,
+          "total": 112118
+        },
+        "covid": {
+          "Democratic": 2072360,
+          "Republican": 515854,
+          "total": 2588214
+        },
+        "gun": {
+          "Democratic": 160496,
+          "Republican": 95805,
+          "total": 256301
+        },
+        "immigra": {
+          "Democratic": 113886,
+          "Republican": 30902,
+          "total": 144788
+        },
+        "rights": {
+          "Democratic": 329492,
+          "Republican": 8229,
+          "total": 337721
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 53331,
+          "Republican": 1207,
+          "total": 54538
+        },
+        "capitol": {
+          "Democratic": 902244,
+          "Republican": 22042,
+          "total": 924286
+        },
+        "climate": {
+          "Democratic": 111524,
+          "Republican": 594,
+          "total": 112118
+        },
+        "covid": {
+          "Democratic": 2072360,
+          "Republican": 515854,
+          "total": 2588214
+        },
+        "gun": {
+          "Democratic": 160496,
+          "Republican": 95805,
+          "total": 256301
+        },
+        "immigra": {
+          "Democratic": 113886,
+          "Republican": 30902,
+          "total": 144788
+        },
+        "rights": {
+          "Democratic": 329492,
+          "Republican": 8229,
+          "total": 337721
+        }
+      }
     },
     {
-        "state": "OK",
-        "Democratic": 4528333,
-        "Republican": 521300,
-        "total": 5049633
+      "state": "OK",
+      "Democratic": 2844782,
+      "Republican": 485689,
+      "total": 3330471,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 44763,
+          "Republican": 11997,
+          "total": 56760
+        },
+        "capitol": {
+          "Democratic": 311291,
+          "Republican": 57849,
+          "total": 369140
+        },
+        "climate": {
+          "Democratic": 96806,
+          "Republican": 6183,
+          "total": 102989
+        },
+        "covid": {
+          "Democratic": 1852914,
+          "Republican": 355237,
+          "total": 2208151
+        },
+        "gun": {
+          "Democratic": 233836,
+          "Republican": 31414,
+          "total": 265250
+        },
+        "immigra": {
+          "Democratic": 39225,
+          "Republican": 11215,
+          "total": 50440
+        },
+        "rights": {
+          "Democratic": 265947,
+          "Republican": 11794,
+          "total": 277741
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 44763,
+          "Republican": 11997,
+          "total": 56760
+        },
+        "capitol": {
+          "Democratic": 311291,
+          "Republican": 57849,
+          "total": 369140
+        },
+        "climate": {
+          "Democratic": 96806,
+          "Republican": 6183,
+          "total": 102989
+        },
+        "covid": {
+          "Democratic": 1852914,
+          "Republican": 355237,
+          "total": 2208151
+        },
+        "gun": {
+          "Democratic": 233836,
+          "Republican": 31414,
+          "total": 265250
+        },
+        "immigra": {
+          "Democratic": 39225,
+          "Republican": 11215,
+          "total": 50440
+        },
+        "rights": {
+          "Democratic": 265947,
+          "Republican": 11794,
+          "total": 277741
+        }
+      }
     },
     {
-        "state": "OR",
-        "Democratic": 2236172,
-        "Republican": 1916766,
-        "total": 4152938
+      "state": "OR",
+      "Democratic": 2226663,
+      "Republican": 1898923,
+      "total": 4125586,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 26421,
+          "Republican": 49663,
+          "total": 76084
+        },
+        "capitol": {
+          "Democratic": 264960,
+          "Republican": 45526,
+          "total": 310486
+        },
+        "climate": {
+          "Democratic": 211211,
+          "Republican": 38174,
+          "total": 249385
+        },
+        "covid": {
+          "Democratic": 1326391,
+          "Republican": 1626955,
+          "total": 2953346
+        },
+        "gun": {
+          "Democratic": 52016,
+          "Republican": 47809,
+          "total": 99825
+        },
+        "immigra": {
+          "Democratic": 174270,
+          "Republican": 62882,
+          "total": 237152
+        },
+        "rights": {
+          "Democratic": 171394,
+          "Republican": 27914,
+          "total": 199308
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 26421,
+          "Republican": 49663,
+          "total": 76084
+        },
+        "capitol": {
+          "Democratic": 264960,
+          "Republican": 45526,
+          "total": 310486
+        },
+        "climate": {
+          "Democratic": 211211,
+          "Republican": 38174,
+          "total": 249385
+        },
+        "covid": {
+          "Democratic": 1326391,
+          "Republican": 1626955,
+          "total": 2953346
+        },
+        "gun": {
+          "Democratic": 52016,
+          "Republican": 47809,
+          "total": 99825
+        },
+        "immigra": {
+          "Democratic": 174270,
+          "Republican": 62882,
+          "total": 237152
+        },
+        "rights": {
+          "Democratic": 171394,
+          "Republican": 27914,
+          "total": 199308
+        }
+      }
     },
     {
-        "state": "PA",
-        "Democratic": 9512270,
-        "Republican": 1003143,
-        "total": 10515413
+      "state": "PA",
+      "Democratic": 7127633,
+      "Republican": 983211,
+      "total": 8110844,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 72532,
+          "Republican": 9180,
+          "total": 81712
+        },
+        "capitol": {
+          "Democratic": 771689,
+          "Republican": 35626,
+          "total": 807315
+        },
+        "climate": {
+          "Democratic": 229752,
+          "Republican": 376,
+          "total": 230128
+        },
+        "covid": {
+          "Democratic": 5073342,
+          "Republican": 869302,
+          "total": 5942644
+        },
+        "gun": {
+          "Democratic": 213982,
+          "Republican": 28439,
+          "total": 242421
+        },
+        "immigra": {
+          "Democratic": 158034,
+          "Republican": 20477,
+          "total": 178511
+        },
+        "rights": {
+          "Democratic": 608302,
+          "Republican": 19811,
+          "total": 628113
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 72532,
+          "Republican": 9180,
+          "total": 81712
+        },
+        "capitol": {
+          "Democratic": 771689,
+          "Republican": 35626,
+          "total": 807315
+        },
+        "climate": {
+          "Democratic": 229752,
+          "Republican": 376,
+          "total": 230128
+        },
+        "covid": {
+          "Democratic": 5073342,
+          "Republican": 869302,
+          "total": 5942644
+        },
+        "gun": {
+          "Democratic": 213982,
+          "Republican": 28439,
+          "total": 242421
+        },
+        "immigra": {
+          "Democratic": 158034,
+          "Republican": 20477,
+          "total": 178511
+        },
+        "rights": {
+          "Democratic": 608302,
+          "Republican": 19811,
+          "total": 628113
+        }
+      }
     },
     {
-        "state": "RI",
-        "Democratic": 3909197,
-        "Republican": 824681,
-        "total": 4733878
+      "state": "RI",
+      "Democratic": 3693644,
+      "Republican": 841481,
+      "total": 4535125,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 71449,
+          "Republican": 15301,
+          "total": 86750
+        },
+        "capitol": {
+          "Democratic": 904445,
+          "Republican": 57190,
+          "total": 961635
+        },
+        "climate": {
+          "Democratic": 259444,
+          "Republican": 33001,
+          "total": 292445
+        },
+        "covid": {
+          "Democratic": 2063072,
+          "Republican": 541865,
+          "total": 2604937
+        },
+        "gun": {
+          "Democratic": 99689,
+          "Republican": 51163,
+          "total": 150852
+        },
+        "immigra": {
+          "Democratic": 97412,
+          "Republican": 86762,
+          "total": 184174
+        },
+        "rights": {
+          "Democratic": 198133,
+          "Republican": 56199,
+          "total": 254332
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 71449,
+          "Republican": 15301,
+          "total": 86750
+        },
+        "capitol": {
+          "Democratic": 904445,
+          "Republican": 57190,
+          "total": 961635
+        },
+        "climate": {
+          "Democratic": 259444,
+          "Republican": 33001,
+          "total": 292445
+        },
+        "covid": {
+          "Democratic": 2063072,
+          "Republican": 541865,
+          "total": 2604937
+        },
+        "gun": {
+          "Democratic": 99689,
+          "Republican": 51163,
+          "total": 150852
+        },
+        "immigra": {
+          "Democratic": 97412,
+          "Republican": 86762,
+          "total": 184174
+        },
+        "rights": {
+          "Democratic": 198133,
+          "Republican": 56199,
+          "total": 254332
+        }
+      }
     },
     {
-        "state": "SC",
-        "Democratic": 5324240,
-        "Republican": 846028,
-        "total": 6170268
+      "state": "SC",
+      "Democratic": 5048870,
+      "Republican": 795728,
+      "total": 5844598,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 32594,
+          "Republican": 6165,
+          "total": 38759
+        },
+        "capitol": {
+          "Democratic": 789699,
+          "Republican": 85020,
+          "total": 874719
+        },
+        "climate": {
+          "Democratic": 94402,
+          "Republican": 1680,
+          "total": 96082
+        },
+        "covid": {
+          "Democratic": 3202902,
+          "Republican": 451923,
+          "total": 3654825
+        },
+        "gun": {
+          "Democratic": 338893,
+          "Republican": 199497,
+          "total": 538390
+        },
+        "immigra": {
+          "Democratic": 19700,
+          "Republican": 31347,
+          "total": 51047
+        },
+        "rights": {
+          "Democratic": 570680,
+          "Republican": 20096,
+          "total": 590776
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 32594,
+          "Republican": 6165,
+          "total": 38759
+        },
+        "capitol": {
+          "Democratic": 789699,
+          "Republican": 85020,
+          "total": 874719
+        },
+        "climate": {
+          "Democratic": 94402,
+          "Republican": 1680,
+          "total": 96082
+        },
+        "covid": {
+          "Democratic": 3202902,
+          "Republican": 451923,
+          "total": 3654825
+        },
+        "gun": {
+          "Democratic": 338893,
+          "Republican": 199497,
+          "total": 538390
+        },
+        "immigra": {
+          "Democratic": 19700,
+          "Republican": 31347,
+          "total": 51047
+        },
+        "rights": {
+          "Democratic": 570680,
+          "Republican": 20096,
+          "total": 590776
+        }
+      }
     },
     {
-        "state": "SD",
-        "Democratic": 1511881,
-        "Republican": 427283,
-        "total": 1939164
+      "state": "SD",
+      "Democratic": 1525366,
+      "Republican": 428121,
+      "total": 1953487,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 43143,
+          "Republican": 3651,
+          "total": 46794
+        },
+        "capitol": {
+          "Democratic": 54444,
+          "Republican": 0,
+          "total": 54444
+        },
+        "climate": {
+          "Democratic": 106303,
+          "Republican": 64,
+          "total": 106367
+        },
+        "covid": {
+          "Democratic": 1084302,
+          "Republican": 411231,
+          "total": 1495533
+        },
+        "gun": {
+          "Democratic": 130086,
+          "Republican": 1464,
+          "total": 131550
+        },
+        "immigra": {
+          "Democratic": 23921,
+          "Republican": 5,
+          "total": 23926
+        },
+        "rights": {
+          "Democratic": 83167,
+          "Republican": 11706,
+          "total": 94873
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 43143,
+          "Republican": 3651,
+          "total": 46794
+        },
+        "capitol": {
+          "Democratic": 54444,
+          "Republican": 0,
+          "total": 54444
+        },
+        "climate": {
+          "Democratic": 106303,
+          "Republican": 64,
+          "total": 106367
+        },
+        "covid": {
+          "Democratic": 1084302,
+          "Republican": 411231,
+          "total": 1495533
+        },
+        "gun": {
+          "Democratic": 130086,
+          "Republican": 1464,
+          "total": 131550
+        },
+        "immigra": {
+          "Democratic": 23921,
+          "Republican": 5,
+          "total": 23926
+        },
+        "rights": {
+          "Democratic": 83167,
+          "Republican": 11706,
+          "total": 94873
+        }
+      }
     },
     {
-        "state": "TN",
-        "Democratic": 8919907,
-        "Republican": 2155406,
-        "total": 11075313
+      "state": "TN",
+      "Democratic": 6949282,
+      "Republican": 1924202,
+      "total": 8873484,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 88745,
+          "Republican": 82441,
+          "total": 171186
+        },
+        "capitol": {
+          "Democratic": 778033,
+          "Republican": 47767,
+          "total": 825800
+        },
+        "climate": {
+          "Democratic": 302736,
+          "Republican": 22328,
+          "total": 325064
+        },
+        "covid": {
+          "Democratic": 4386596,
+          "Republican": 1463690,
+          "total": 5850286
+        },
+        "gun": {
+          "Democratic": 441319,
+          "Republican": 191527,
+          "total": 632846
+        },
+        "immigra": {
+          "Democratic": 244689,
+          "Republican": 37168,
+          "total": 281857
+        },
+        "rights": {
+          "Democratic": 707164,
+          "Republican": 79281,
+          "total": 786445
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 88745,
+          "Republican": 82441,
+          "total": 171186
+        },
+        "capitol": {
+          "Democratic": 778033,
+          "Republican": 47767,
+          "total": 825800
+        },
+        "climate": {
+          "Democratic": 302736,
+          "Republican": 22328,
+          "total": 325064
+        },
+        "covid": {
+          "Democratic": 4386596,
+          "Republican": 1463690,
+          "total": 5850286
+        },
+        "gun": {
+          "Democratic": 441319,
+          "Republican": 191527,
+          "total": 632846
+        },
+        "immigra": {
+          "Democratic": 244689,
+          "Republican": 37168,
+          "total": 281857
+        },
+        "rights": {
+          "Democratic": 707164,
+          "Republican": 79281,
+          "total": 786445
+        }
+      }
     },
     {
-        "state": "TX",
-        "Democratic": 16642987,
-        "Republican": 2012186,
-        "total": 18655173
+      "state": "TX",
+      "Democratic": 13251211,
+      "Republican": 1933897,
+      "total": 15185108,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 250937,
+          "Republican": 101251,
+          "total": 352188
+        },
+        "capitol": {
+          "Democratic": 545090,
+          "Republican": 42213,
+          "total": 587303
+        },
+        "climate": {
+          "Democratic": 509832,
+          "Republican": 39542,
+          "total": 549374
+        },
+        "covid": {
+          "Democratic": 8908089,
+          "Republican": 1381028,
+          "total": 10289117
+        },
+        "gun": {
+          "Democratic": 1053855,
+          "Republican": 208495,
+          "total": 1262350
+        },
+        "immigra": {
+          "Democratic": 583890,
+          "Republican": 80565,
+          "total": 664455
+        },
+        "rights": {
+          "Democratic": 1399518,
+          "Republican": 80803,
+          "total": 1480321
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 250937,
+          "Republican": 101251,
+          "total": 352188
+        },
+        "capitol": {
+          "Democratic": 545090,
+          "Republican": 42213,
+          "total": 587303
+        },
+        "climate": {
+          "Democratic": 509832,
+          "Republican": 39542,
+          "total": 549374
+        },
+        "covid": {
+          "Democratic": 8908089,
+          "Republican": 1381028,
+          "total": 10289117
+        },
+        "gun": {
+          "Democratic": 1053855,
+          "Republican": 208495,
+          "total": 1262350
+        },
+        "immigra": {
+          "Democratic": 583890,
+          "Republican": 80565,
+          "total": 664455
+        },
+        "rights": {
+          "Democratic": 1399518,
+          "Republican": 80803,
+          "total": 1480321
+        }
+      }
     },
     {
-        "state": "UT",
-        "Democratic": 3996978,
-        "Republican": 178209,
-        "total": 4175187
+      "state": "UT",
+      "Democratic": 3196235,
+      "Republican": 130747,
+      "total": 3326982,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 53036,
+          "Republican": 756,
+          "total": 53792
+        },
+        "capitol": {
+          "Democratic": 96510,
+          "Republican": 31910,
+          "total": 128420
+        },
+        "climate": {
+          "Democratic": 189365,
+          "Republican": 787,
+          "total": 190152
+        },
+        "covid": {
+          "Democratic": 2262030,
+          "Republican": 83081,
+          "total": 2345111
+        },
+        "gun": {
+          "Democratic": 137851,
+          "Republican": 276,
+          "total": 138127
+        },
+        "immigra": {
+          "Democratic": 215283,
+          "Republican": 7212,
+          "total": 222495
+        },
+        "rights": {
+          "Democratic": 242160,
+          "Republican": 6725,
+          "total": 248885
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 53036,
+          "Republican": 756,
+          "total": 53792
+        },
+        "capitol": {
+          "Democratic": 96510,
+          "Republican": 31910,
+          "total": 128420
+        },
+        "climate": {
+          "Democratic": 189365,
+          "Republican": 787,
+          "total": 190152
+        },
+        "covid": {
+          "Democratic": 2262030,
+          "Republican": 83081,
+          "total": 2345111
+        },
+        "gun": {
+          "Democratic": 137851,
+          "Republican": 276,
+          "total": 138127
+        },
+        "immigra": {
+          "Democratic": 215283,
+          "Republican": 7212,
+          "total": 222495
+        },
+        "rights": {
+          "Democratic": 242160,
+          "Republican": 6725,
+          "total": 248885
+        }
+      }
     },
     {
-        "state": "VA",
-        "Democratic": 10419897,
-        "Republican": 198778,
-        "total": 10618675
+      "state": "VA",
+      "Democratic": 6733924,
+      "Republican": 154431,
+      "total": 6888355,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 68484,
+          "Republican": 2975,
+          "total": 71459
+        },
+        "capitol": {
+          "Democratic": 283705,
+          "Republican": 20056,
+          "total": 303761
+        },
+        "climate": {
+          "Democratic": 407004,
+          "Republican": 1443,
+          "total": 408447
+        },
+        "covid": {
+          "Democratic": 4391427,
+          "Republican": 101373,
+          "total": 4492800
+        },
+        "gun": {
+          "Democratic": 690311,
+          "Republican": 21942,
+          "total": 712253
+        },
+        "immigra": {
+          "Democratic": 269632,
+          "Republican": 3066,
+          "total": 272698
+        },
+        "rights": {
+          "Democratic": 623361,
+          "Republican": 3576,
+          "total": 626937
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 68484,
+          "Republican": 2975,
+          "total": 71459
+        },
+        "capitol": {
+          "Democratic": 283705,
+          "Republican": 20056,
+          "total": 303761
+        },
+        "climate": {
+          "Democratic": 407004,
+          "Republican": 1443,
+          "total": 408447
+        },
+        "covid": {
+          "Democratic": 4391427,
+          "Republican": 101373,
+          "total": 4492800
+        },
+        "gun": {
+          "Democratic": 690311,
+          "Republican": 21942,
+          "total": 712253
+        },
+        "immigra": {
+          "Democratic": 269632,
+          "Republican": 3066,
+          "total": 272698
+        },
+        "rights": {
+          "Democratic": 623361,
+          "Republican": 3576,
+          "total": 626937
+        }
+      }
     },
     {
-        "state": "VT",
-        "Democratic": 1109588,
-        "Republican": 10393,
-        "total": 1119981
+      "state": "VT",
+      "Democratic": 616644,
+      "Republican": 10393,
+      "total": 627037,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 323,
+          "Republican": 0,
+          "total": 323
+        },
+        "capitol": {
+          "Democratic": 14221,
+          "Republican": 0,
+          "total": 14221
+        },
+        "climate": {
+          "Democratic": 13204,
+          "Republican": 0,
+          "total": 13204
+        },
+        "covid": {
+          "Democratic": 412628,
+          "Republican": 5710,
+          "total": 418338
+        },
+        "gun": {
+          "Democratic": 5207,
+          "Republican": 0,
+          "total": 5207
+        },
+        "immigra": {
+          "Democratic": 2157,
+          "Republican": 0,
+          "total": 2157
+        },
+        "rights": {
+          "Democratic": 168904,
+          "Republican": 4683,
+          "total": 173587
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 323,
+          "Republican": 0,
+          "total": 323
+        },
+        "capitol": {
+          "Democratic": 14221,
+          "Republican": 0,
+          "total": 14221
+        },
+        "climate": {
+          "Democratic": 13204,
+          "Republican": 0,
+          "total": 13204
+        },
+        "covid": {
+          "Democratic": 412628,
+          "Republican": 5710,
+          "total": 418338
+        },
+        "gun": {
+          "Democratic": 5207,
+          "Republican": 0,
+          "total": 5207
+        },
+        "immigra": {
+          "Democratic": 2157,
+          "Republican": 0,
+          "total": 2157
+        },
+        "rights": {
+          "Democratic": 168904,
+          "Republican": 4683,
+          "total": 173587
+        }
+      }
     },
     {
-        "state": "WA",
-        "Democratic": 3705818,
-        "Republican": 113017,
-        "total": 3818835
+      "state": "WA",
+      "Democratic": 3559264,
+      "Republican": 112932,
+      "total": 3672196,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 62348,
+          "Republican": 0,
+          "total": 62348
+        },
+        "capitol": {
+          "Democratic": 217424,
+          "Republican": 16149,
+          "total": 233573
+        },
+        "climate": {
+          "Democratic": 680551,
+          "Republican": 166,
+          "total": 680717
+        },
+        "covid": {
+          "Democratic": 2159549,
+          "Republican": 17633,
+          "total": 2177182
+        },
+        "gun": {
+          "Democratic": 55555,
+          "Republican": 74799,
+          "total": 130354
+        },
+        "immigra": {
+          "Democratic": 78355,
+          "Republican": 1947,
+          "total": 80302
+        },
+        "rights": {
+          "Democratic": 305482,
+          "Republican": 2238,
+          "total": 307720
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 62348,
+          "Republican": 0,
+          "total": 62348
+        },
+        "capitol": {
+          "Democratic": 217424,
+          "Republican": 16149,
+          "total": 233573
+        },
+        "climate": {
+          "Democratic": 680551,
+          "Republican": 166,
+          "total": 680717
+        },
+        "covid": {
+          "Democratic": 2159549,
+          "Republican": 17633,
+          "total": 2177182
+        },
+        "gun": {
+          "Democratic": 55555,
+          "Republican": 74799,
+          "total": 130354
+        },
+        "immigra": {
+          "Democratic": 78355,
+          "Republican": 1947,
+          "total": 80302
+        },
+        "rights": {
+          "Democratic": 305482,
+          "Republican": 2238,
+          "total": 307720
+        }
+      }
     },
     {
-        "state": "WI",
-        "Democratic": 3218005,
-        "Republican": 441541,
-        "total": 3659546
+      "state": "WI",
+      "Democratic": 2424141,
+      "Republican": 401696,
+      "total": 2825837,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 2839,
+          "Republican": 25755,
+          "total": 28594
+        },
+        "capitol": {
+          "Democratic": 359881,
+          "Republican": 43809,
+          "total": 403690
+        },
+        "climate": {
+          "Democratic": 8657,
+          "Republican": 66618,
+          "total": 75275
+        },
+        "covid": {
+          "Democratic": 1533609,
+          "Republican": 259013,
+          "total": 1792622
+        },
+        "gun": {
+          "Democratic": 89484,
+          "Republican": 1461,
+          "total": 90945
+        },
+        "immigra": {
+          "Democratic": 77250,
+          "Republican": 4009,
+          "total": 81259
+        },
+        "rights": {
+          "Democratic": 352421,
+          "Republican": 1031,
+          "total": 353452
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 2839,
+          "Republican": 25755,
+          "total": 28594
+        },
+        "capitol": {
+          "Democratic": 359881,
+          "Republican": 43809,
+          "total": 403690
+        },
+        "climate": {
+          "Democratic": 8657,
+          "Republican": 66618,
+          "total": 75275
+        },
+        "covid": {
+          "Democratic": 1533609,
+          "Republican": 259013,
+          "total": 1792622
+        },
+        "gun": {
+          "Democratic": 89484,
+          "Republican": 1461,
+          "total": 90945
+        },
+        "immigra": {
+          "Democratic": 77250,
+          "Republican": 4009,
+          "total": 81259
+        },
+        "rights": {
+          "Democratic": 352421,
+          "Republican": 1031,
+          "total": 353452
+        }
+      }
     },
     {
-        "state": "WV",
-        "Democratic": 783510,
-        "Republican": 514123,
-        "total": 1297633
+      "state": "WV",
+      "Democratic": 512740,
+      "Republican": 506881,
+      "total": 1019621,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 4842,
+          "Republican": 1528,
+          "total": 6370
+        },
+        "capitol": {
+          "Democratic": 178822,
+          "Republican": 410,
+          "total": 179232
+        },
+        "climate": {
+          "Democratic": 10477,
+          "Republican": 865,
+          "total": 11342
+        },
+        "covid": {
+          "Democratic": 305121,
+          "Republican": 448477,
+          "total": 753598
+        },
+        "gun": {
+          "Democratic": 10923,
+          "Republican": 19118,
+          "total": 30041
+        },
+        "immigra": {
+          "Democratic": 306,
+          "Republican": 12610,
+          "total": 12916
+        },
+        "rights": {
+          "Democratic": 2249,
+          "Republican": 23873,
+          "total": 26122
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 4842,
+          "Republican": 1528,
+          "total": 6370
+        },
+        "capitol": {
+          "Democratic": 178822,
+          "Republican": 410,
+          "total": 179232
+        },
+        "climate": {
+          "Democratic": 10477,
+          "Republican": 865,
+          "total": 11342
+        },
+        "covid": {
+          "Democratic": 305121,
+          "Republican": 448477,
+          "total": 753598
+        },
+        "gun": {
+          "Democratic": 10923,
+          "Republican": 19118,
+          "total": 30041
+        },
+        "immigra": {
+          "Democratic": 306,
+          "Republican": 12610,
+          "total": 12916
+        },
+        "rights": {
+          "Democratic": 2249,
+          "Republican": 23873,
+          "total": 26122
+        }
+      }
     },
     {
-        "state": "WY",
-        "Democratic": 8710,
-        "Republican": 443344,
-        "total": 452054
+      "state": "WY",
+      "Democratic": 5052,
+      "Republican": 445539,
+      "total": 450591,
+      "topic_breakdown": {
+        "abortion": {
+          "Democratic": 39,
+          "Republican": 136,
+          "total": 175
+        },
+        "capitol": {
+          "Democratic": 4,
+          "Republican": 3657,
+          "total": 3661
+        },
+        "climate": {
+          "Democratic": 3112,
+          "Republican": 2062,
+          "total": 5174
+        },
+        "covid": {
+          "Democratic": 1173,
+          "Republican": 426077,
+          "total": 427250
+        },
+        "gun": {
+          "Democratic": 717,
+          "Republican": 11413,
+          "total": 12130
+        },
+        "immigra": {
+          "Democratic": 0,
+          "Republican": 143,
+          "total": 143
+        },
+        "rights": {
+          "Democratic": 7,
+          "Republican": 2051,
+          "total": 2058
+        }
+      },
+      "legislator_breakdown": {
+        "abortion": {
+          "Democratic": 39,
+          "Republican": 136,
+          "total": 175
+        },
+        "capitol": {
+          "Democratic": 4,
+          "Republican": 3657,
+          "total": 3661
+        },
+        "climate": {
+          "Democratic": 3112,
+          "Republican": 2062,
+          "total": 5174
+        },
+        "covid": {
+          "Democratic": 1173,
+          "Republican": 426077,
+          "total": 427250
+        },
+        "gun": {
+          "Democratic": 717,
+          "Republican": 11413,
+          "total": 12130
+        },
+        "immigra": {
+          "Democratic": 0,
+          "Republican": 143,
+          "total": 143
+        },
+        "rights": {
+          "Democratic": 7,
+          "Republican": 2051,
+          "total": 2058
+        }
+      }
     }
-]
+  ]
