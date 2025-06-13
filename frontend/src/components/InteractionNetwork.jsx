@@ -5,6 +5,7 @@ import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import moment from 'moment';
 import { FaNetworkWired } from 'react-icons/fa';
+import SectionTitle from './SectionTitle';
 
 const REGION_STATE_MAP = {
   Northeast: ['CT','ME','MA','NH','RI','VT','NJ','NY','PA'],
@@ -12,15 +13,6 @@ const REGION_STATE_MAP = {
   South:     ['DE','FL','GA','MD','NC','SC','VA','DC','WV','AL','KY','MS','TN','AR','LA','OK','TX'],
   West:      ['AZ','CO','ID','MT','NV','NM','UT','WY','AK','CA','HI','OR','WA']
 };
-
-function SectionTitle({ icon, text }) {
-  return (
-    <h2 className="text-lg flex items-center">
-      <span className="mr-1">{icon}</span>
-      {text}
-    </h2>
-  );
-}
 
 function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric, legislator, keyword }) {
   const tooltipRef = useRef();
@@ -377,7 +369,18 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
 
   return (
     <div className="flex flex-col space-y-4 p-2">
-      <SectionTitle icon={<FaNetworkWired />} text="Legislator Interaction Network" />
+      <SectionTitle icon={<FaNetworkWired />} text="Legislator Interaction Network" helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>This chord diagram visualizes interactions between legislators across regions and states.</li>
+            <li>Use the filters above to focus on specific parties, regions, states, or interaction types.</li>
+            <li>Hover over chords to see detailed interaction counts between legislators.</li>
+            <li>The thickness of connections indicates the frequency of interactions.</li>
+            <li>Each chord is an arrow from the source to the target legislator.</li>
+            <li>Color coding shows party affiliation (blue for Democrats, red for Republicans).</li>
+          </ul>
+        </div>
+      } />
       <div className="card shadow-md bg-base-300">
         <div className="card-body p-4">
             <div className="flex flex-wrap gap-4 items-center mb-4">

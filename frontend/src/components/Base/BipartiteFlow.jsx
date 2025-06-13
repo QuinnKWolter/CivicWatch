@@ -3,9 +3,10 @@ import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
-import { FaSpinner } from 'react-icons/fa';
+import { FaSpinner, FaLayerGroup } from 'react-icons/fa';
 import StackedAreaChart from './StackedAreaChart';
 import TimelineSlider from './TimelineSlider';
+import SectionTitle from '../SectionTitle';
 import { colorMap } from '../../utils/utils';
 
 // Extend dayjs with comparison plugins
@@ -83,32 +84,51 @@ export default function BipartiteFlow({ activeTopics, startDate, endDate, onDate
   if (loading) return <Loading />;
   if (error) return <ErrorBanner message={error} />;
 
+  const helpContent = (
+    <div className="text-left">
+      <ul className="list-disc list-inside space-y-1">
+        <li>This visualization compares topic activity between Democrats (top) and Republicans (bottom) over time.</li>
+        <li>Each colored area represents a topic&apos;s contribution to the total selected metric ({selectedMetric}).</li>
+        <li>Use the timeline slider in the center to adjust the displayed date range, noting key events in the timeline.</li>
+      </ul>
+    </div>
+  );
+
   return (
-    <div className="relative flex flex-col items-center w-full h-full gap-2">
-      <div className="w-full h-[48%]">
-        <StackedAreaChart
-          data={filteredData}
-          activeTopics={sortedTopics}
-          colorMap={colorMap}
-          inverted={false}
-          selectedMetric={selectedMetric}
-        />
-      </div>
-      <div className="mt-2 w-full h-[4%]">
-        <TimelineSlider
-          startDate={startDate}
-          endDate={endDate}
-          onDateChange={onDateChange}
-        />
-      </div>
-      <div className="w-full h-[48%]">
-        <StackedAreaChart
-          data={filteredData}
-          activeTopics={sortedTopics}
-          colorMap={colorMap}
-          inverted
-          selectedMetric={selectedMetric}
-        />
+    <div className="flex flex-col w-full h-full p-2">
+      <SectionTitle
+        icon={<FaLayerGroup />}
+        text="Bipartisan Topic Activity Flow"
+        helpContent={helpContent}
+      />
+      <div className="card shadow-md bg-base-300 flex-1">
+        <div className="card-body p-2 flex flex-col items-center gap-2">
+            <div className="w-full h-[48%]">
+              <StackedAreaChart
+                data={filteredData}
+                activeTopics={sortedTopics}
+                colorMap={colorMap}
+                inverted={false}
+                selectedMetric={selectedMetric}
+              />
+            </div>
+            <div className="mt-2 w-full h-[4%]">
+              <TimelineSlider
+                startDate={startDate}
+                endDate={endDate}
+                onDateChange={onDateChange}
+              />
+            </div>
+            <div className="w-full h-[48%]">
+              <StackedAreaChart
+                data={filteredData}
+                activeTopics={sortedTopics}
+                colorMap={colorMap}
+                inverted
+                selectedMetric={selectedMetric}
+              />
+            </div>
+        </div>
       </div>
     </div>
   );

@@ -6,23 +6,14 @@ import {
   FaSpinner,
   FaTh,
   FaChartArea,
-  FaBalanceScale,
+  FaSatelliteDish,
   FaClipboardList,
   FaChartLine,
   FaDemocrat,
   FaRepublican,
-  FaExchangeAlt
 } from "react-icons/fa";
 import useMeasure from "react-use-measure";
-
-function SectionTitle({ icon, text }) {
-  return (
-    <h2 className="text-lg flex items-center">
-      <span className="mr-1">{icon}</span>
-      {text}
-    </h2>
-  );
-}
+import SectionTitle from "../SectionTitle";
 
 function LegislatorCharts({
   legislatorClicked,
@@ -97,7 +88,15 @@ function LegislatorCharts({
 
   return (
     <div className="flex flex-col space-y-4 p-2 h-full overflow-y-auto">
-      <SectionTitle icon={<FaTh />} text="Legislator Activity Heatmap" />
+      <SectionTitle icon={<FaTh />} text="Legislator Activity Heatmap" helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>This heatmap visualizes legislator activity patterns over time.</li>
+            <li>Color intensity indicates activity level, with darker shades showing higher engagement.</li>
+            <li>Toggle between Democratic and Republican views using the tabs above.</li>
+          </ul>
+        </div>
+      } />
       <div className="card shadow-md bg-base-300">
         <div className="card-body p-2">
           <div className="tabs tabs-boxed">
@@ -122,34 +121,22 @@ function LegislatorCharts({
           </div>
         </div>
       </div>
-      
-      {/*
-      <SectionTitle icon={<FaExchangeAlt />} text="Legislator Interactions" />
-      <div className="card shadow-md bg-base-300">
-        <div className="card-body p-2">
-           <div className="h-96">
-              {bounds.width > 0 && (
-                <ChordDiagram
-                  width={bounds.width}
-                  height={bounds.height}
-                  startDate={startDate}
-                  endDate={endDate}
-                  legislator={legislator}
-                  geojson={geojson}
-                  setLegislator={setLegislator}
-                />
-              )}
-            </div>
-        </div>
-      </div>
-      */}
 
-      <SectionTitle icon={<FaChartArea />} text="Legislator Analytics" />
+      <SectionTitle icon={<FaChartArea />} text="Legislator Analytics" helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>These visualizations provide detailed analytics for selected legislators.</li>
+            <li>The Analytics tab shows key metrics like credibility, interactions, and virality.</li>
+            <li>The Topics tab displays topic-specific engagement patterns.</li>
+            <li>The Post Distribution tab shows temporal patterns of activity per topic.</li>
+          </ul>
+        </div>
+      } />
       <div className="card shadow-md bg-base-300">
         <div className="card-body p-2">
           <div className="tabs tabs-boxed">
             <a className={`tab gap-2 ${cVal === 0 ? 'tab-active' : ''}`} onClick={() => setCVal(0)}>
-              <FaBalanceScale /> Accountability
+              <FaSatelliteDish /> Analytics
             </a>
             <a className={`tab gap-2 ${cVal === 1 ? 'tab-active' : ''}`} onClick={() => setCVal(1)}>
               <FaClipboardList /> Topics

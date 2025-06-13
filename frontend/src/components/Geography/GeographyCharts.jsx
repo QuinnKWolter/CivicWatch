@@ -4,6 +4,7 @@ import * as d3 from 'd3';
 import { FaSpinner, FaMapMarkedAlt, FaTable } from 'react-icons/fa';
 import ChoroplethMap from './ChoroplethMap';
 import PropTypes from 'prop-types';
+import SectionTitle from '../SectionTitle';
 
 const stateAbbrevToName = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
@@ -17,15 +18,6 @@ const stateAbbrevToName = {
   SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
-
-function SectionTitle({ icon, text }) {
-  return (
-    <h2 className="text-lg flex items-center">
-      <span className="mr-1">{icon}</span>
-      {text}
-    </h2>
-  );
-}
 
 function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, geoData, setGeoData, geojson, setGeojson }) {
   const [selectedState, setSelectedState] = useState(null);
@@ -122,7 +114,16 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, g
 
   return (
     <div className="flex flex-col space-y-4 p-2">
-      <SectionTitle icon={<FaMapMarkedAlt />} text={`Geographic ${getMetricDisplayName(selectedMetric)} Distribution`} />
+      <SectionTitle icon={<FaMapMarkedAlt />} text={`Geographic ${getMetricDisplayName(selectedMetric)} Distribution`} helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>This choropleth map shows the distribution of {getMetricDisplayName(selectedMetric).toLowerCase()} across states.</li>
+            <li>Color intensity indicates activity level, with darker shades showing higher values.</li>
+            <li>Toggle between raw totals and normalized data using the button below the map.</li>
+            <li>Click on a state to view a table of detailed topic breakdowns.</li>
+          </ul>
+        </div>
+      } />
       <div className="card shadow-md bg-base-300">
         <div className="card-body p-2">
           <ChoroplethMap
@@ -162,7 +163,7 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, g
           </div>
           <div className="card-actions justify-center mt-2">
             <button onClick={toggleNormalization} className="btn btn-primary btn-sm">
-              {isNormalized ? 'Show Raw Totals' : 'Show Per Capita Data'}
+              {isNormalized ? 'Show Raw Totals' : 'Show Normalized Data'}
             </button>
           </div>
         </div>
@@ -170,7 +171,16 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, g
 
       {selectedState && (
         <>
-          <SectionTitle icon={<FaTable />} text={`${selectedState.name}: ${getMetricDisplayName(selectedMetric)} Breakdown`} />
+          <SectionTitle icon={<FaTable />} text={`${selectedState.name}: ${getMetricDisplayName(selectedMetric)} Breakdown`} helpContent={
+            <div className="text-left">
+              <ul className="list-disc list-inside space-y-1">
+                <li>This table shows the detailed breakdown of {getMetricDisplayName(selectedMetric).toLowerCase()} by topic for {selectedState.name}.</li>
+                <li>Values are separated by party (Democratic and Republican).</li>
+                <li>Topics are sorted by total {getMetricDisplayName(selectedMetric).toLowerCase()} count within the state.</li>
+                <li>Use this view to compare topic {getMetricDisplayName(selectedMetric).toLowerCase()} patterns between parties.</li>
+              </ul>
+            </div>
+          } />
           <div className="card shadow-md bg-base-300">
             <div className="card-body p-2">
               <div className="overflow-x-auto">

@@ -11,15 +11,7 @@ import {
 import Plotly from "plotly.js-dist";
 import Tippy from '@tippyjs/react';
 import { colorMap, topicIcons } from '../../utils/utils';
-
-function SectionTitle({ icon, text }) {
-  return (
-    <h2 className="text-lg flex items-center">
-      <span className="mr-1">{icon}</span>
-      {text}
-    </h2>
-  );
-}
+import SectionTitle from '../SectionTitle';
 
 function TopicCard({ party, topics, totalEngagement, formatNumber }) {
   const isDem = party === 'Democratic';
@@ -225,13 +217,30 @@ function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
 
   return (
     <div className="flex flex-col space-y-4 p-2">
-      <SectionTitle icon={<FaChartBar />} text="Top Topics by Engagement" />
+      <SectionTitle icon={<FaChartBar />} text="Top Topics by Engagement" helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>This section shows the most engaging topics for each party.</li>
+            <li>Topics are ranked by total engagement (likes + retweets).</li>
+            <li>Color coding indicates party affiliation (blue for Democrats, red for Republicans).</li>
+          </ul>
+        </div>
+      } />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <TopicCard party='Democratic' topics={data.by_party.Democratic.topics} totalEngagement={data.by_party.Democratic.total_engagement} formatNumber={formatNumber} />
         <TopicCard party='Republican' topics={data.by_party.Republican.topics} totalEngagement={data.by_party.Republican.total_engagement} formatNumber={formatNumber} />
       </div>
 
-      <SectionTitle icon={<FaExchangeAlt />} text="Engagement Flow" />
+      <SectionTitle icon={<FaExchangeAlt />} text="Engagement Flow" helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>This Sankey diagram visualizes the flow of engagement across topics and parties.</li>
+            <li>The width of each flow represents the volume of engagement.</li>
+            <li>Follow the connections to see how engagement is distributed between topics.</li>
+            <li>Node colors indicate party affiliation and topic categories.</li>
+          </ul>
+        </div>
+      } />
       <div className="card shadow-md bg-base-300">
         <div className="card-body p-2">
           <div ref={chartRef}></div>
