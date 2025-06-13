@@ -84,22 +84,20 @@ export default function BipartiteFlow({ activeTopics, startDate, endDate, onDate
   if (loading) return <Loading />;
   if (error) return <ErrorBanner message={error} />;
 
-  const helpContent = (
-    <div className="text-left">
-      <ul className="list-disc list-inside space-y-1">
-        <li>This visualization compares topic activity between Democrats (top) and Republicans (bottom) over time.</li>
-        <li>Each colored area represents a topic&apos;s contribution to the total selected metric ({selectedMetric}).</li>
-        <li>Use the timeline slider in the center to adjust the displayed date range, noting key events in the timeline.</li>
-      </ul>
-    </div>
-  );
-
   return (
     <div className="flex flex-col w-full h-full p-2">
       <SectionTitle
         icon={<FaLayerGroup />}
         text="Bipartisan Topic Activity Flow"
-        helpContent={helpContent}
+        helpContent={
+          <div className="text-left">
+            <ul className="list-disc list-inside space-y-1">
+              <li>This visualization compares topic activity between Democrats (top) and Republicans (bottom) over time.</li>
+              <li>Each colored area represents a topic&apos;s contribution to the total selected metric ({selectedMetric}).</li>
+              <li>Use the timeline slider in the center to adjust the displayed date range, noting key events in the timeline.</li>
+            </ul>
+          </div>
+        }
       />
       <div className="card shadow-md bg-base-300 flex-1">
         <div className="card-body p-2 flex flex-col items-center gap-2">

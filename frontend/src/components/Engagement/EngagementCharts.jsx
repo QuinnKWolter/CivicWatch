@@ -49,10 +49,10 @@ function TopicCard({ party, topics, totalEngagement, formatNumber }) {
                     </div>
                     <div className="flex space-x-2">
                       <span className="flex items-center text-primary">
-                        <FaThumbsUp className="mr-1" /> <span className="text-white">{formatNumber(metrics.likes)}</span>
+                        <FaThumbsUp className="mr-1" /> <span className="text-base-content">{formatNumber(metrics.likes)}</span>
                       </span>
                       <span className="flex items-center text-primary">
-                        <FaRetweet className="mr-1" /> <span className="text-white">{formatNumber(metrics.retweets)}</span>
+                        <FaRetweet className="mr-1 text-lg" /> <span className="text-base-content">{formatNumber(metrics.retweets)}</span>
                       </span>
                     </div>
                   </div>
