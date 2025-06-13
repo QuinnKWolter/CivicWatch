@@ -1,16 +1,28 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Radar } from "./Radar";
-// import { SummaryLegislatorScatter } from "./SummaryLegislatorScatter";
-import { useState } from "react";
-// import { LineChart } from "./PostLinechart";
-// import { LegislatorHex } from "./LegislatorHexBin";
 import { RidgeLinePlot } from "./RidgeLine";
 import { LegislatorHeatMap } from "./LegislatorHeatMap";
-import { FaSpinner } from "react-icons/fa";
-// import { SemanticScatterPlot } from "../Posts/SemanticSimilarity";
-import { ChordDiagram } from "../Interactions/ChordDiagram";
+import {
+  FaSpinner,
+  FaTh,
+  FaChartArea,
+  FaBalanceScale,
+  FaClipboardList,
+  FaChartLine,
+  FaDemocrat,
+  FaRepublican,
+  FaExchangeAlt
+} from "react-icons/fa";
 import useMeasure from "react-use-measure";
-import { active } from "d3";
+
+function SectionTitle({ icon, text }) {
+  return (
+    <h2 className="text-lg flex items-center">
+      <span className="mr-1">{icon}</span>
+      {text}
+    </h2>
+  );
+}
 
 function LegislatorCharts({
   legislatorClicked,
@@ -33,152 +45,45 @@ function LegislatorCharts({
 
   const axisConfig = useMemo(() => {
     if (!legScatterData || legScatterData.length === 0) return [];
-
     return [
-      {
-        display_name: "Low Credibility",
-        name: "total_misinfo_count_tw",
-        max: Math.max(
-          ...legScatterData
-            .map((d) => d.total_misinfo_count_tw)
-            .filter(Number.isFinite)
-        ),
-      },
-      {
-        display_name: "Interactions",
-        name: "total_interactions_tw",
-        max: Math.max(
-          ...legScatterData
-            .map((d) => d.total_interactions_tw)
-            .filter(Number.isFinite)
-        ),
-      },
-      {
-        display_name: "Virality",
-        name: "overperforming_score_tw",
-        max: Math.max(
-          ...legScatterData
-            .map((d) => d.overperforming_score_tw)
-            .filter(Number.isFinite)
-        ),
-      },
+      { name: "total_misinfo_count_tw", display_name: "Low Credibility", max: Math.max(...legScatterData.map((d) => d.total_misinfo_count_tw).filter(Number.isFinite)) },
+      { name: "total_interactions_tw", display_name: "Interactions", max: Math.max(...legScatterData.map((d) => d.total_interactions_tw).filter(Number.isFinite)) },
+      { name: "overperforming_score_tw", display_name: "Virality", max: Math.max(...legScatterData.map((d) => d.overperforming_score_tw).filter(Number.isFinite)) },
     ];
   }, [legScatterData]);
 
   const axisConfigTopics = useMemo(() => {
     if (!legScatterData || legScatterData.length === 0) return [];
-
-    console.log("SCATTER DATA", legScatterData);
-
     let topics = [
-      {
-        display_name: "Capitol",
-        name: "capitol",
-        max: Math.max(
-          ...legScatterData.map((d) => d.capitol).filter(Number.isFinite)
-        ),
-      },
-      {
-        display_name: "Climate",
-        name: "climate",
-        max: Math.max(
-          ...legScatterData.map((d) => d.climate).filter(Number.isFinite)
-        ),
-      },
-      {
-        display_name: "Covid",
-        name: "covid",
-        max: Math.max(
-          ...legScatterData.map((d) => d.covid).filter(Number.isFinite)
-        ),
-      },
-      {
-        display_name: "Gun",
-        name: "gun",
-        max: Math.max(
-          ...legScatterData.map((d) => d.gun).filter(Number.isFinite)
-        ),
-      },
-      {
-        display_name: "Immigra",
-        name: "immigra",
-        max: Math.max(
-          ...legScatterData.map((d) => d.immigra).filter(Number.isFinite)
-        ),
-      },
-      {
-        display_name: "Rights",
-        name: "rights",
-        max: Math.max(
-          ...legScatterData.map((d) => d.rights).filter(Number.isFinite)
-        ),
-      },
-      {
-        display_name: "Abortion",
-        name: "abortion",
-        max: Math.max(
-          ...legScatterData.map((d) => d.abortion).filter(Number.isFinite)
-        ),
-      },
-      {
-        display_name: "BLM",
-        name: "blacklivesmatter",
-        max: Math.max(
-          ...legScatterData
-            .map((d) => d.blacklivesmatter)
-            .filter(Number.isFinite)
-        ),
-      },
+      { name: "capitol", display_name: "Capitol", max: Math.max(...legScatterData.map((d) => d.capitol).filter(Number.isFinite)) },
+      { name: "climate", display_name: "Climate", max: Math.max(...legScatterData.map((d) => d.climate).filter(Number.isFinite)) },
+      { name: "covid", display_name: "Covid", max: Math.max(...legScatterData.map((d) => d.covid).filter(Number.isFinite)) },
+      { name: "gun", display_name: "Gun", max: Math.max(...legScatterData.map((d) => d.gun).filter(Number.isFinite)) },
+      { name: "immigra", display_name: "Immigra", max: Math.max(...legScatterData.map((d) => d.immigra).filter(Number.isFinite)) },
+      { name: "rights", display_name: "Rights", max: Math.max(...legScatterData.map((d) => d.rights).filter(Number.isFinite)) },
+      { name: "abortion", display_name: "Abortion", max: Math.max(...legScatterData.map((d) => d.abortion).filter(Number.isFinite)) },
+      { name: "blacklivesmatter", display_name: "BLM", max: Math.max(...legScatterData.map((d) => d.blacklivesmatter).filter(Number.isFinite)) },
     ];
-
-    console.log("ACTIVE TOPICS", activeTopics);
-
     return topics.filter((d) => activeTopics.includes(d.name.toLowerCase()));
-  },[activeTopics, legScatterData]);
-  
-  // [
-  //   { name: "capitol", max: 244 },
-  //   { name: "climate", max: 418 },
-  //   { name: "covid", max: 2515 },
-  //   { name: "gun", max: 427 },
-  //   { name: "immigra", max: 384 },
-  //   { name: "rights", max: 327 },
-  // ];
+  }, [activeTopics, legScatterData]);
 
   const [cVal, setCVal] = useState(0);
   const [dVal, setDVal] = useState(0);
   const [demData, setDemData] = useState([]);
   const [repubData, setRepubData] = useState([]);
 
-  const handleChange = (newValue) => {
-    setCVal(newValue);
-  };
-
-  const handleDChange = (newValue) => {
-    setDVal(newValue);
-  };
-
   useEffect(() => {
-    if (!loading) {
-      console.log("DATAAAA", monthlyLeg);
+    if (!loading && monthlyLeg) {
       setDemData(monthlyLeg.legislators.filter((d) => d.party === "D"));
       setRepubData(monthlyLeg.legislators.filter((d) => d.party === "R"));
-      console.log(
-        "repub data",
-        monthlyLeg.legislators.filter((d) => d.party === "R")
-      );
     }
   }, [monthlyLeg, loading]);
 
   useEffect(() => {
-    if (legislator) {
-      const matchInData =
-        demData.some((d) => d.name === legislator.name) ||
-        repubData.some((d) => d.name === legislator.name);
-      console.log("set match")
+    if (legislator && demData.length && repubData.length) {
+      const matchInData = demData.some((d) => d.name === legislator.name) || repubData.some((d) => d.name === legislator.name);
       setMatch(matchInData);
     }
-    console.log("bounds", bounds)
   }, [demData, legislator, repubData]);
 
   if (loading) {
@@ -191,156 +96,80 @@ function LegislatorCharts({
   }
 
   return (
-    <div className="overflow-y-auto h-full p-2">
-      <div className="flex space-x-2 border-b border-base-300 mt-3">
-        <button
-          className={`py-1 px-3 rounded-t ${
-            dVal === 0
-              ? "bg-primary text-primary-content"
-              : "bg-base-300 text-base-content"
-          }`}
-          onClick={() => handleDChange(0)}
-        >
-          Democrat Post Heat Map
-        </button>
-        <button
-          className={`py-1 px-3 rounded-5 ${
-            dVal === 1
-              ? "bg-primary text-primary-content"
-              : "bg-base-300 text-base-content"
-          }`}
-          onClick={() => handleDChange(1)}
-        >
-          Republican Post Heat Map
-        </button>
+    <div className="flex flex-col space-y-4 p-2 h-full overflow-y-auto">
+      <SectionTitle icon={<FaTh />} text="Legislator Activity Heatmap" />
+      <div className="card shadow-md bg-base-300">
+        <div className="card-body p-2">
+          <div className="tabs tabs-boxed">
+            <a className={`tab gap-2 ${dVal === 0 ? 'tab-active' : ''}`} onClick={() => setDVal(0)}>
+              <FaDemocrat /> Democrats
+            </a>
+            <a className={`tab gap-2 ${dVal === 1 ? 'tab-active' : ''}`} onClick={() => setDVal(1)}>
+              <FaRepublican /> Republicans
+            </a>
+          </div>
+          <div ref={ref} className="mt-2">
+            {match && (
+              <div className="relative overflow-y-auto min-h-[400px]">
+                {dVal === 0 && bounds.width > 0 && (
+                  <LegislatorHeatMap width={bounds.width} height={bounds.width * 1.75} startDate={startDate} endDate={endDate} data={demData} legScatterData={legScatterData} setLegislatorClicked={setLegislatorClicked} party={1} legislatorClicked={legislatorClicked} legislator={legislator} setLegislator={setLegislator} match={match} />
+                )}
+                {dVal === 1 && bounds.width > 0 && (
+                  <LegislatorHeatMap width={bounds.width} height={bounds.width * 1.75} startDate={startDate} endDate={endDate} data={repubData} legScatterData={legScatterData} setLegislatorClicked={setLegislatorClicked} party={2} legislatorClicked={legislatorClicked} legislator={legislator} setLegislator={setLegislator} match={match} />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-      <div ref={ref}>
-      {match &&
-        <div  className=" relative mt-4 overflow-y-auto min-h-[400px]">
-          {dVal === 0 && (
-            <>
-              {bounds.width > 0 && match && (
-                <LegislatorHeatMap
+      
+      {/*
+      <SectionTitle icon={<FaExchangeAlt />} text="Legislator Interactions" />
+      <div className="card shadow-md bg-base-300">
+        <div className="card-body p-2">
+           <div className="h-96">
+              {bounds.width > 0 && (
+                <ChordDiagram
                   width={bounds.width}
-                  height={bounds.width * 1.75}
+                  height={bounds.height}
                   startDate={startDate}
                   endDate={endDate}
-                  data={demData}
-                  legScatterData={legScatterData}
-                  setLegislatorClicked={setLegislatorClicked}
-                  party={1}
-                  legislatorClicked={legislatorClicked}
                   legislator={legislator}
+                  geojson={geojson}
                   setLegislator={setLegislator}
-                  match={match}
                 />
               )}
-
-              {/* {bounds.width > 0 && (
-              <ChordDiagram
-                width={bounds.width}
-                height={bounds.height}
-                startDate={startDate}
-                endDate={endDate}
-                legislator={legislator}
-                geojson={geojson}
-                setLegislator={setLegislator}
-              />
-            )} */}
-            </>
-
-            // <div className="relative">
-            //   <SemanticScatterPlot width={400} height={400} data={semanticData.slice(0, 100)} hoveredSemanticDataRef={hoveredSemanticDataRef} />
-            // </div>
-          )}
-          {dVal === 1 && match && (
-            <LegislatorHeatMap
-              width={bounds.width}
-              height={bounds.width * 1.75}
-              startDate={startDate}
-              endDate={endDate}
-              data={repubData}
-              legScatterData={legScatterData}
-              setLegislatorClicked={setLegislatorClicked}
-              party={2}
-              legislatorClicked={legislatorClicked}
-              legislator={legislator}
-              setLegislator={setLegislator}
-                match={match}
-                
-            />
-          )}
-          </div>}
+            </div>
         </div>
-
-      <div className="flex space-x-2 border-b border-base-300 mt-3">
-        <button
-          className={`py-1 px-3 rounded-t ${
-            cVal === 0
-              ? "bg-primary text-primary-content"
-              : "bg-base-300 text-base-content"
-          }`}
-          onClick={() => handleChange(0)}
-        >
-          Radar Accountability
-        </button>
-        <button
-          className={`py-1 px-3 rounded-5 ${
-            cVal === 1
-              ? "bg-primary text-primary-content"
-              : "bg-base-300 text-base-content"
-          }`}
-          onClick={() => handleChange(1)}
-        >
-          Radar Topics
-        </button>
-        <button
-          className={`py-1 px-3 rounded-5 ${
-            cVal === 2
-              ? "bg-primary text-primary-content"
-              : "bg-base-300 text-base-content"
-          }`}
-          onClick={() => handleChange(2)}
-        >
-          Post Ridgeline Plot
-        </button>
       </div>
+      */}
 
-      <div className="mt-4 overflow-y-auto min-h-[400px]">
-        {cVal === 0 && (
-          <Radar
-            axisConfig={axisConfig}
-            width={500}
-            height={400}
-            data={legislatorClicked}
-            activeTopics={activeTopics}
-          />
-        )}
-        {cVal === 1 && (
-          <Radar
-            axisConfig={axisConfigTopics}
-            width={500}
-            height={400}
-            data={legislatorClicked}
-            activeTopics={activeTopics}
-          />
-        )}
-        {cVal === 2 && (
-          // <LineChart
-          //   data={postData}
-          //   width={300}
-          //   height={300}
-          // />
-          <RidgeLinePlot
-              height={bounds.height > 0 ? bounds.height / 2 : 300}
-            width={bounds.width}
-            legislatorClicked={legislatorClicked}
-            startDate={startDate}
-            endDate={endDate}
-            activeTopics={activeTopics}
-            legislator={legislator}
-          />
-        )}
+      <SectionTitle icon={<FaChartArea />} text="Legislator Analytics" />
+      <div className="card shadow-md bg-base-300">
+        <div className="card-body p-2">
+          <div className="tabs tabs-boxed">
+            <a className={`tab gap-2 ${cVal === 0 ? 'tab-active' : ''}`} onClick={() => setCVal(0)}>
+              <FaBalanceScale /> Accountability
+            </a>
+            <a className={`tab gap-2 ${cVal === 1 ? 'tab-active' : ''}`} onClick={() => setCVal(1)}>
+              <FaClipboardList /> Topics
+            </a>
+            <a className={`tab gap-2 ${cVal === 2 ? 'tab-active' : ''}`} onClick={() => setCVal(2)}>
+              <FaChartLine /> Post Distribution
+            </a>
+          </div>
+          <div className="mt-2 overflow-y-auto min-h-[400px]">
+            {cVal === 0 && (
+              <Radar axisConfig={axisConfig} width={500} height={400} data={legislatorClicked} activeTopics={activeTopics} />
+            )}
+            {cVal === 1 && (
+              <Radar axisConfig={axisConfigTopics} width={500} height={400} data={legislatorClicked} activeTopics={activeTopics} />
+            )}
+            {cVal === 2 && (
+              <RidgeLinePlot height={bounds.height > 0 ? bounds.height / 2 : 300} width={bounds.width} legislatorClicked={legislatorClicked} startDate={startDate} endDate={endDate} activeTopics={activeTopics} legislator={legislator} />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

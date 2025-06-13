@@ -6,11 +6,8 @@ const MARGIN = 20;
 export const Radar = ({ width, height, data, axisConfig, activeTopics }) => {
   if (!data || Object.keys(data).length === 0 || activeTopics.length < 1) {
     return (
-      <div
-        style={{ width, height }}
-        className="flex items-center justify-center"
-      >
-        No data available
+      <div className="flex items-center justify-center">
+        No data available - please select a legislator.
       </div>
     );
   }

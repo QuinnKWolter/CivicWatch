@@ -1,8 +1,7 @@
 import '../../App.css';
 import { useState, useEffect } from 'react';
 import * as d3 from 'd3';
-import * as topojson from 'topojson-client';
-import { FaSpinner } from 'react-icons/fa';
+import { FaSpinner, FaMapMarkedAlt, FaTable } from 'react-icons/fa';
 import ChoroplethMap from './ChoroplethMap';
 import PropTypes from 'prop-types';
 
@@ -19,9 +18,16 @@ const stateAbbrevToName = {
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
+function SectionTitle({ icon, text }) {
+  return (
+    <h2 className="text-lg flex items-center">
+      <span className="mr-1">{icon}</span>
+      {text}
+    </h2>
+  );
+}
+
 function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, geoData, setGeoData, geojson, setGeojson }) {
- 
-  
   const [selectedState, setSelectedState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,8 +35,6 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, g
 
   const legendWidth = 200;
   const legendHeight = 10;
-
- 
 
   useEffect(() => {
     if (!startDate || !endDate || !selectedTopics || selectedTopics.length === 0) return;
@@ -59,7 +63,7 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, g
         setError("Failed to load geography data. Please try again.");
         setLoading(false);
       });
-  }, [startDate, endDate, selectedTopics, selectedMetric]);
+  }, [startDate, endDate, selectedTopics, selectedMetric, setGeoData]);
 
   useEffect(() => {
     if (!selectedState || !geoData.length) return;
@@ -71,6 +75,7 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, g
         topicBreakdown: updatedStateData.topic_breakdown,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geoData, selectedState?.name, selectedMetric]);
 
   const demMin = d3.min(geoData, d => d.democratTotal) || 0;
@@ -116,95 +121,83 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, g
   }
 
   return (
-    <>
-      <ChoroplethMap
-        geojson={geojson}
-        geoData={geoData}
-        selectedMetric={selectedMetric}
-        startDate={startDate}
-        endDate={endDate}
-        selectedTopics={selectedTopics}
-        onStateSelected={setSelectedState}
-        showLegend={false}
-        blueScale={blueScale}
-        redScale={redScale}
-        isNormalized={isNormalized}
-      />
-
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: '30px', marginBottom: '20px' }}>
-        <svg width={legendWidth * 3} height={legendHeight * 4} className="text-base-content">
-          <g transform="translate(30, 0)">
-            <text x={0} y={12} style={{ fontSize: '14px', fontWeight: 'bold' }} className="fill-current">Democrat</text>
-
-            <g transform="translate(20, 20)">
-              <text x={-25} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(demMin)}</text>
-              {blueScale.range().map((d, i) => (
-                <rect
-                  key={`blue-rect-${i}`}
-                  x={i * ((legendWidth * 0.7) / blueScale.range().length)}
-                  y={0}
-                  width={(legendWidth * 0.7) / blueScale.range().length}
-                  height={legendHeight}
-                  style={{ fill: d }}
-                />
-              ))}
-              <text x={(legendWidth * 0.7) + 5} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(demMax)}</text>
-            </g>
-
-            <text x={legendWidth * 1.5} y={12} style={{ fontSize: '14px', fontWeight: 'bold' }} className="fill-current">Republican</text>
-            
-            <g transform={`translate(${legendWidth * 1.2 + 20}, 20)`}>
-              <text x={-25} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(repMin)}</text>
-              {redScale.range().map((d, i) => (
-                <rect
-                  key={`red-rect-${i}`}
-                  x={i * ((legendWidth * 0.7) / redScale.range().length)}
-                  y={0}
-                  width={(legendWidth * 0.7) / redScale.range().length}
-                  height={legendHeight}
-                  style={{ fill: d }}
-                />
-              ))}
-              <text x={(legendWidth * 0.7) + 5} y={10} style={{ fontSize: '10px' }} className="fill-current">{formatNumber(repMax)}</text>
-            </g>
-          </g>
-        </svg>
-      </div>
-
-      <div className="flex justify-center mb-4">
-        <button onClick={toggleNormalization} className="btn btn-primary">
-          {isNormalized ? 'Switch to Raw Data' : 'Switch to Normalized Data'}
-        </button>
+    <div className="flex flex-col space-y-4 p-2">
+      <SectionTitle icon={<FaMapMarkedAlt />} text={`Geographic ${getMetricDisplayName(selectedMetric)} Distribution`} />
+      <div className="card shadow-md bg-base-300">
+        <div className="card-body p-2">
+          <ChoroplethMap
+            geojson={geojson}
+            geoData={geoData}
+            selectedMetric={selectedMetric}
+            startDate={startDate}
+            endDate={endDate}
+            selectedTopics={selectedTopics}
+            onStateSelected={setSelectedState}
+            showLegend={false}
+            blueScale={blueScale}
+            redScale={redScale}
+            isNormalized={isNormalized}
+          />
+          <div className="flex justify-center mt-2">
+            <svg width={legendWidth * 3} height={legendHeight * 4} className="text-base-content">
+              <g transform="translate(30, 0)">
+                <text x={0} y={12} className="text-sm font-bold fill-current">Democrat</text>
+                <g transform="translate(20, 20)">
+                  <text x={-25} y={10} className="text-xs fill-current">{formatNumber(demMin)}</text>
+                  {blueScale.range().map((d, i) => (
+                    <rect key={`blue-rect-${i}`} x={i * ((legendWidth * 0.7) / blueScale.range().length)} y={0} width={(legendWidth * 0.7) / blueScale.range().length} height={legendHeight} style={{ fill: d }} />
+                  ))}
+                  <text x={(legendWidth * 0.7) + 5} y={10} className="text-xs fill-current">{formatNumber(demMax)}</text>
+                </g>
+                <text x={legendWidth * 1.5} y={12} className="text-sm font-bold fill-current">Republican</text>
+                <g transform={`translate(${legendWidth * 1.2 + 20}, 20)`}>
+                  <text x={-25} y={10} className="text-xs fill-current">{formatNumber(repMin)}</text>
+                  {redScale.range().map((d, i) => (
+                    <rect key={`red-rect-${i}`} x={i * ((legendWidth * 0.7) / redScale.range().length)} y={0} width={(legendWidth * 0.7) / redScale.range().length} height={legendHeight} style={{ fill: d }} />
+                  ))}
+                  <text x={(legendWidth * 0.7) + 5} y={10} className="text-xs fill-current">{formatNumber(repMax)}</text>
+                </g>
+              </g>
+            </svg>
+          </div>
+          <div className="card-actions justify-center mt-2">
+            <button onClick={toggleNormalization} className="btn btn-primary btn-sm">
+              {isNormalized ? 'Show Raw Totals' : 'Show Per Capita Data'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {selectedState && (
-        <div className="mt-6 px-4">
-          <h3 className="text-base-content text-xl font-bold mb-3">
-            {selectedState.name} {getMetricDisplayName(selectedMetric)} Breakdown
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="table table-zebra w-full">
-              <thead>
-              <tr className="!bg-base-200">
-                  <th className="text-base-content !bg-base-200 border-b-base-300">Topic</th>
-                  <th className="!bg-base-200 text-blue-600 border-b-base-300">Democratic</th>
-                  <th className="!bg-base-200 text-red-600 border-b-base-300">Republican</th>
-                </tr>
-              </thead>
-              <tbody>
-                  {Object.entries(selectedState.topicBreakdown).map(([topic, { Democratic, Republican }]) => (
-                  <tr key={topic} className="hover">
-                    <td className="font-medium">{topic}</td>
-                    <td className="text-blue-600">{formatNumber(Democratic)}</td>
-                    <td className="text-red-600">{formatNumber(Republican)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <>
+          <SectionTitle icon={<FaTable />} text={`${selectedState.name}: ${getMetricDisplayName(selectedMetric)} Breakdown`} />
+          <div className="card shadow-md bg-base-300">
+            <div className="card-body p-2">
+              <div className="overflow-x-auto">
+                <table className="table table-zebra w-full">
+                  <thead>
+                    <tr className="!bg-base-200">
+                      <th className="!bg-base-200 border-b-base-300">Topic</th>
+                      <th className="!bg-base-200 text-blue-600 border-b-base-300">Democratic</th>
+                      <th className="!bg-base-200 text-red-600 border-b-base-300">Republican</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(selectedState.topicBreakdown).map(([topic, { Democratic, Republican }]) => (
+                      <tr key={topic} className="hover">
+                        <td className="font-medium">{topic}</td>
+                        <td className="text-blue-600">{formatNumber(Democratic)}</td>
+                        <td className="text-red-600">{formatNumber(Republican)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
-    </>
+    </div>
   );
 }
 
@@ -213,7 +206,10 @@ GeographyCharts.propTypes = {
   endDate: PropTypes.object.isRequired,
   selectedTopics: PropTypes.array.isRequired,
   selectedMetric: PropTypes.string.isRequired,
+  geoData: PropTypes.array.isRequired,
+  setGeoData: PropTypes.func.isRequired,
+  geojson: PropTypes.object,
+  setGeojson: PropTypes.func.isRequired,
 };
 
 export default GeographyCharts;
-

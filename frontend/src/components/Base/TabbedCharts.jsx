@@ -4,7 +4,7 @@ import EngagementCharts from '../Engagement/EngagementCharts';
 import GeographyCharts from '../Geography/GeographyCharts';
 import LegislatorCharts from '../Legislators/LegislatorCharts';
 import AccountabilityInterface from '../Accountability/AccountabilityInterface';
-import { PostCharts } from '../Posts/PostsCharts';
+import { PostsCharts } from '../Posts/PostsCharts';
 import InteractionNetwork from '../InteractionNetwork';
 import * as topojson from 'topojson-client';
 import { RiDashboardLine } from 'react-icons/ri';
@@ -26,7 +26,7 @@ const tabs = [
   { icon: <FaUsers />, label: 'Legislators', value: 3 },
   { icon: <IoEarthOutline />, label: 'Geography', value: 4 },
   { icon: <BsFilePost />, label: 'Posts', value: 2 },
-  { icon: <FaUsers />, label: 'Interaction', value: 6 },
+  { icon: <FaUsers />, label: 'Interactions', value: 6 },
 ];
 
 export default function TabbedCharts({
@@ -161,7 +161,7 @@ useEffect(() => {
         return <EngagementCharts {...{ startDate, endDate, selectedTopics: memoTopics }} />;
       case 2:
         return (
-          <PostCharts
+          <PostsCharts
             startDate={startDate}
             endDate={endDate}
             semanticData={semanticData}

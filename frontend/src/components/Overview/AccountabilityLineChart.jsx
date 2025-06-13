@@ -27,7 +27,7 @@ import { topicIcons, colorMap } from '../../utils/utils';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-const TOPICS = ['all', ...Object.keys(topicIcons)];
+const TOPICS = [...Object.keys(topicIcons)];
 const OFFSET = 0.1;
 
 function processChartData(rawData, { start, end, topic }) {
