@@ -6,7 +6,7 @@ import {useEffect, useRef, useLayoutEffect, useMemo} from 'react'
 // ]
 
 
-export const InteractionMap = ({ width, height, data, connections }) => {
+export const InteractionMap = ({ width, height, data, connections, isMapHovered}) => {
     const canvasRef = useRef(null);
       const requestRef = useRef()
         const progressRef = useRef(0)
@@ -87,9 +87,9 @@ export const InteractionMap = ({ width, height, data, connections }) => {
       // Draw map base
       context.beginPath()
       pathGenerator(data)
-      context.fillStyle = 'grey'
+      context.fillStyle = 'gray'
       context.fill()
-      context.strokeStyle = 'lightGrey'
+      context.strokeStyle =  isMapHovered ? "red" : "gray"
       context.lineWidth = 0.1
       context.stroke()
 
@@ -137,7 +137,7 @@ export const InteractionMap = ({ width, height, data, connections }) => {
         return ()=> cancelAnimationFrame(animationFrameId)
 
 
-    }, [width, height, projection, data, connections])
+    }, [width, height, projection, data, connections, isMapHovered])
 
     return <canvas ref={canvasRef} width={width} height={height} />
     

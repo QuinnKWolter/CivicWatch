@@ -106,7 +106,7 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
       </div>
 
       <SectionTitle icon={<FaExchangeAlt />} text="Legislator Interactions" />
-      <div className="card shadow-md">
+      <div className="card shadow-md bg-base-300">
         <div className="card-body p-2">
           <div className="h-96" ref={ref}> 
             {bounds.width > 0 && bounds.height > 0 && ( // Ensure bounds are measured before rendering ChordDiagram
@@ -125,7 +125,7 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
       </div>
 
       <SectionTitle icon={<FaBalanceScale />} text="Accountability" />
-      <div className="card shadow-md">
+      <div className="card shadow-md bg-base-300">
         <div className="card-body p-2">
           <div className="h-80">
             <AccountabilityLineChart startDate={startDate} endDate={endDate} />
@@ -134,7 +134,7 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
       </div>
 
       <SectionTitle icon={<FaChartLine />} text={`Engagement Trends Over Time ${isWeekly ? '(Weekly)' : '(Daily)'}`} />
-      <div className="card shadow-md">
+      <div className="card shadow-md bg-base-300">
         <div className="card-body p-2">
           <div className="h-80">
             <TrendLineChart startDate={startDate} endDate={endDate} selectedTopics={selectedTopics} />
