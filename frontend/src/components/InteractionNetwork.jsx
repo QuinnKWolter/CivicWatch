@@ -209,7 +209,6 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
 
 
 
-
   const stateToRegion = Object.entries(REGION_STATE_MAP)
     .flatMap(([reg, sts]) => sts.map(s => [s, reg]))
     .reduce((acc, [s, r]) => {
@@ -229,26 +228,33 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
       );
 
 
-    if (typeof keyword === "string" && keyword.trim() !== "") {
+      // … inside your useEffect, replace the keyword‐filter block with this:
+
+      if (typeof keyword === "string" && keyword.trim() !== "") {
         const lower = keyword.trim().toLowerCase();
-  
+
         links = links.filter(l => {
-          if (l.text?.toLowerCase().includes(lower)) {
+          // 1) check any post text for the keyword
+          if (Array.isArray(l.texts) && l.texts.some(t => t.toLowerCase().includes(lower))) {
             return true;
           }
+          // 2) topics match
           if (l.topics?.some(t => t.toLowerCase().includes(lower))) {
             return true;
           }
+          // 3) legislator name match
           const src = data.nodes.find(n => n.legislator_id === l.source_legislator_id);
           const tgt = data.nodes.find(n => n.legislator_id === l.target_legislator_id);
-  
-          if (src?.name.toLowerCase().includes(lower) || tgt?.name.toLowerCase().includes(lower)) {
-            return true;
-          }
-          if (src?.state.toLowerCase() === lower || tgt?.state.toLowerCase() === lower) {
-            return true;
-          }
           if (
+            src?.name.toLowerCase().includes(lower) ||
+            tgt?.name.toLowerCase().includes(lower)
+          ) {
+            return true;
+          }
+          // 4) state or region match
+          if (
+            src?.state.toLowerCase() === lower ||
+            tgt?.state.toLowerCase() === lower ||
             stateToRegion[src?.state]?.toLowerCase() === lower ||
             stateToRegion[tgt?.state]?.toLowerCase() === lower
           ) {
@@ -256,13 +262,23 @@ function InteractionNetwork({ startDate, endDate, selectedTopics, selectedMetric
           }
           return false;
         });
-      }
+      } 
       else {
         if (selectedTopics.length > 0) {
           links = links.filter(l =>
             selectedTopics.some(t => l.topics?.includes(t))
           );
         }
+      }
+
+
+      if (filters.region !== 'all') {
+        const regionStates = REGION_STATE_MAP[filters.region];
+      
+        links = links.filter(l => {
+          const src = data.nodes.find(n => n.legislator_id === l.source_legislator_id);
+          return src && regionStates.includes(src.state);
+        });
       }
     
 
