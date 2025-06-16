@@ -17,8 +17,11 @@ export const PostCharts = ({
   const [filteredData, setFilteredData] = useState([])
 
 
-useEffect(() => {
+  useEffect(() => {
+  
   if (!semanticData) return;
+
+  console.log("in postCharts", semanticData)
 
   let filtered = semanticData;
 
@@ -33,10 +36,6 @@ useEffect(() => {
 
   if (hasLegislator) {
     filtered = filtered.filter((d) => d.name === legislator.name);
-  }
-
-  if (!hasKeyword && !hasLegislator) {
-    filtered = semanticData.slice(0, 100);
   }
 
   setFilteredData(filtered);

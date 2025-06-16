@@ -525,6 +525,32 @@ def post_semantic_similarity(request):
     return JsonResponse(list(posts_list), safe=False)
 
 
+from django.http import JsonResponse
+from .models import Post  # Adjust to your actual model
+
+def default_semantic_similarity_data(request):
+ 
+    republican_posts = Post.objects.filter(party="Republican").values(
+        "post_id", "topics__name", "name", "party", "text",
+        "created_at", "like_count", "retweet_count", "civility_score",
+        "count_misinfo", "pca_x", "pca_y"
+    ).order_by("-like_count")[:100]
+
+   
+    democrat_posts = Post.objects.filter(party="Democratic").values(
+        "post_id", "topics__name", "name", "party", "text",
+        "created_at", "like_count", "retweet_count", "civility_score",
+        "count_misinfo", "pca_x", "pca_y"
+    ).order_by("-like_count")[:100]
+
+
+    combined_posts = list(republican_posts) + list(democrat_posts)
+
+    print(str(combined_posts))
+
+    return JsonResponse(combined_posts, safe=False)
+
+
 
 def legislators_scatter_data(request):
     start_date = request.GET.get('start_date')
@@ -984,7 +1010,7 @@ def default_engagement_data(request):
         return JsonResponse(data, safe=False)
     except FileNotFoundError:
         return HttpResponse(status=404, content="Default engagement data not found.")
-
+    
 def default_overview_data(request):
     # Path to the JSON file
     json_file_path = os.path.join(os.path.dirname(__file__), '../static/data/defaultOverviewTab.json')
