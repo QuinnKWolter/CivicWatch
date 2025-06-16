@@ -195,7 +195,7 @@ export const RidgeLinePlot = ({ width, height, legislatorClicked, startDate, end
   if (!legislatorClicked || Object.keys(legislatorClicked).length === 0) {
     return (
       <div className="flex items-center justify-center">
-        No data available
+        No data available - please select a legislator.
       </div>
     );
   }

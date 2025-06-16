@@ -23,6 +23,7 @@ import AccountabilityLineChart from './AccountabilityLineChart';
 import { colorMap, formatNumber } from '../../utils/utils';
 import { ChordDiagram } from "../Interactions/ChordDiagram";
 import useMeasure from "react-use-measure";
+import SectionTitle from '../SectionTitle';
 
 const DEFAULT_START = '2020-01-01';
 const DEFAULT_END = '2021-12-31';
@@ -98,14 +99,28 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
 
   return (
     <div className="flex flex-col space-y-4 p-2">
-      <SectionTitle icon={<FaChartBar />} text="Summary Metrics" />
+      <SectionTitle icon={<FaChartBar />} text="Summary Metrics" helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>This section displays key metrics for selected Democratic and Republican legislators.</li>
+            <li>Metrics include total posts, active legislators, likes, retweets, and more.</li>
+            <li>Additional metrics track uncivil posts and low-credibility content per party.</li>
+          </ul>
+        </div>
+      } />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {Object.entries(summaryMetrics).map(([party, m]) => (
           <MetricsCard key={party} party={party} metrics={m} />
         ))}
       </div>
 
-      <SectionTitle icon={<FaExchangeAlt />} text="Legislator Interactions" />
+      <SectionTitle icon={<FaExchangeAlt />} text="Legislator Interactions" helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>TODO: Add help content @Chase"</li>
+          </ul>
+        </div>
+      } />
       <div className="card shadow-md bg-base-300">
         <div className="card-body p-2">
           <div className="h-96" ref={ref}> 
@@ -124,7 +139,16 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
         </div>
       </div>
 
-      <SectionTitle icon={<FaBalanceScale />} text="Accountability" />
+      <SectionTitle icon={<FaBalanceScale />} text="Accountability" helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>These charts track accountability metrics over time for both parties.</li>
+            <li>The top chart shows low-credibility content trends.</li>
+            <li>The bottom chart displays uncivil communication patterns.</li>
+            <li>Use the switch in the upper left to cycle through topics.</li>
+          </ul>
+        </div>
+      } />
       <div className="card shadow-md bg-base-300">
         <div className="card-body p-2">
           <div className="h-80">
@@ -133,7 +157,15 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
         </div>
       </div>
 
-      <SectionTitle icon={<FaChartLine />} text={`Engagement Trends Over Time ${isWeekly ? '(Weekly)' : '(Daily)'}`} />
+      <SectionTitle icon={<FaChartLine />} text={`Engagement Trends Over Time ${isWeekly ? '(Weekly)' : '(Daily)'}`} helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>This chart shows engagement trends over the selected time period.</li>
+            <li>Data is aggregated by {isWeekly ? 'week' : 'day'} for better visualization.</li>
+            <li>Engagement score combines likes and retweets normalized by post count.</li>
+          </ul>
+        </div>
+      } />
       <div className="card shadow-md bg-base-300">
         <div className="card-body p-2">
           <div className="h-80">
@@ -142,15 +174,6 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
         </div>
       </div>
     </div>
-  );
-}
-
-function SectionTitle({ icon, text }) {
-  return (
-    <h2 className="text-lg flex items-center">
-      <span className="mr-1">{icon}</span>
-      {text}
-    </h2>
   );
 }
 

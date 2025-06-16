@@ -9,7 +9,6 @@ import {
   XAxis,
   YAxis,
   ResponsiveContainer,
-  CartesianGrid,
   Tooltip
 } from 'recharts';
 import {
@@ -17,7 +16,6 @@ import {
   IoIosArrowDown
 } from 'react-icons/io';
 import {
-  FaQuestionCircle,
   FaSpinner
 } from 'react-icons/fa';
 import Tippy from '@tippyjs/react';
@@ -27,7 +25,7 @@ import { topicIcons, colorMap } from '../../utils/utils';
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
-const TOPICS = ['all', ...Object.keys(topicIcons)];
+const TOPICS = [...Object.keys(topicIcons)];
 const OFFSET = 0.1;
 
 function processChartData(rawData, { start, end, topic }) {
@@ -62,15 +60,6 @@ const Loading = () => (
 const ErrorBanner = ({ message }) => (
   <div className="alert alert-error shadow-sm text-sm p-2">
     <span>{message}</span>
-  </div>
-);
-
-const InfoTooltip = () => (
-  <div className="text-base-content p-4 w-72 text-sm">
-    <ul className="list-disc list-inside">
-      <li>Values further from the center represent higher average misinformation/incivility for each party.</li>
-      <li>Check the “Info” link at the top of the page for details and definitions.</li>
-    </ul>
   </div>
 );
 
@@ -124,7 +113,6 @@ export default function AccountabilityLineChart({ startDate, endDate }) {
 
   const renderChartContent = (dataKeyDem, dataKeyRep) => (
     <LineChart data={processedData}>
-      {/* <CartesianGrid stroke="#444444" vertical={false} /> */} {/* Example if you want only horizontal lines */}
       <XAxis dataKey="date" axisLine={false} tickLine={false} tick={false} />
       <YAxis axisLine={false} tickLine={false} tick={false} domain={yAxisDomain} />
       <Tooltip content={({ label }) => <span className="text-xs">{label}</span>} />
@@ -166,23 +154,11 @@ export default function AccountabilityLineChart({ startDate, endDate }) {
         <button onClick={nextTopic} aria-label="Next Topic">
           <IoIosArrowDown size={20} />
         </button>
-        <div className="mt-auto pt-2">
-          <Tippy
-            content={<InfoTooltip />}
-            animation="scale-subtle"
-            placement="right"
-            arrow
-          >
-            <span className="cursor-pointer inline-block align-middle">
-              <FaQuestionCircle size={18} />
-            </span>
-          </Tippy>
-        </div>
       </div>
 
       <div className="flex-1 flex flex-col space-y-3">
         <div className="flex-1 flex flex-col min-h-0" style={{ marginLeft: -60 }}>
-          <h3 className="text-center text-xs font-semibold mb-1 text-base-content/80">MISINFORMATION</h3>
+          <h3 className="text-center text-xs font-semibold mb-1 text-base-content/80">LOW CREDIBILITY</h3>
           <div className="flex-1 min-h-0">
             {processedData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
