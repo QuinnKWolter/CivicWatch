@@ -117,7 +117,9 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
       <SectionTitle icon={<FaExchangeAlt />} text="Legislator Interactions" helpContent={
         <div className="text-left">
           <ul className="list-disc list-inside space-y-1">
-            <li>TODO: Add help content @Chase"</li>
+            <li>Click on a Legislator Edge to go to their page </li>
+             <li> Click on map to view out-of-state interactions </li>
+              <li> Out-of-state highlighted in yellow</li>
           </ul>
         </div>
       } />
