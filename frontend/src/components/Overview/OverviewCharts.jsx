@@ -200,7 +200,7 @@ function MetricsCard({ party, metrics }) {
           <Stat icon={<FaMapMarkerAlt className="text-primary" />} label="Top State" value={metrics.mostActiveState} />
           <Stat icon={<FaExchangeAlt className="text-primary" />} label="Avg Interaction" value={metrics.avgInteractionScore.toFixed(2)} />
           <Stat icon={<FaHandshakeSlash className="text-error" />} label="Uncivil Posts" value={formatNumber(metrics.numUncivilPosts)} />
-          <Stat icon={<FaExclamationTriangle className="text-error" />} label="Misinfo Posts" value={formatNumber(metrics.numMisinfoPosts)} />
+          <Stat icon={<FaExclamationTriangle className="text-error" />} label="Low Credibility Posts" value={formatNumber(metrics.numMisinfoPosts)} />
         </div>
       </div>
     </div>

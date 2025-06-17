@@ -105,12 +105,12 @@ function AccountabilityInterface({ startDate, endDate, selectedTopics }) {
         </div>
         <div className="flex justify-between w-full mt-8 space-x-4">
           <div className="flex-1">
-            <h3>Democrat Misinformation</h3>
-            {renderPieChart('Democrat Misinformation', 'Democratic', 'informative')}
+            <h3>Democrat Low Credibility</h3>
+            {renderPieChart('Democrat Low Credibility', 'Democratic', 'informative')}
           </div>
           <div className="flex-1">
-            <h3>Republican Misinformation</h3>
-            {renderPieChart('Republican Misinformation', 'Republican', 'informative')}
+            <h3>Republican Low Credibility</h3>
+            {renderPieChart('Republican Low Credibility', 'Republican', 'informative')}
           </div>
         </div>
       </div>
