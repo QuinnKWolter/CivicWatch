@@ -128,7 +128,24 @@ useEffect(() => {
         .finally(() => setLoading(false));
 
     // Semantic similarity
-    setSemanticLoading(true);
+}, [startDate, endDate]);
+
+  
+  useEffect(() => {
+     setSemanticLoading(true);
+  if (!legislator)
+  {
+    fetch(
+      '/api/posts/default_post_semantic_similarity/'
+    )
+      .then(res => res.json())
+      .then(data => setSemanticData(data))
+      .catch(err => console.error('Semantic Data error:', err))
+      .finally(() => setSemanticLoading(false));
+    
+    
+  }
+  else {
     fetch(
         `/api/posts/post_semantic_similarity/?` +
         new URLSearchParams({
@@ -140,8 +157,10 @@ useEffect(() => {
         .then(data => setSemanticData(data))
         .catch(err => console.error('Semantic data error:', err))
         .finally(() => setSemanticLoading(false));
-}, [startDate, endDate]);
-
+    
+  }
+    
+  },[startDate,endDate,legislator])
 
   const renderContent = () => {
     switch (activeTab) {

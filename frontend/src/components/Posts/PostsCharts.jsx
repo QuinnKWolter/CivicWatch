@@ -28,14 +28,9 @@ export const PostsCharts = ({
       filtered = filtered.filter((d) => d.text.toLowerCase().includes(keyword.toLowerCase()));
     }
 
-    if (hasLegislator) {
-      filtered = filtered.filter((d) => d.name === legislator.name);
-    }
-
-    // If no filters are active, show a sample. Otherwise, show all filtered results.
-    if (!hasKeyword && !hasLegislator) {
-      filtered = semanticData.slice(0, 100);
-    }
+  if (hasLegislator) {
+    filtered = filtered.filter((d) => d.name === legislator.name);
+  }
 
     setFilteredData(filtered);
   }, [keyword, legislator, semanticData]);

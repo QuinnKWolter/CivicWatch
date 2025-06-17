@@ -53,5 +53,6 @@ urlpatterns = [
     path("api/us-states/", views.us_states_data, name="us_states_data"),
     path('api/posts/post_semantic_similarity/', views.post_semantic_similarity, name="semantic_similarity"),
     path('api/chord/chord_interactions/', views.chord_interactions_novel, name="chord interactions"),
-    path('api/chord/chord_top_legislators/', views.chord_top_legislators_novel, name="top legislators")
+    path('api/chord/chord_top_legislators/', views.chord_top_legislators_novel, name="top legislators"),
+    path('api/posts/default_post_semantic_similarity/', views.default_semantic_similarity_data, name="default semantic" )
 ]
