@@ -38,6 +38,13 @@ class Post(models.Model):
     overperforming_score = models.FloatField(null=True, blank=True)
     pca_x = models.FloatField(null=True, blank=True, db_index=True)
     pca_y = models.FloatField(null=True, blank=True)
+
+    toxicity        = models.FloatField(null=True, blank=True)
+    severe_toxicity = models.FloatField(null=True, blank=True)
+    obscene         = models.FloatField(null=True, blank=True)
+    threat          = models.FloatField(null=True, blank=True)
+    insult          = models.FloatField(null=True, blank=True)
+    identity_attack = models.FloatField(null=True, blank=True)
     
     def __str__(self):
         return f"{self.legislator.name} - {self.created_at}"
