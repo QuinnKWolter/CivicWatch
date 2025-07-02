@@ -148,7 +148,14 @@ export default function Sidebar({
             className="input input-bordered w-full"
             placeholder="Search legislator"
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e => {
+                   const v = e.target.value;
+                   setSearchTerm(v);
+                   if (v === '') {
+                     setLegislator(null);
+                     setDropdownOpen(false);
+                   }
+                 }}
             onFocus={() => {
               if (!legislators.length) fetchLegislators();
               setDropdownOpen(true);
@@ -187,7 +194,13 @@ export default function Sidebar({
           type="text"
           className="input input-bordered w-full"
           value={inputValue}
-          onChange={e => setInputValue(e.target.value)}
+          onChange={e => {
+            const v = e.target.value;
+            setInputValue(v);
+            if (v.trim() === '') {
+              setKeyword(null);
+            }
+          }}
         />
       </Section>
 
