@@ -97,7 +97,7 @@ export const ChordDiagram = ({
   const [legStates, setLegStates] = useState([]);
   const [isMapHovered, setIsMapHovered] = useState(false);
 
-  const url = "http://localhost:9000/api/chord/chord_interactions/?";
+  const url = "/api/chord/chord_interactions/?";
 
   useEffect(() => {
     if (!legislator) return;

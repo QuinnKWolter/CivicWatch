@@ -4,8 +4,8 @@ import { colorMap, topicIcons } from '../../utils/utils';
 
 // Constants
 const FLASHPOINTS = [
-  { label: 'January 6th Insurrection', range: ['2021-01-06', '2021-01-31'] },
-  { label: '2020 BLM Protests', range: ['2020-05-25', '2020-07-31'] },
+  { label: 'January 6th Insurrection', range: ['2021-01-05', '2021-01-31'] },
+  { label: '2020 BLM Protests', range: ['2020-05-24', '2020-07-31'] },
 ];
 const TOPICS = Object.keys(topicIcons);
 const METRICS = [
