@@ -86,6 +86,11 @@ export default function App() {
         toggleSidebar={() => toggle('sidebar')}
         toggleAbout={() => toggle('about')}
         toggleInfo={() => toggle('info')}
+        startDate={startDate}
+        endDate={endDate}
+        topics={topics}
+        keyword={keyword}
+        legislator={legislator}
       />
       <BrowserRouter>
         <div className="flex flex-grow mt-16 relative">

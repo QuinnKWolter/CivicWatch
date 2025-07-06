@@ -11,6 +11,7 @@ from django.db.models.functions import TruncDate, TruncWeek, TruncDay, TruncMont
 from .models import Post
 import json
 import os
+import csv
 from django.conf import settings
 from collections import defaultdict
 
@@ -1042,3 +1043,52 @@ def us_states_data(request):
         return JsonResponse(data, safe=False)
     except FileNotFoundError:
         return HttpResponse(status=404, content="US states data not found.")
+
+
+def export_posts_csv(request):
+    
+    filtered_posts = filter_posts(request)
+    
+   
+    response = HttpResponse(content_type='text/csv')
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    response['Content-Disposition'] = f'attachment; filename="civicwatch_posts_export_{current_date}.csv"'
+    
+ 
+    writer = csv.writer(response)
+    
+ 
+    writer.writerow([
+        'Post ID', 'Legislator Name', 'Created At', 'Text', 
+        'State', 'Chamber', 'Party', 'Retweet Count', 'Like Count', 
+        'Misinfo Count', 'Civility Score', 'Interaction Score', 'Overperforming Score',
+        'Topics'
+    ])
+    
+    filtered_posts = filtered_posts.select_related('legislator').prefetch_related('topics')
+    
+    batch_size = 500
+    for i in range(0, filtered_posts.count(), batch_size):
+        batch = filtered_posts[i:i+batch_size]
+        for post in batch:
+           
+            topics = ', '.join([topic.name for topic in post.topics.all()])
+            
+            writer.writerow([
+                post.post_id,
+                post.name,
+                post.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                post.text,
+                post.state,
+                post.chamber,
+                post.party,
+                post.retweet_count,
+                post.like_count,
+                post.count_misinfo,
+                post.civility_score,
+                post.interaction_score,
+                post.overperforming_score,
+                topics
+            ])
+    
+    return response

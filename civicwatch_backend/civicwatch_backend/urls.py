@@ -21,6 +21,9 @@ from civicwatch import views
 urlpatterns = [
     path("admin/", admin.site.urls),
 
+    # CSV Export endpoint
+    path("api/export-posts-csv/", views.export_posts_csv, name="export_posts_csv"),
+
     # New Overview Metrics Endpoint
     path("api/overview_metrics/", views.overview_metrics, name="overview_metrics"),
 
