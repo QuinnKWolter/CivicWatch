@@ -21,8 +21,13 @@ export const LegislatorHeatMap = ({
   // const [match, setMatch] = useState(true)
 
   const handleClick = (name) => {
-    setLegislatorClicked(legScatterData.filter((d) => d.name === name));
-  };
+  const selected = legScatterData.find((d) => d.name === name);
+  if (selected) {
+    setLegislatorClicked([selected]);
+    setLegislator(selected); 
+  }
+};
+
 
   useEffect(() => {
     if (
@@ -203,6 +208,9 @@ export const LegislatorHeatMap = ({
       .attr("height", y.bandwidth())
       .attr("y", 0)
       .attr("fill", (d) => color(d.count))
+      .on("click", (event, d) => {
+        handleClick(d.name);   // <-- Add this
+      })
       .append("title")
       .text((d) => `${d.name}: ${d.count} posts in ${d.monthStr}`);
 

@@ -22,7 +22,7 @@ const SCATTER_KEYS = [
 
 const tabs = [
   { icon: <RiDashboardLine />, label: 'Overview', value: 0 },
-  { icon: <BiTrendingUp />, label: 'Engagement', value: 1 },
+  // { icon: <BiTrendingUp />, label: 'Engagement', value: 1 },
   { icon: <FaUsers />, label: 'Legislators', value: 3 },
   { icon: <IoEarthOutline />, label: 'Geography', value: 4 },
   { icon: <BsFilePost />, label: 'Posts', value: 2 },
@@ -176,8 +176,8 @@ useEffect(() => {
             setLegislator={setLegislator}
           />
         );
-      case 1:
-        return <EngagementCharts {...{ startDate, endDate, selectedTopics: memoTopics }} />;
+      // case 1:
+      //   return <EngagementCharts {...{ startDate, endDate, selectedTopics: memoTopics }} />;
       case 2:
         return (
           <PostsCharts
