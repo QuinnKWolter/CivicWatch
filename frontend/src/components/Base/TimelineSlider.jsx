@@ -2,8 +2,8 @@ import { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { FaCalendarAlt, FaVirus, FaVoteYea, FaGavel, FaUserSlash, FaStore, FaSkullCrossbones, FaVideo, FaMapMarkedAlt, FaDemocrat, FaRepublican, FaBalanceScale, FaTwitter } from 'react-icons/fa';
-import { GiCapitol, GiMegaphone } from 'react-icons/gi';
+import { FaCalendarAlt, FaVirus, FaVoteYea, FaGavel, FaUserSlash, FaStore, FaSkullCrossbones, FaVideo, FaMapMarkedAlt, FaDemocrat, FaRepublican, FaTwitter } from 'react-icons/fa';
+import { GiCapitol } from 'react-icons/gi';
 import { WiThermometer } from 'react-icons/wi';
 import { TbPodium } from 'react-icons/tb';
 import ReactDOM from 'react-dom/client';
@@ -23,8 +23,6 @@ function TimelineSlider({
   const [dimensions, setDimensions] = useState({ width: 0, height: 40 });
   const [isStartDateEditing, setIsStartDateEditing] = useState(false);
   const [isEndDateEditing, setIsEndDateEditing] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const tooltipRef = useRef(null);
 
   const minDate = dayjs('2020-01-01');
   const maxDate = dayjs('2021-12-31');

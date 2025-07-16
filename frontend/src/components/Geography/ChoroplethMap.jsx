@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import PropTypes from 'prop-types';
 import tippy from 'tippy.js';
@@ -17,7 +17,8 @@ function ChoroplethMap({
   showLegend = false,
   blueScale,
   redScale,
-  isNormalized
+  isNormalized,
+  connections = []
 }) {
   const svgRef = useRef();
 
@@ -54,12 +55,13 @@ function ChoroplethMap({
     const demStdDev = d3.deviation(demValues) || 1;
     const repStdDev = d3.deviation(repValues) || 1;
 
-    // 4) Draw each state path and set its tooltip content
-    const states = svg.append('g')
-      .selectAll('path')
+    const statesGroup = svg.append('g');
+
+
+    const states = statesGroup.selectAll('path')
       .data(geojson.features)
       .join('path')
-      .attr('class', 'state-shape cursor-pointer') // Add cursor-pointer for better UX
+      .attr('class', 'state-shape cursor-pointer') 
       .attr('d', path)
       .attr('stroke', '#fff')
       .attr('stroke-width', 0.5)
@@ -74,7 +76,7 @@ function ChoroplethMap({
         }
       });
 
-    // 5) Set fill color and tooltip content in a separate loop for clarity
+   
     states.attr('fill', d => {
         const s = stateGeoMap.get(d.properties.name);
         if (!s) return '#eee';
@@ -102,7 +104,6 @@ function ChoroplethMap({
             .map(([topic, totals]) => `<li>${topic}: ${formatNumber(totals.Democratic + totals.Republican)}</li>`)
             .join('') : '<li>No topic breakdown available</li>';
 
-        // Use DaisyUI/Tailwind classes for a themed tooltip that matches the app
         return `
           <div class="text-white p-3 max-w-xs">
             <h3 class="font-bold text-md mb-1 pb-1">
@@ -132,22 +133,57 @@ function ChoroplethMap({
         `;
       });
 
-    // 6) Initialize Tippy on all state shapes, removing the explicit theme
+    
+    if (connections && connections.length > 0) {
+     
+      const stateCentroids = {};
+      geojson.features.forEach(feature => {
+        const centroid = path.centroid(feature);
+        if (centroid && !isNaN(centroid[0]) && !isNaN(centroid[1])) {
+          stateCentroids[feature.properties.name] = centroid;
+        }
+      });
+
+      
+      const connectionsGroup = svg.append('g')
+        .attr('class', 'connections');
+
+      
+      connections.forEach(([stateA, stateB]) => {
+        const start = stateCentroids[stateA];
+        const end = stateCentroids[stateB];
+        
+        if (start && end) {
+          const midX = (start[0] + end[0]) / 2;
+          const midY = (start[1] + end[1]) / 2 - 15; // Raise the control point to create an arc
+          
+          connectionsGroup.append('path')
+            .attr('d', `M${start[0]},${start[1]} Q${midX},${midY} ${end[0]},${end[1]}`)
+            .attr('stroke', 'rgba(255, 240, 0, 0.5)')
+            .attr('stroke-width', 4)
+            .attr('fill', 'none')
+            .attr('stroke-linecap', 'round')
+            .attr('stroke-linejoin', 'round');
+        }
+      });
+    }
+
+  
     const instances = tippy('.state-shape', {
       allowHTML: true,
       placement: 'top',
       animation: 'scale-subtle',
       delay: 50,
-      trigger: 'mouseenter', // Explicitly set trigger to hover only
-      hideOnClick: false, // Prevents tooltip from hiding when its reference is clicked
+      trigger: 'mouseenter', 
+      hideOnClick: false, 
     });
 
-    // 7) Return a cleanup function to destroy tooltips on re-render
+ 
     return () => {
       instances.forEach(instance => instance.destroy());
     };
 
-  }, [geojson, geoData, selectedMetric, startDate, endDate, selectedTopics, onStateSelected, blueScale, redScale, isNormalized]);
+  }, [geojson, geoData, selectedMetric, startDate, endDate, selectedTopics, onStateSelected, blueScale, redScale, isNormalized, connections]);
 
   return (
     <div className="w-full">
@@ -179,7 +215,8 @@ ChoroplethMap.propTypes = {
   showLegend: PropTypes.bool,
   blueScale: PropTypes.func,
   redScale: PropTypes.func,
-  isNormalized: PropTypes.bool
+  isNormalized: PropTypes.bool,
+  connections: PropTypes.array
 };
 
 export default ChoroplethMap;

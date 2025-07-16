@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -99,9 +99,9 @@ export default function BipartiteFlow({ activeTopics, startDate, endDate, onDate
           </div>
         }
       />
-      <div className="card shadow-md bg-base-300 flex-1">
-        <div className="card-body p-2 flex flex-col items-center gap-2">
-            <div className="w-full h-[48%]">
+      <div className="card shadow-md bg-base-300 flex-1 overflow-hidden">
+        <div className="card-body p-2 flex flex-col items-center h-full">
+            <div className="w-full" style={{ height: "45%", minHeight: "150px" }}>
               <StackedAreaChart
                 data={filteredData}
                 activeTopics={sortedTopics}
@@ -110,14 +110,14 @@ export default function BipartiteFlow({ activeTopics, startDate, endDate, onDate
                 selectedMetric={selectedMetric}
               />
             </div>
-            <div className="mt-2 w-full h-[4%]">
+            <div className="w-full my-2" style={{ height: "50px" }}>
               <TimelineSlider
                 startDate={startDate}
                 endDate={endDate}
                 onDateChange={onDateChange}
               />
             </div>
-            <div className="w-full h-[48%]">
+            <div className="w-full" style={{ height: "45%", minHeight: "150px" }}>
               <StackedAreaChart
                 data={filteredData}
                 activeTopics={sortedTopics}

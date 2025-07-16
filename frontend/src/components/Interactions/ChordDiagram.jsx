@@ -80,7 +80,7 @@ export const ChordDiagram = ({
   setLegislator
 }) => {
   const [isMapExpanded, setIsMapExpanded] = useState(false);
-  const [ref, bounds] = useMeasure();
+  const [ref ] = useMeasure();
   const svgRef = useRef(null);
   const [matrixChordData, setMatrixChordData] = useState([]);
   const [matrixChordNames, setMatrixChordNames] = useState([]);
@@ -112,8 +112,6 @@ export const ChordDiagram = ({
 
     const queryParams = new URLSearchParams(params).toString();
     const query = `${url}${queryParams}`;
-
-    console.log("QUERY", query);
 
     function includesPair(arr, pair) {
       return arr.some((item) => item[0] === pair[0] && item[1] === pair[1]);

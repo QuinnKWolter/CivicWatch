@@ -133,8 +133,8 @@ export default function App() {
               sidebarOpen || aboutOpen || infoOpen ? 'ml-64' : 'ml-0'
             }`}
           >
-            <div className="grid grid-cols-5 gap-4 p-4 h-[calc(100vh-4rem)]">
-              <section className="col-span-3 bg-base-200 rounded-lg shadow-lg overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 p-4 h-[calc(100vh-4rem)] overflow-auto">
+              <section className="lg:col-span-3 bg-base-200 rounded-lg shadow-lg overflow-hidden min-h-[400px]">
                 <BipartiteFlow
                   activeTopics={topics}
                   startDate={startDate}
@@ -146,7 +146,7 @@ export default function App() {
                 />
               </section>
 
-              <section className="col-span-2 bg-base-200 rounded-lg shadow-lg overflow-hidden">
+              <section className="lg:col-span-2 bg-base-200 rounded-lg shadow-lg overflow-hidden min-h-[400px]">
                 <TabbedCharts
                   legislatorClicked={clickedLegislators}
                   setLegislatorClicked={setClickedLegislators}

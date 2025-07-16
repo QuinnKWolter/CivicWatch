@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FiSun, FiMoon, FiDownload } from 'react-icons/fi';
 import PropTypes from 'prop-types';
 import logo from '../../images/logo.png';

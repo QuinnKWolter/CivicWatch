@@ -227,6 +227,8 @@ useEffect(() => {
               setGeoData,
               geojson,
               setGeojson,
+              legislator,
+              setLegislator
             }}
           />
         );
