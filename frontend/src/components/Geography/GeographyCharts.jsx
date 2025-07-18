@@ -5,6 +5,9 @@ import { FaSpinner, FaMapMarkedAlt, FaTable } from 'react-icons/fa';
 import ChoroplethMap from './ChoroplethMap';
 import PropTypes from 'prop-types';
 import SectionTitle from '../SectionTitle';
+import { ChordDiagram } from '../Interactions/ChordDiagram';
+import { BiOutline } from 'react-icons/bi';
+import useMeasure from 'react-use-measure';
 
 const stateAbbrevToName = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
@@ -19,11 +22,13 @@ const stateAbbrevToName = {
   VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
-function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, geoData, setGeoData, geojson, setGeojson }) {
+function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, geoData, setGeoData, geojson, legislator, setLegislator }) {
   const [selectedState, setSelectedState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isNormalized, setIsNormalized] = useState(false);
+  const [connections, setConnections] = useState([]);
+  const [ref, bounds] = useMeasure();
 
   const legendWidth = 200;
   const legendHeight = 10;
@@ -69,6 +74,61 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, g
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [geoData, selectedState?.name, selectedMetric]);
+
+  useEffect(() => {
+    if (!legislator?.legislator_id) {
+      setConnections([]);
+      return;
+    }
+
+    const params = {
+      start_date: startDate.format("YYYY-MM-DD"),
+      end_date: endDate.format("YYYY-MM-DD"),
+      legislator: legislator.legislator_id,
+    };
+
+    const queryParams = new URLSearchParams(params).toString();
+    const url = `/api/chord/chord_interactions/?${queryParams}`;
+
+    function includesPair(arr, pair) {
+      return arr.some((item) => item[0] === pair[0] && item[1] === pair[1]);
+    }
+
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        const filteredData = data.filter(
+          (d) => d.count > 0 && d.source_name !== d.target_name
+        );
+
+        if (filteredData.length === 0) {
+          setConnections([]);
+          return;
+        }
+
+        const filteredConnections = [];
+
+        filteredData.forEach((d) => {
+          let toAdd = [
+            stateAbbrevToName[d.source_state],
+            stateAbbrevToName[d.target_state],
+          ];
+
+          if (
+            !includesPair(filteredConnections, toAdd) &&
+            d.source_state !== d.target_state
+          ) {
+            filteredConnections.push(toAdd);
+          }
+        });
+
+        setConnections(filteredConnections);
+      })
+      .catch((error) => {
+        console.error("Error fetching interaction data:", error);
+        setConnections([]);
+      });
+  }, [legislator, startDate, endDate]);
 
   const demMin = d3.min(geoData, d => d.democratTotal) || 0;
   const demMax = d3.max(geoData, d => d.democratTotal) || 0;
@@ -138,6 +198,7 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, g
             blueScale={blueScale}
             redScale={redScale}
             isNormalized={isNormalized}
+            connections={connections}
           />
           <div className="flex justify-center mt-2">
             <svg width={legendWidth * 3} height={legendHeight * 4} className="text-base-content">
@@ -165,6 +226,31 @@ function GeographyCharts({ startDate, endDate, selectedTopics, selectedMetric, g
             <button onClick={toggleNormalization} className="btn btn-primary btn-sm">
               {isNormalized ? 'Show Raw Totals' : 'Show Normalized Data'}
             </button>
+          </div>
+        </div>
+        <div className="card-body p-2">
+          <div className="h-96" ref={ref}>
+            <ChordDiagram
+              width={bounds.width}
+              height={bounds.height}
+              startDate={startDate}
+              endDate={endDate}
+              legislator={legislator}
+              geojson={geojson}
+              setLegislator={setLegislator}
+            />
+          </div>
+          </div>
+        <div className="card-body p-2" >
+          <div className='h-96'>
+            {legislator?.legislator_id && (
+              <div className="text-center mb-4">
+                <div className="badge badge-primary mb-2">Showing Interactions</div>
+                <h3 className="text-lg font-semibold">
+                  Legislator: {legislator.name || legislator.legislator_id}
+                </h3>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -219,7 +305,10 @@ GeographyCharts.propTypes = {
   geoData: PropTypes.array.isRequired,
   setGeoData: PropTypes.func.isRequired,
   geojson: PropTypes.object,
-  setGeojson: PropTypes.func.isRequired,
+  legislator: PropTypes.shape({
+    legislator_id: PropTypes.string,
+    name: PropTypes.string
+  })
 };
 
 export default GeographyCharts;

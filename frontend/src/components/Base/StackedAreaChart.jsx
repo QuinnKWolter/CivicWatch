@@ -20,32 +20,48 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
       if (!container) return;
 
       const { width, height } = container.getBoundingClientRect();
-      setDimensions({ width, height });
+      
+      // Only update if there's a significant change in dimensions
+      if (Math.abs(dimensions.width - width) > 5 || Math.abs(dimensions.height - height) > 5) {
+        setDimensions({ width, height });
+      }
     };
 
     updateDimensions();
-    const resizeObserver = new ResizeObserver(updateDimensions);
+    
+    let resizeTimer;
+    const resizeObserver = new ResizeObserver(() => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(updateDimensions, 250); // 250ms debounce
+    });
+    
     resizeObserver.observe(containerRef.current);
 
-    return () => resizeObserver.disconnect();
-  }, []);
+    return () => {
+      clearTimeout(resizeTimer);
+      resizeObserver.disconnect();
+    };
+  }, [dimensions]);
 
   useEffect(() => {
-    if (!dimensions.width || !dimensions.height) return;
+    if (!dimensions.width || !dimensions.height || dimensions.width < 50 || dimensions.height < 50 || !data.length) return;
 
     const margin = { 
-      top: inverted ? 40 : 20,     // More space for inverted top labels
-      right: 30, 
-      bottom: inverted ? 20 : 40,  // More space for normal bottom labels
-      left: 50 
+      top: inverted ? Math.min(40, dimensions.height * 0.1) : Math.min(20, dimensions.height * 0.05),
+      right: Math.min(30, dimensions.width * 0.05),
+      bottom: inverted ? Math.min(20, dimensions.height * 0.05) : Math.min(40, dimensions.height * 0.1),
+      left: Math.min(50, dimensions.width * 0.1)
     };
-    const chartWidth = dimensions.width - margin.left - margin.right;
-    const chartHeight = dimensions.height - margin.top - margin.bottom;
+    
+    const chartWidth = Math.max(50, dimensions.width - margin.left - margin.right);
+    const chartHeight = Math.max(50, dimensions.height - margin.top - margin.bottom);
 
     const svg = d3.select(containerRef.current)
       .select('svg')
       .attr('width', dimensions.width)
-      .attr('height', dimensions.height);
+      .attr('height', dimensions.height)
+      .attr('viewBox', `0 0 ${dimensions.width} ${dimensions.height}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet');
 
     svg.selectAll("*").remove(); // Clear previous content
 
@@ -55,7 +71,6 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
     const parseDate = d3.timeParse("%Y-%m-%d");
     const parsedData = data.map(d => ({ ...d, date: parseDate(d.date) }));
 
-    // Sort data by date
     parsedData.sort((a, b) => a.date - b.date);
 
     const x = d3.scaleTime()
@@ -76,7 +91,6 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
 
     const layers = stack(parsedData);
 
-    // Use a power scale for the Y-axis
     const maxSum = d3.max(layers, layer => d3.max(layer, d => d[1]));
     const y = d3.scalePow()
       .exponent(0.5) // Square root scale
@@ -153,7 +167,6 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
     g.selectAll(".axis--x line")
       .style("stroke-opacity", 0.2);
 
-    // Draw Y-axis with power scale
     g.append("g")
       .attr("class", "axis axis--y")
       .call(d3.axisLeft(y).ticks(6, "~s").tickSize(-chartWidth).tickPadding(10))
@@ -163,7 +176,7 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
   }, [data, activeTopics, colorMap, inverted, dimensions.width, dimensions.height, selectedMetric]);
 
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div ref={containerRef} className="w-full h-full visualization-container">
       <Tippy
         content={tooltipContent}
         visible={tooltipVisible}
@@ -173,7 +186,13 @@ function StackedAreaChart({ data, activeTopics, colorMap, inverted, selectedMetr
         appendTo={() => document.body}
         plugins={[followCursor]}
       >
-        <svg width="100%" height="100%" />
+        <svg 
+          width="100%" 
+          height="100%" 
+          className="chart-svg"
+          viewBox={dimensions.width && dimensions.height ? `0 0 ${dimensions.width} ${dimensions.height}` : "0 0 600 300"}
+          preserveAspectRatio="xMidYMid meet"
+        />
       </Tippy>
     </div>
   );
