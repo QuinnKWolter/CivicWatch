@@ -71,6 +71,8 @@ function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
   const [error, setError] = useState(null);
   const chartRef = useRef();
 
+  const [showTopics, setShowTopics] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -217,19 +219,40 @@ function EngagementCharts({ startDate, endDate, selectedTopics = [] }) {
 
   return (
     <div className="flex flex-col space-y-4 p-2">
-      <SectionTitle icon={<FaChartBar />} text="Top Topics by Engagement" helpContent={
-        <div className="text-left">
-          <ul className="list-disc list-inside space-y-1">
-            <li>This section shows the most engaging topics for each party.</li>
-            <li>Topics are ranked by total engagement (likes + retweets).</li>
-            <li>Color coding indicates party affiliation (blue for Democrats, red for Republicans).</li>
-          </ul>
+    <button
+    onClick={() => setShowTopics(prev => !prev)}
+    className="btn btn-sm btn-primary self-start mb-2"
+    >
+      {showTopics ? 'Hide Top Topics by Engagement' : 'Show Top Topics by Engagement'}
+    </button>
+
+    {showTopics && (
+      <div>
+        <SectionTitle
+          icon={<FaChartBar />}
+          text="Top Topics by Engagement"
+          helpContent={
+            <div className="text-left">
+              <ul className="list-disc list-inside space-y-1">
+                <li>This section shows the most engaging topics for each party.</li>
+                <li>Topics are ranked by total engagement (likes + retweets).</li>
+                <li>Color coding indicates party affiliation (blue for Democrats, red for Republicans).</li>
+              </ul>
+            </div>
+          }
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+          <TopicCard party='Democratic' topics={data.by_party.Democratic.topics} totalEngagement={data.by_party.Democratic.total_engagement} formatNumber={formatNumber} />
+          <TopicCard party='Republican' topics={data.by_party.Republican.topics} totalEngagement={data.by_party.Republican.total_engagement} formatNumber={formatNumber} />
         </div>
-      } />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      </div>
+    )}
+
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <TopicCard party='Democratic' topics={data.by_party.Democratic.topics} totalEngagement={data.by_party.Democratic.total_engagement} formatNumber={formatNumber} />
         <TopicCard party='Republican' topics={data.by_party.Republican.topics} totalEngagement={data.by_party.Republican.total_engagement} formatNumber={formatNumber} />
-      </div>
+      </div> */}
 
       <SectionTitle icon={<FaExchangeAlt />} text="Engagement Flow" helpContent={
         <div className="text-left">

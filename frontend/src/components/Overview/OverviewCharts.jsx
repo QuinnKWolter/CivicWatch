@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   FaChartBar,
   FaChartLine,
@@ -24,6 +24,7 @@ import { colorMap, formatNumber } from '../../utils/utils';
 import { ChordDiagram } from "../Interactions/ChordDiagram";
 import useMeasure from "react-use-measure";
 import SectionTitle from '../SectionTitle';
+import EngagementCharts from '../Engagement/EngagementCharts';
 
 const DEFAULT_START = '2020-01-01';
 const DEFAULT_END = '2021-12-31';
@@ -34,6 +35,7 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [ref, bounds] = useMeasure(); // ref and bounds are for ChordDiagram
+  const memoTopics = useMemo(() => selectedTopics, [selectedTopics]);
 
   useEffect(() => {
     const fetchOverview = async () => {
@@ -175,6 +177,25 @@ export default function OverviewCharts({ startDate, endDate, selectedTopics = []
           </div>
         </div>
       </div>
+
+      <SectionTitle icon={<FaBalanceScale />} text="Engagement Flow" helpContent={
+        <div className="text-left">
+          <ul className="list-disc list-inside space-y-1">
+            <li>These charts track accountability metrics over time for both parties.</li>
+            <li>The top chart shows low-credibility content trends.</li>
+            <li>The bottom chart displays uncivil communication patterns.</li>
+            <li>Use the switch in the upper left to cycle through topics.</li>
+          </ul>
+        </div>
+      } />
+      <div className="card shadow-md bg-base-300">
+        <div className="card-body p-2">
+          <div className="h-80">
+            <EngagementCharts startDate={startDate} endDate={endDate} selectedTopics={memoTopics} />
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }
