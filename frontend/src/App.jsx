@@ -5,8 +5,9 @@ import Navbar from './components/Base/Navbar';
 import Sidebar from './components/Base/Sidebar';
 import SidebarAbout from './components/Base/SidebarAbout';
 import SidebarInfo from './components/Base/SidebarInfo';
-import TabbedCharts from './components/Base/TabbedCharts';
-import BipartiteFlow from './components/Base/BipartiteFlow';
+import EngagementTimeline from './components/Base/EngagementTimeline';
+import TopVisualization from './components/Base/TopVisualization';
+import ContextPanel from './components/Base/ContextPanel';
 import './App.css';
 
 const INITIAL_TOPICS = [
@@ -26,27 +27,12 @@ export default function App() {
   const [topics, setTopics] = useState(INITIAL_TOPICS);
   const [startDate, setStartDate] = useState(dayjs('2020-01-01'));
   const [endDate, setEndDate] = useState(dayjs('2021-12-31'));
-  const [metric, setMetric] = useState('posts'); // Renamed from selectedMetric for consistency with HEAD
   const [keyword, setKeyword] = useState('');
   const [legislator, setLegislator] = useState(null);
-  const [clickedLegislators, setClickedLegislators] = useState([]); // From HEAD
-  const [postData, setPostData] = useState([]);
+  const [selectedState, setSelectedState] = useState('');
+  const [selectedParty, setSelectedParty] = useState('both');
+  const [selectedPlatform, setSelectedPlatform] = useState('both');
 
-  // State from Incoming Change to be integrated
-  const [filters, setFilters] = useState({
-    interactionType: "all",
-    party: ["D", "R"],
-    state: "all",
-  });
-  const [minCivility, setMinCivility] = useState(0.5);
-  const [expandedSections, setExpandedSections] = useState({
-    filters: true,
-    civility: true,
-    misinformation: true, // Assuming this was intended; if not, remove
-    statistics: true,
-    topics: true,
-    metrics: true,
-  });
 
   // Sync initial theme (from HEAD, slightly adapted variable name from Incoming)
   useEffect(() => {
@@ -65,19 +51,6 @@ export default function App() {
   const handleDateChange = (s, e) => {
     setStartDate(s);
     setEndDate(e);
-  };
-
-  // Filter change handler from Incoming
-  const handleFilterChange = (type, value) => {
-    setFilters((prev) => ({ ...prev, [type]: value }));
-  };
-
-  // Section toggle handler from Incoming
-  const toggleSection = (section) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
   };
 
   return (
@@ -101,26 +74,22 @@ export default function App() {
             }`}
           >
             <Sidebar
-              // Props from HEAD
               activeTopics={topics}
               setActiveTopics={setTopics}
               startDate={startDate}
               setStartDate={setStartDate}
               endDate={endDate}
               setEndDate={setEndDate}
-              selectedMetric={metric}
-              setSelectedMetric={setMetric}
               keyword={keyword}
               setKeyword={setKeyword}
               legislator={legislator}
               setLegislator={setLegislator}
-              filters={filters}
-              handleFilterChange={handleFilterChange}
-              expandedSections={expandedSections}
-              toggleSection={toggleSection}
-              minCivility={minCivility}
-              setMinCivility={setMinCivility}
-              sidebarOpen={sidebarOpen}
+              selectedState={selectedState}
+              setSelectedState={setSelectedState}
+              selectedParty={selectedParty}
+              setSelectedParty={setSelectedParty}
+              selectedPlatform={selectedPlatform}
+              setSelectedPlatform={setSelectedPlatform}
             />
           </aside>
 
@@ -133,37 +102,43 @@ export default function App() {
               sidebarOpen || aboutOpen || infoOpen ? 'ml-64' : 'ml-0'
             }`}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 p-4 h-[calc(100vh-4rem)] overflow-auto">
-              <section className="lg:col-span-3 bg-base-200 rounded-lg shadow-lg overflow-hidden min-h-[400px]">
-                <BipartiteFlow
-                  activeTopics={topics}
-                  startDate={startDate}
-                  endDate={endDate}
-                  onDateChange={handleDateChange}
-                  selectedMetric={metric}
-                  filters={filters}
-                  minCivility={minCivility}
-                />
-              </section>
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 px-4 pb-4 h-[calc(100vh-4rem)] overflow-auto">
+              {/* Middle section - TopVisualization and EngagementTimeline */}
+              <div className="lg:col-span-3 flex flex-col h-full">
+                {/* TopVisualization - fills available space */}
+                <div className="bg-base-200 rounded-lg shadow-lg overflow-hidden flex-1 min-h-0">
+                  <TopVisualization
+                    activeTopics={topics}
+                    startDate={startDate}
+                    endDate={endDate}
+                    legislator={legislator}
+                    keyword={keyword}
+                  />
+                </div>
 
-              <section className="lg:col-span-2 bg-base-200 rounded-lg shadow-lg overflow-hidden min-h-[400px]">
-                <TabbedCharts
-                  legislatorClicked={clickedLegislators}
-                  setLegislatorClicked={setClickedLegislators}
-                  postData={postData}
-                  setPostData={setPostData}
+                {/* EngagementTimeline - fixed height at bottom */}
+                <div className="bg-base-200 rounded-lg shadow-lg overflow-hidden mt-4" style={{ height: "300px" }}>
+                  <EngagementTimeline
+                    activeTopics={topics}
+                    startDate={startDate}
+                    endDate={endDate}
+                    onDateChange={handleDateChange}
+                  />
+                </div>
+              </div>
+
+              {/* Right side - ContextPanel */}
+              <div className="lg:col-span-2 bg-base-200 rounded-lg shadow-lg overflow-hidden">
+                <ContextPanel
                   startDate={startDate}
                   endDate={endDate}
                   selectedTopics={topics}
-                  selectedMetric={metric}
                   keyword={keyword}
                   legislator={legislator}
                   setLegislator={setLegislator}
-                  filters={filters}
-                  minCivility={minCivility}
                   activeTopics={topics}
                 />
-              </section>
+              </div>
             </div>
           </main>
         </div>

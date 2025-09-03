@@ -15,16 +15,28 @@ export const topicIcons = {
   covid: FaVirus
 };
 
-// Export color map with new color scheme
+// Export color map with accessible color scheme (no party differentiation)
 export const colorMap = {
-  capitol:          { D: '#b2ebf2', R: '#ffe0b2' }, // very light
-  immigra:          { D: '#81deea', R: '#ffcc80' },
-  abortion:         { D: '#4dd0e1', R: '#ffb74d' },
-  blacklivesmatter: { D: '#26c6da', R: '#ffa726' },
-  climate:          { D: '#00acc1', R: '#ff9800' },
-  gun:              { D: '#00838f', R: '#fb8c00' },
-  rights:           { D: '#006064', R: '#ef6c00' },
-  covid:            { D: '#004d40', R: '#e65100' }  // darkest
+  capitol:          { color: '#3B82F6' }, // Blue
+  immigra:          { color: '#10B981' }, // Green
+  abortion:         { color: '#F59E0B' }, // Amber
+  blacklivesmatter: { color: '#EF4444' }, // Red
+  climate:          { color: '#8B5CF6' }, // Purple
+  gun:              { color: '#F97316' }, // Orange
+  rights:           { color: '#06B6D4' }, // Cyan
+  covid:            { color: '#84CC16' }  // Lime
+};
+
+// Topic name mapping for display
+export const topicNames = {
+  capitol: 'Capitol',
+  immigra: 'Immigration',
+  abortion: 'Abortion',
+  blacklivesmatter: 'Black Lives Matter',
+  climate: 'Climate Change',
+  gun: 'Gun Rights',
+  rights: 'Civil Rights',
+  covid: 'COVID-19'
 };
 
 // Function to format numbers with optional decimal truncation
