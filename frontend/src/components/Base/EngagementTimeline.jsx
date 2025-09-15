@@ -9,6 +9,7 @@ import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import { followCursor } from 'tippy.js';
 import { topicIcons, formatNumber, colorMap, topicNames } from '../../utils/utils';
+import detectEvents from './detectEvents';
 import SectionTitle from '../SectionTitle';
 
 // Extend dayjs with comparison plugins
@@ -58,15 +59,23 @@ export default function EngagementTimeline({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStartDate, setDragStartDate] = useState(null);
   const [dragEndDate, setDragEndDate] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [hoverEvent, setHoverEvent] = useState(null);
+  const [detectorMode, setDetectorMode] = useState('robust');
 
-  // Fetch data once
+  // Fetch data with server-side filters (topics excluded to avoid re-query on toggles)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await fetch('/api/flow/bipartite_data/');
+        const params = new URLSearchParams();
+        if (startDate) params.append('start_date', dayjs(startDate).format('YYYY-MM-DD'));
+        if (endDate) params.append('end_date', dayjs(endDate).format('YYYY-MM-DD'));
+        const url = `/api/flow/bipartite_data/?${params.toString()}`;
+        const res = await fetch(url);
         if (!res.ok) throw new Error();
-        setData(await res.json());
+        const payload = await res.json();
+        setData(payload);
         setError('');
       } catch {
         console.error('Error fetching engagement timeline data');
@@ -76,17 +85,13 @@ export default function EngagementTimeline({
       }
     };
     fetchData();
-  }, []);
+  }, [startDate, endDate]);
 
   // Sort topics by total engagement
   const sortedTopics = useMemo(() => {
     return [...activeTopics]
       .map(topic => {
-        const total = data.reduce((sum, item) => {
-          const d = (item[topic]?.D?.likes || 0) + (item[topic]?.D?.shares || 0);
-          const r = (item[topic]?.R?.likes || 0) + (item[topic]?.R?.shares || 0);
-          return sum + d + r;
-        }, 0);
+        const total = data.reduce((sum, item) => sum + (item[topic] || 0), 0);
         return { topic, total };
       })
       .sort((a, b) => a.total - b.total)
@@ -95,12 +100,26 @@ export default function EngagementTimeline({
 
   // Filter data by date range
   const filteredData = useMemo(
-    () => data.filter(item => {
-      const d = dayjs(item.date);
-      return d.isSameOrAfter(dayjs(startDate)) && d.isSameOrBefore(dayjs(endDate));
-    }),
-    [data, startDate, endDate]
+    () => data,
+    [data]
   );
+
+  // Compute dynamic spike events asynchronously for performance
+  useEffect(() => {
+    if (!filteredData.length || !activeTopics || activeTopics.length === 0) {
+      setEvents([]);
+      return;
+    }
+
+    const computeAsync = () => {
+      const result = detectEvents({ filteredData, activeTopics, detectorMode });
+      setEvents(result);
+    };
+
+    // Defer to keep timeline responsive
+    const id = setTimeout(computeAsync, 0);
+    return () => clearTimeout(id);
+  }, [filteredData, activeTopics, detectorMode]);
 
   // Responsive dimensions handling
   useEffect(() => {
@@ -202,13 +221,7 @@ export default function EngagementTimeline({
 
     const stack = d3.stack()
       .keys(sortedTopics)
-      .value((d, key) => {
-        const dValue = d[key]?.D?.likes || 0;
-        const rValue = d[key]?.R?.likes || 0;
-        const dShares = d[key]?.D?.shares || 0;
-        const rShares = d[key]?.R?.shares || 0;
-        return dValue + rValue + dShares + rShares;
-      })
+      .value((d, key) => d[key] || 0)
       .order(d3.stackOrderNone)
       .offset(d3.stackOffsetNone);
 
@@ -360,7 +373,7 @@ export default function EngagementTimeline({
       });
 
     // Add hover line
-    if (hoverDate && !isDragging) {
+    if (hoverDate && !isDragging && !hoverEvent) {
       const hoverX = x(hoverDate.toDate());
       g.append("line")
         .attr("class", "hover-line")
@@ -448,7 +461,83 @@ export default function EngagementTimeline({
     g.selectAll(".axis--y text")
       .style("font-size", "12px");
 
-  }, [filteredData, sortedTopics, colorMap, dimensions, hoverDate, isDragging, dragStartDate, dragEndDate]);
+    // Draw dynamic event glyphs (diamonds) centered at highest overall engagement within window, aligned to chart top
+    if (events && events.length) {
+      const eventGroup = g.append('g').attr('class', 'events-layer');
+
+      // Build helpers to map dates to indices and topics to layers
+      const layerByKey = new Map();
+      layers.forEach(layer => layerByKey.set(layer.key, layer));
+
+      const minZ = d3.min(events, e => e.peakZ) || 0;
+      const maxZ = d3.max(events, e => e.peakZ) || 1;
+      const sizeFor = (z) => {
+        if (maxZ === minZ) return 140;
+        const norm = (z - minZ) / (maxZ - minZ); // 0..1
+        return 110 + 140 * norm; // area size
+      };
+
+      events.forEach((ev) => {
+        const topic = ev.associatedTopic;
+        const anchorDate = ev.maxDate || ev.topicPeakDate || ev.peakDate;
+        const xPos = x(anchorDate);
+        if (Number.isNaN(xPos)) return;
+        const strokeColor = colorMap[topic]?.color || '#666';
+        const gray = Math.floor(192 + Math.random() * 63); // light-ish grayscale
+        const fillColor = `rgb(${gray},${gray},${gray})`;
+
+        // Align along the very top of the chart (constant y)
+        const yPos = 0;
+
+        const glyph = eventGroup.append('path')
+          .attr('transform', `translate(${xPos}, ${yPos})`)
+          .attr('d', d3.symbol().type(d3.symbolDiamond).size(sizeFor(ev.peakZ)))
+          .attr('fill', fillColor)
+          .attr('stroke', strokeColor)
+          .attr('stroke-width', 2)
+          .style('cursor', 'pointer');
+
+        // Hover behavior: draw start/end lines
+        const onEnter = () => {
+          const sX = x(ev.startDate);
+          const eX = x(ev.endDate);
+          eventGroup.append('line')
+            .attr('class', 'event-start-line')
+            .attr('x1', sX).attr('x2', sX)
+            .attr('y1', 0).attr('y2', chartHeight)
+            .style('stroke', '#3b82f6')
+            .style('stroke-width', 2)
+            .style('stroke-dasharray', '5,5')
+            .style('pointer-events', 'none');
+          eventGroup.append('line')
+            .attr('class', 'event-end-line')
+            .attr('x1', eX).attr('x2', eX)
+            .attr('y1', 0).attr('y2', chartHeight)
+            .style('stroke', '#f97316')
+            .style('stroke-width', 2)
+            .style('stroke-dasharray', '5,5')
+            .style('pointer-events', 'none');
+          setHoverEvent(ev);
+          setHoverDate(null);
+        };
+        const onLeave = () => {
+          eventGroup.selectAll('.event-start-line,.event-end-line').remove();
+          setHoverEvent(null);
+        };
+
+        glyph
+          .on('mouseenter', onEnter)
+          .on('mouseleave', onLeave)
+          .on('click', () => {
+            if (onDateChange) {
+              // mimic scrubbing selection
+              onDateChange(dayjs(ev.startDate), dayjs(ev.endDate));
+            }
+          });
+      });
+    }
+
+  }, [filteredData, sortedTopics, colorMap, dimensions, hoverDate, isDragging, dragStartDate, dragEndDate, events]);
 
   // Global mouse up handler for drag completion
   useEffect(() => {
@@ -495,6 +584,23 @@ export default function EngagementTimeline({
             </div>
           }
         />
+        <div className="flex items-center gap-2 px-2 pt-1">
+          <span className="text-xs opacity-80">Detector:</span>
+          <div className="join">
+            <button
+              className={`btn btn-xs join-item ${detectorMode === 'robust' ? 'btn-primary' : ''}`}
+              onClick={() => setDetectorMode('robust')}
+            >
+              Robust Z
+            </button>
+            <button
+              className={`btn btn-xs join-item ${detectorMode === 'cumulative' ? 'btn-primary' : ''}`}
+              onClick={() => setDetectorMode('cumulative')}
+            >
+              Cumulative Z
+            </button>
+          </div>
+        </div>
       </div>
       
       <div className="flex-1 relative min-h-0">
@@ -510,7 +616,7 @@ export default function EngagementTimeline({
            trigger="manual"
          />
          
-          {/* Date tooltip for when not hovering over topics */}
+          {/* Date tooltip for when not hovering over topics or event glyphs */}
           <Tippy
             content={
               <div className="text-center text-white px-4 py-3 rounded-lg shadow-xl">
@@ -523,7 +629,29 @@ export default function EngagementTimeline({
                 </div>
               </div>
             }
-            visible={hoverDate && !isDragging && !tooltipVisible}
+            visible={hoverDate && !isDragging && !tooltipVisible && !hoverEvent}
+            placement="top"
+            arrow={true}
+            appendTo={() => document.body}
+            followCursor={true}
+            plugins={[followCursor]}
+            trigger="manual"
+          />
+
+          {/* Event tooltip */}
+          <Tippy
+            content={
+              hoverEvent ? (
+                <div className="text-center text-white px-4 py-3 rounded-lg shadow-xl">
+                  <div className="font-bold text-lg mb-1">Event Window</div>
+                  <div className="text-sm opacity-90">
+                    {dayjs(hoverEvent.startDate).format('MMM D, YYYY')} – {dayjs(hoverEvent.endDate).format('MMM D, YYYY')}
+                  </div>
+                  <div className="text-xs opacity-75 mt-1">Topic: {hoverEvent.associatedTopic || 'all'} • z≈{hoverEvent.peakZ.toFixed(1)}</div>
+                </div>
+              ) : null
+            }
+            visible={!!hoverEvent}
             placement="top"
             arrow={true}
             appendTo={() => document.body}
