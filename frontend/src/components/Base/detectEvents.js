@@ -44,6 +44,187 @@ function maybeBinWeekly(rows, activeTopics) {
   return binned;
 }
 
+// Helper: compute local robust z-scores for a single numeric series
+function localRobustZ(values, win) {
+  const half = Math.floor(win / 2);
+  const n = values.length;
+  const z = new Array(n).fill(0);
+  const med = new Array(n).fill(0);
+  const sig = new Array(n).fill(0);
+  
+  for (let i = 0; i < n; i++) {
+    const start = Math.max(0, i - half);
+    const end = Math.min(n - 1, i + half);
+    const windowVals = values.slice(start, end + 1);
+    const m = median(windowVals);
+    const absDevs = windowVals.map(v => Math.abs(v - m));
+    const mad = median(absDevs);
+    const sigma = mad > 0 ? 1.4826 * mad : 0;
+    z[i] = sigma > 0 ? (values[i] - m) / sigma : 0;
+    med[i] = m;
+    sig[i] = sigma;
+  }
+  
+  return { z, med, sig };
+}
+
+// Detect events using robust z-score method on a single topic series
+function detectRobustOnSeries(values, win) {
+  const { z, med, sig } = localRobustZ(values, win);
+  const half = Math.floor(win / 2);
+  const events = [];
+  
+  let i = 0;
+  while (i < z.length) {
+    if (z[i] >= 3) {
+      let startIdx = i;
+      let peakIdx = i;
+      let peakZ = z[i];
+      
+      while (i + 1 < z.length && z[i + 1] > 1) {
+        i++;
+        if (z[i] > peakZ) {
+          peakZ = z[i];
+          peakIdx = i;
+        }
+      }
+      let endIdx = i;
+
+      // Prominence check on this series
+      const leftValley = Math.min(...values.slice(Math.max(0, startIdx - half), startIdx + 1));
+      const rightValley = Math.min(...values.slice(endIdx, Math.min(values.length, endIdx + half + 1)));
+      const valley = Math.max(leftValley, rightValley);
+      const prominenceVal = values[peakIdx] - valley;
+      const prominenceOk = sig[peakIdx] === 0 || (prominenceVal >= 0.5 * sig[peakIdx]);
+      
+      if (prominenceOk) {
+        const totalEngagement = values.slice(startIdx, endIdx + 1).reduce((a, b) => a + b, 0);
+        events.push({
+          startIdx,
+          endIdx,
+          peakIdx,
+          peakZ,
+          baseline: med[peakIdx],
+          zPeak: z[peakIdx],
+          prominence: prominenceVal,
+          totalEngagement
+        });
+      }
+    }
+    i++;
+  }
+  
+  return events;
+}
+
+// Detect events using cumulative z-score method on a single topic series
+function detectControlOnSeries(values, win) {
+  const WINDOW = 21;
+  const DECAY = 0.8;
+  const Z0 = 1.0;
+  const C_OPEN = 10;
+  const C_CLOSE = 5;
+  const SOFT_CLOSE = 2;
+  const SOFT_LEN = 2;
+  const COOL_OFF = 3;
+  const ALPHA = 0.15;
+  const Z_START_MIN = 1.5;
+  const MAX_LEN = values.length > 400 ? 12 : 21;
+
+  // Trailing robust z (prior-only) on this series
+  const zTrail = new Array(values.length).fill(0);
+  for (let i = 0; i < values.length; i++) {
+    const start = Math.max(0, i - WINDOW);
+    const end = i; // exclusive
+    const windowVals = values.slice(start, end);
+    if (windowVals.length < 3) continue;
+    
+    const med = median(windowVals);
+    const mad = median(windowVals.map(v => Math.abs(v - med)));
+    const sigma = mad > 0 ? 1.4826 * mad : 0;
+    zTrail[i] = sigma > 0 ? (values[i] - med) / sigma : 0;
+  }
+
+  // EMA de-bias
+  const ema = new Array(values.length).fill(0);
+  const zExcess = new Array(values.length).fill(0);
+  for (let t = 0; t < values.length; t++) {
+    ema[t] = t === 0 ? zTrail[0] : ALPHA * zTrail[t] + (1 - ALPHA) * ema[t - 1];
+  }
+  for (let t = 0; t < values.length; t++) {
+    zExcess[t] = zTrail[t] - (t > 0 ? ema[t - 1] : 0);
+  }
+
+  // CUSUM-like accumulation
+  const C = new Array(values.length).fill(0);
+  let cool = 0;
+  for (let t = 0; t < values.length; t++) {
+    const prev = t > 0 ? C[t - 1] : 0;
+    const inc = Math.max(0, zExcess[t] - Z0);
+    cool = zTrail[t] <= 0 ? cool + 1 : 0;
+    let candidate = Math.max(0, DECAY * prev + inc);
+    if (cool >= COOL_OFF) candidate = 0;
+    C[t] = candidate;
+  }
+
+  // Find intervals with prominence on this series
+  const events = [];
+  let t = 0;
+  while (t < C.length) {
+    while (t < C.length && !(C[t] >= C_OPEN && zExcess[t] >= Z_START_MIN)) t++;
+    if (t >= C.length) break;
+    
+    const startIdx = t;
+    let endIdx = t;
+    let peakIdx = t;
+    let peakC = C[t];
+    let softRun = 0;
+    let length = 0;
+    
+    while (t < C.length && C[t] > C_CLOSE && length < MAX_LEN) {
+      if (C[t] > peakC) {
+        peakC = C[t];
+        peakIdx = t;
+      }
+      endIdx = t;
+      softRun = C[t] <= SOFT_CLOSE ? softRun + 1 : 0;
+      length++;
+      if (softRun >= SOFT_LEN) {
+        t++;
+        break;
+      }
+      t++;
+    }
+
+    // Prominence check
+    const leftValley = Math.min(...values.slice(startIdx, peakIdx + 1));
+    const rightValley = Math.min(...values.slice(peakIdx, endIdx + 1));
+    const valley = Math.max(leftValley, rightValley);
+
+    // Get local sigma at peak from symmetric robust z for fair scale
+    const { sig } = localRobustZ(values, win);
+    const prominenceVal = values[peakIdx] - valley;
+    const prominenceOk = sig[peakIdx] === 0 || (prominenceVal >= 0.5 * sig[peakIdx]);
+    
+    if (prominenceOk) {
+      const totalEngagement = values.slice(startIdx, endIdx + 1).reduce((a, b) => a + b, 0);
+      events.push({
+        startIdx,
+        endIdx,
+        peakIdx,
+        peakC,
+        peakZ: zTrail[peakIdx],
+        zPeak: zTrail[peakIdx],
+        prominence: prominenceVal,
+        baseline: 0,
+        totalEngagement
+      });
+    }
+  }
+  
+  return events;
+}
+
 export default function detectEvents({ filteredData, activeTopics, detectorMode = 'robust' }) {
   if (!filteredData || !filteredData.length || !activeTopics || !activeTopics.length) return [];
 
@@ -52,236 +233,104 @@ export default function detectEvents({ filteredData, activeTopics, detectorMode 
   rows = maybeBinWeekly(rows, activeTopics);
   if (rows.length < 10) return [];
 
-  const values = rows.map(r => r.total);
-
   // Neighborhood sizing for valley checks (based on rows scale)
   const win = rows.length > 400 ? 8 : 21;
-  const half = Math.floor(win / 2);
 
-  // Local robust z using symmetric window (as in current impl)
-  const zScores = new Array(values.length).fill(0);
-  const mediansArr = new Array(values.length).fill(0);
-  const sigmasArr = new Array(values.length).fill(0);
-  for (let i = 0; i < values.length; i++) {
-    const start = Math.max(0, i - half);
-    const end = Math.min(values.length - 1, i + half);
-    const windowVals = values.slice(start, end + 1);
-    const med = median(windowVals);
-    const absDevs = windowVals.map(v => Math.abs(v - med));
-    const mad = median(absDevs);
-    const sigma = mad > 0 ? 1.4826 * mad : 0;
-    zScores[i] = sigma > 0 ? (values[i] - med) / sigma : 0;
-    mediansArr[i] = med;
-    sigmasArr[i] = sigma;
+  // Build per-topic series
+  const seriesByTopic = {};
+  for (const topic of activeTopics) {
+    seriesByTopic[topic] = rows.map(r => r.topics[topic] || 0);
   }
 
-  let rawEvents = [];
-  if (detectorMode === 'robust') {
-    // Robust Z with open/close and prominence
-    let i = 0;
-    while (i < zScores.length) {
-      if (zScores[i] >= 3) {
-        let startIdx = i;
-        let peakIdx = i;
-        let peakZ = zScores[i];
-        while (i + 1 < zScores.length && zScores[i + 1] > 1) {
-          i++;
-          if (zScores[i] > peakZ) { peakZ = zScores[i]; peakIdx = i; }
-        }
-        let endIdx = i;
-
-        const leftValley = Math.min(...values.slice(Math.max(0, startIdx - half), startIdx + 1));
-        const rightValley = Math.min(...values.slice(endIdx, Math.min(values.length, endIdx + half + 1)));
-        const valley = Math.max(leftValley, rightValley);
-        const sigmaAtPeak = sigmasArr[peakIdx] || 0;
-        const prominenceVal = values[peakIdx] - valley;
-        const prominenceOk = sigmaAtPeak === 0 || (prominenceVal >= 0.5 * sigmaAtPeak);
-        if (!prominenceOk) { i++; continue; }
-
-        // Associate topic and max engagement date inside window
-        let assocTopic = null, assocIdx = peakIdx, assocVal = -Infinity;
-        for (const t of activeTopics) {
-          for (let j = startIdx; j <= endIdx; j++) {
-            const v = rows[j].topics[t] || 0;
-            if (v > assocVal) { assocVal = v; assocTopic = t; assocIdx = j; }
-          }
-        }
-        let maxIdx = startIdx, maxVal = -Infinity;
-        for (let j = startIdx; j <= endIdx; j++) {
-          if (rows[j].total > maxVal) { maxVal = rows[j].total; maxIdx = j; }
-        }
-        const totalEngagement = values.slice(startIdx, endIdx + 1).reduce((a, b) => a + b, 0);
-        rawEvents.push({
-          startIdx, endIdx, peakIdx,
-          peakZ,
-          startDate: rows[startIdx].date,
-          endDate: rows[endIdx].date,
-          peakDate: rows[peakIdx].date,
-          peakValue: values[peakIdx],
-          associatedTopic: assocTopic,
-          topicPeakIdx: assocIdx,
-          topicPeakDate: rows[assocIdx].date,
-          maxIdx,
-          maxDate: rows[maxIdx].date,
-          baseline: mediansArr[peakIdx] || 0,
-          zPeak: zScores[peakIdx] || 0,
-          prominence: prominenceVal,
-          totalEngagement
-        });
-      }
-      i++;
-    }
-  } else {
-    // Cumulative Z (control graph) tightened with trailing baseline, floor, decay, hysteresis, cooldown, and de-biasing
-    const WINDOW = 21;    // trailing days for baseline
-    const DECAY = 0.8;    // faster exponential leak
-    const Z0 = 1.0;       // ignore small positives
-    const C_OPEN = 10;    // open threshold
-    const C_CLOSE = 5;    // close threshold (hysteresis)
-    const SOFT_CLOSE = 2; // soft close band
-    const SOFT_LEN = 2;   // consecutive bins under soft band to close
-    const COOL_OFF = 3;   // consecutive bins with z<=0 to force reset
-    const ALPHA = 0.15;   // EMA smoothing for de-biasing
-    const Z_START_MIN = 1.5; // require decent start
-    const Z_PEAK_MIN = 2.5;  // require decent peak
-    const MAX_LEN = rows.length > 400 ? 12 : 21; // cap event length (bins)
-
-    // Trailing z (prior-only)
-    const zTrail = new Array(values.length).fill(0);
-    for (let i = 0; i < values.length; i++) {
-      const s = Math.max(0, i - WINDOW);
-      const e = i; // exclusive
-      const wVals = values.slice(s, e);
-      if (wVals.length < 3) { zTrail[i] = 0; continue; }
-      const med = median(wVals);
-      const mad = median(wVals.map(v => Math.abs(v - med)));
-      const sig = mad > 0 ? 1.4826 * mad : 0;
-      zTrail[i] = sig > 0 ? (values[i] - med) / sig : 0;
-    }
-
-    // De-bias: remove slow positive drift via EMA
-    const ema = new Array(values.length).fill(0);
-    for (let t = 0; t < values.length; t++) {
-      if (t === 0) ema[t] = zTrail[0];
-      else ema[t] = ALPHA * zTrail[t] + (1 - ALPHA) * ema[t - 1];
-    }
-    const zExcess = new Array(values.length).fill(0);
-    for (let t = 0; t < values.length; t++) {
-      const base = t > 0 ? ema[t - 1] : 0; // causal
-      zExcess[t] = zTrail[t] - base;
-    }
-
-    // Accumulate with floor, decay, cooldown reset
-    const C = new Array(values.length).fill(0);
-    let cool = 0;
-    for (let t = 0; t < values.length; t++) {
-      const prev = t > 0 ? C[t - 1] : 0;
-      const inc = Math.max(0, zExcess[t] - Z0);
-      cool = zTrail[t] <= 0 ? cool + 1 : 0;
-      let candidate = Math.max(0, DECAY * prev + inc);
-      if (cool >= COOL_OFF) candidate = 0;
-      C[t] = candidate;
-    }
-
-    // Detect intervals with hysteresis and length cap
-    let t = 0;
-    while (t < C.length) {
-      while (t < C.length && !(C[t] >= C_OPEN && zExcess[t] >= Z_START_MIN)) t++;
-      if (t >= C.length) break;
-      const startIdx = t;
-      let endIdx = t;
-      let peakIdx = t;
-      let peakC = C[t];
-      let softRun = 0;
-      let length = 0;
-      while (t < C.length && C[t] > C_CLOSE && length < MAX_LEN) {
-        if (C[t] > peakC) { peakC = C[t]; peakIdx = t; }
-        endIdx = t;
-        softRun = C[t] <= SOFT_CLOSE ? softRun + 1 : 0;
-        length++;
-        if (softRun >= SOFT_LEN) { t++; break; }
-        t++;
-      }
-
-      // Prominence check on E within [startIdx..endIdx]
-      const leftSlice = values.slice(startIdx, peakIdx + 1);
-      const rightSlice = values.slice(peakIdx, endIdx + 1);
-      const leftValley = leftSlice.length ? Math.min(...leftSlice) : values[peakIdx];
-      const rightValley = rightSlice.length ? Math.min(...rightSlice) : values[peakIdx];
-      const valley = Math.max(leftValley, rightValley);
-      const sAtPeak = sigmasArr[peakIdx] || 0;
-      const promVal = values[peakIdx] - valley;
-      const promOk = sAtPeak === 0 || (promVal >= 0.5 * sAtPeak);
-      if (!promOk) continue;
-
-      // Topic association and max engagement date
-      let assocTopic = null, assocIdx = peakIdx, assocVal = -Infinity;
-      for (const topic of activeTopics) {
-        for (let j = startIdx; j <= endIdx; j++) {
-          const v = rows[j].topics[topic] || 0;
-          if (v > assocVal) { assocVal = v; assocTopic = topic; assocIdx = j; }
-        }
-      }
-      let maxIdx = startIdx, maxVal = -Infinity;
-      for (let j = startIdx; j <= endIdx; j++) {
-        if (rows[j].total > maxVal) { maxVal = rows[j].total; maxIdx = j; }
-      }
-      const totalEngagement = values.slice(startIdx, endIdx + 1).reduce((a, b) => a + b, 0);
-      rawEvents.push({
-        startIdx, endIdx, peakIdx,
-        peakZ: zTrail[peakIdx] || 0,
-        startDate: rows[startIdx].date,
-        endDate: rows[endIdx].date,
-        peakDate: rows[peakIdx].date,
-        peakValue: values[peakIdx],
-        associatedTopic: assocTopic,
-        topicPeakIdx: assocIdx,
-        topicPeakDate: rows[assocIdx].date,
-        maxIdx,
-        maxDate: rows[maxIdx].date,
-        baseline: mediansArr[peakIdx] || 0,
-        zPeak: zTrail[peakIdx] || 0,
-        peakC,
-        prominence: promVal,
-        totalEngagement
-      });
-    }
+  // Run per-topic detection and tag results with topic
+  const perTopicEvents = [];
+  for (const topic of activeTopics) {
+    const values = seriesByTopic[topic];
+    const events = (detectorMode === 'robust' 
+      ? detectRobustOnSeries(values, win)
+      : detectControlOnSeries(values, win))
+      .map(event => ({ ...event, topic }));
+    perTopicEvents.push(...events);
   }
 
-  if (!rawEvents.length) return [];
-
-  // Merge close events (time-based window merge consistent with current impl)
-  rawEvents.sort((a, b) => a.startDate - b.startDate);
-  const merged = [];
-  const maxGapMs = rows.length > 400 ? 7 * 24 * 3600 * 1000 : 3 * 24 * 3600 * 1000;
-  for (const ev of rawEvents) {
-    if (!merged.length) { merged.push({ ...ev }); continue; }
-    const last = merged[merged.length - 1];
-    if (ev.startDate - last.endDate <= maxGapMs) {
-      last.endIdx = Math.max(last.endIdx, ev.endIdx);
-      last.endDate = rows[last.endIdx].date;
-      if (ev.peakZ > last.peakZ) {
-        last.peakZ = ev.peakZ;
-        last.peakIdx = ev.peakIdx;
-        last.peakDate = ev.peakDate;
-        last.peakValue = ev.peakValue;
+  // Helper function to merge events within the same topic
+  function mergeEventsSameTopic(events) {
+    events.sort((a, b) => a.startIdx - b.startIdx);
+    const merged = [];
+    const maxGapMs = rows.length > 400 ? 7 * 24 * 3600 * 1000 : 3 * 24 * 3600 * 1000;
+    
+    for (const event of events) {
+      // Add date properties to event
+      event.startDate = rows[event.startIdx].date;
+      event.endDate = rows[event.endIdx].date;
+      event.peakDate = rows[event.peakIdx].date;
+      event.peakValue = seriesByTopic[event.topic][event.peakIdx];
+      
+      // Find max engagement date within the event window
+      let maxIdx = event.startIdx;
+      let maxVal = -Infinity;
+      for (let j = event.startIdx; j <= event.endIdx; j++) {
+        if (rows[j].total > maxVal) {
+          maxVal = rows[j].total;
+          maxIdx = j;
+        }
       }
-      if (!last.associatedTopic || ev.peakZ > last.peakZ) {
-        last.associatedTopic = ev.associatedTopic;
-        last.topicPeakIdx = ev.topicPeakIdx;
-        last.topicPeakDate = ev.topicPeakDate;
+      event.maxIdx = maxIdx;
+      event.maxDate = rows[maxIdx].date;
+      
+      // Set topic association (already known from per-topic detection)
+      event.associatedTopic = event.topic;
+      event.topicPeakIdx = event.peakIdx;
+      event.topicPeakDate = event.peakDate;
+      
+      if (!merged.length || 
+          event.topic !== merged[merged.length - 1].topic ||
+          (event.startDate - merged[merged.length - 1].endDate) > maxGapMs) {
+        merged.push({ ...event });
+      } else {
+        const last = merged[merged.length - 1];
+        last.endIdx = Math.max(last.endIdx, event.endIdx);
+        last.endDate = rows[last.endIdx].date;
+        
+        // Prefer stronger peak (zPeak or peakC depending on mode)
+        const eventStrength = event.zPeak ?? event.peakC ?? 0;
+        const lastStrength = last.zPeak ?? last.peakC ?? 0;
+        
+        if (eventStrength > lastStrength) {
+          Object.assign(last, {
+            peakIdx: event.peakIdx,
+            peakDate: event.peakDate,
+            zPeak: event.zPeak,
+            peakZ: event.peakZ,
+            peakC: event.peakC,
+            peakValue: event.peakValue
+          });
+        }
+        
+        // Update max engagement if this event has higher total engagement
+        if (rows[event.maxIdx].total > rows[last.maxIdx].total) {
+          last.maxIdx = event.maxIdx;
+          last.maxDate = event.maxDate;
+        }
+        
+        last.totalEngagement += event.totalEngagement;
       }
-      if (rows[ev.maxIdx].total > rows[last.maxIdx ?? last.peakIdx].total) {
-        last.maxIdx = ev.maxIdx;
-        last.maxDate = ev.maxDate;
-      }
-    } else {
-      merged.push({ ...ev });
     }
+    
+    return merged;
   }
 
-  merged.sort((a, b) => b.peakZ - a.peakZ);
-  return merged.slice(0, 3);
+  if (!perTopicEvents.length) return [];
+
+  // Merge events within each topic
+  const mergedByTopic = mergeEventsSameTopic(perTopicEvents);
+
+  // Final selection: keep top-k overall
+  mergedByTopic.sort((a, b) => {
+    const aStrength = a.zPeak ?? a.peakC ?? 0;
+    const bStrength = b.zPeak ?? b.peakC ?? 0;
+    return bStrength - aStrength;
+  });
+  
+  return mergedByTopic.slice(0, 3);
 }
-
-
