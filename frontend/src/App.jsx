@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import dayjs from 'dayjs';
-import Navbar from './components/Base/Navbar';
-import Sidebar from './components/Base/Sidebar';
-import SidebarAbout from './components/Base/SidebarAbout';
-import SidebarInfo from './components/Base/SidebarInfo';
-import EngagementTimeline from './components/Base/EngagementTimeline';
-import TopVisualization from './components/Base/TopVisualization';
-import ContextPanel from './components/Base/ContextPanel';
+import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
+import SidebarAbout from './components/SidebarAbout';
+import SidebarInfo from './components/SidebarInfo';
+import EngagementTimeline from './components/EngagementTimeline';
+import TopVisualization from './components/TopVisualization';
+import ContextPanel from './components/ContextPanel';
 import './App.css';
 
 const INITIAL_TOPICS = [

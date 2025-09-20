@@ -8,9 +8,9 @@ import { FaSpinner, FaChartLine } from 'react-icons/fa';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import { followCursor } from 'tippy.js';
-import { topicIcons, formatNumber, colorMap, topicNames } from '../../utils/utils';
+import { topicIcons, formatNumber, colorMap, topicNames } from '../utils/utils';
 import detectEvents from './detectEvents';
-import SectionTitle from '../SectionTitle';
+import SectionTitle from './SectionTitle';
 
 // Extend dayjs with comparison plugins
 dayjs.extend(isSameOrAfter);
@@ -355,6 +355,15 @@ export default function EngagementTimeline({
             newEndDate = dragStartDate;
           }
           
+          // Ensure minimum 2-day range
+          const durationMs = newEndDate.diff(newStartDate, 'millisecond');
+          const minDurationMs = 2 * 24 * 60 * 60 * 1000; // 2 days in milliseconds
+          
+          if (durationMs < minDurationMs) {
+            // Extend the end date to ensure minimum duration
+            newEndDate = newStartDate.add(2, 'day');
+          }
+          
           onDateChange(newStartDate, newEndDate);
         }
         
@@ -530,14 +539,26 @@ export default function EngagementTimeline({
           .on('mouseleave', onLeave)
           .on('click', () => {
             if (onDateChange) {
-              // mimic scrubbing selection
-              onDateChange(dayjs(ev.startDate), dayjs(ev.endDate));
+              // mimic scrubbing selection with minimum duration check
+              let newStartDate = dayjs(ev.startDate);
+              let newEndDate = dayjs(ev.endDate);
+              
+              // Ensure minimum 2-day range
+              const durationMs = newEndDate.diff(newStartDate, 'millisecond');
+              const minDurationMs = 2 * 24 * 60 * 60 * 1000; // 2 days in milliseconds
+              
+              if (durationMs < minDurationMs) {
+                // Extend the end date to ensure minimum duration
+                newEndDate = newStartDate.add(2, 'day');
+              }
+              
+              onDateChange(newStartDate, newEndDate);
             }
           });
       });
     }
 
-  }, [filteredData, sortedTopics, colorMap, dimensions, hoverDate, isDragging, dragStartDate, dragEndDate, events]);
+  }, [filteredData, sortedTopics, dimensions, hoverDate, isDragging, dragStartDate, dragEndDate, events, hoverEvent, onDateChange]);
 
   // Global mouse up handler for drag completion
   useEffect(() => {
@@ -551,6 +572,16 @@ export default function EngagementTimeline({
           newStartDate = dragEndDate;
           newEndDate = dragStartDate;
         }
+        
+        // Ensure minimum 2-day range
+        const durationMs = newEndDate.diff(newStartDate, 'millisecond');
+        const minDurationMs = 2 * 24 * 60 * 60 * 1000; // 2 days in milliseconds
+        
+        if (durationMs < minDurationMs) {
+          // Extend the end date to ensure minimum duration
+          newEndDate = newStartDate.add(2, 'day');
+        }
+        
         onDateChange(newStartDate, newEndDate);
       }
       setIsDragging(false);

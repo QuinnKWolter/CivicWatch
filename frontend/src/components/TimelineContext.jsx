@@ -17,8 +17,8 @@ import {
 } from 'react-icons/fa';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
-import { colorMap, formatNumber } from '../../utils/utils';
-import HelpTooltip from '../HelpTooltip';
+import { colorMap, formatNumber } from '../utils/utils';
+import HelpTooltip from './HelpTooltip';
 
 const DEFAULT_START = '2020-01-01';
 const DEFAULT_END = '2021-12-31';

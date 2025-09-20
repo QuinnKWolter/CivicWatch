@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
 import { FaUser, FaMapMarkerAlt, FaTimes, FaSearch, FaCalendarAlt } from 'react-icons/fa';
 import { FaDemocrat, FaRepublican, FaArrowsAltH } from 'react-icons/fa';
 import { FaTwitter, FaFacebook } from 'react-icons/fa';
-import { colorMap, topicIcons } from '../../utils/utils';
+import { colorMap, topicIcons } from '../utils/utils';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 
@@ -397,14 +398,30 @@ export default function Sidebar({
                         type="date"
                         className="input input-bordered input-sm flex-1 text-xs"
                         value={dayjs(startDate).format('YYYY-MM-DD')}
-                        onChange={e => setStartDate(dayjs(e.target.value))}
+                        onChange={e => {
+                          const newStartDate = dayjs(e.target.value);
+                          // Ensure at least 2 days difference
+                          if (newStartDate.isSameOrAfter(endDate)) {
+                            const newEndDate = newStartDate.add(2, 'day');
+                            setEndDate(newEndDate);
+                          }
+                          setStartDate(newStartDate);
+                        }}
                       />
                       <span className="text-xs text-gray-500">to</span>
                       <input
                         type="date"
                         className="input input-bordered input-sm flex-1 text-xs"
                         value={dayjs(endDate).format('YYYY-MM-DD')}
-                        onChange={e => setEndDate(dayjs(e.target.value))}
+                        onChange={e => {
+                          const newEndDate = dayjs(e.target.value);
+                          // Ensure at least 2 days difference
+                          if (newEndDate.isSameOrBefore(startDate)) {
+                            const newStartDate = newEndDate.subtract(2, 'day');
+                            setStartDate(newStartDate);
+                          }
+                          setEndDate(newEndDate);
+                        }}
                       />
                     </div>
                   </div>
@@ -419,7 +436,7 @@ export default function Sidebar({
                   keyword ? (
                     <div className="text-center">
                       <div className="font-semibold text-sm mb-1">Keyword Search</div>
-                      <div className="text-xs mb-2">"{keyword}"</div>
+                      <div className="text-xs mb-2">&ldquo;{keyword}&rdquo;</div>
                       <div className="text-xs text-gray-400">Click to Clear Selection</div>
                     </div>
                   ) : (
@@ -780,3 +797,27 @@ export default function Sidebar({
     </aside>
   );
 }
+
+Sidebar.propTypes = {
+  activeTopics: PropTypes.arrayOf(PropTypes.string).isRequired,
+  setActiveTopics: PropTypes.func.isRequired,
+  startDate: PropTypes.object.isRequired,
+  setStartDate: PropTypes.func.isRequired,
+  endDate: PropTypes.object.isRequired,
+  setEndDate: PropTypes.func.isRequired,
+  keyword: PropTypes.string,
+  setKeyword: PropTypes.func.isRequired,
+  legislator: PropTypes.shape({
+    name: PropTypes.string,
+    party: PropTypes.string,
+    state: PropTypes.string,
+    legislator_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+  }),
+  setLegislator: PropTypes.func.isRequired,
+  selectedState: PropTypes.string.isRequired,
+  setSelectedState: PropTypes.func.isRequired,
+  selectedParty: PropTypes.string.isRequired,
+  setSelectedParty: PropTypes.func.isRequired,
+  selectedPlatform: PropTypes.string.isRequired,
+  setSelectedPlatform: PropTypes.func.isRequired
+};

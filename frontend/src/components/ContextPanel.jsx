@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import TimelineContext from './TimelineContext';
-import LegislatorContext from '../LegislatorContext';
+import LegislatorContext from './LegislatorContext';
 
 export default function ContextPanel({
   startDate,

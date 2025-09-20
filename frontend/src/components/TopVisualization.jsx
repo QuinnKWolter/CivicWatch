@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import * as d3 from 'd3';
 import { FaChartBar } from 'react-icons/fa';
-import SectionTitle from '../SectionTitle';
+import SectionTitle from './SectionTitle';
 
 // Enhanced mock data with engagement-based positioning
 const mockData = {

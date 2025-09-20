@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiSun, FiMoon, FiDownload } from 'react-icons/fi';
 import PropTypes from 'prop-types';
-import logo from '../../images/logo.png';
+import logo from '../images/logo.png';
 
 export default function Navbar({ 
   toggleSidebar, 
