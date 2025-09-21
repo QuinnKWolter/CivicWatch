@@ -62,6 +62,8 @@ export default function EngagementTimeline({
   const [events, setEvents] = useState([]);
   const [hoverEvent, setHoverEvent] = useState(null);
   const [detectorMode, setDetectorMode] = useState('robust');
+  const [isMouseInChart, setIsMouseInChart] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   // Fetch data with server-side filters (topics excluded to avoid re-query on toggles)
   useEffect(() => {
@@ -84,7 +86,10 @@ export default function EngagementTimeline({
         setLoading(false);
       }
     };
-    fetchData();
+
+    // Add a small delay to debounce rapid date changes
+    const timeoutId = setTimeout(fetchData, 50);
+    return () => clearTimeout(timeoutId);
   }, [startDate, endDate]);
 
   // Sort topics by total engagement
@@ -206,7 +211,14 @@ export default function EngagementTimeline({
       .append("svg")
       .attr('width', '100%')
       .attr('height', '100%')
-      .style('cursor', 'crosshair');
+      .style('cursor', 'crosshair')
+      .on('mouseenter', () => setIsMouseInChart(true))
+      .on('mouseleave', () => {
+        setIsMouseInChart(false);
+        setHoverDate(null);
+        setTooltipVisible(false);
+        setHoverEvent(null);
+      });
 
     const g = svg.append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
@@ -334,6 +346,9 @@ export default function EngagementTimeline({
         }
       })
       .on("mousedown", (event) => {
+        // Only handle left mouse button for dragging
+        if (event.button !== 0) return;
+        
         event.preventDefault();
         const [mouseX] = d3.pointer(event);
         const date = x.invert(mouseX);
@@ -342,8 +357,14 @@ export default function EngagementTimeline({
         setDragEndDate(dayjs(date));
       })
       .on("mouseup", (event) => {
+        // Only handle left mouse button for drag completion
+        if (event.button !== 0) return;
+        
         event.preventDefault();
         if (isDragging && dragStartDate && dragEndDate && onDateChange) {
+          // Clear selected event when manually dragging a new range
+          setSelectedEvent(null);
+          
           // Determine start and end dates based on drag direction
           let newStartDate, newEndDate;
           
@@ -376,7 +397,8 @@ export default function EngagementTimeline({
       .on("contextmenu", (event) => {
         event.preventDefault();
         if (onDateChange) {
-          // Clear the date range by setting to full range
+          // Clear the date range by setting to full range and reset selected event
+          setSelectedEvent(null);
           onDateChange(dayjs('2020-01-01'), dayjs('2021-12-31'));
         }
       });
@@ -471,7 +493,8 @@ export default function EngagementTimeline({
       .style("font-size", "12px");
 
     // Draw dynamic event glyphs (diamonds) centered at highest overall engagement within window, aligned to chart top
-    if (events && events.length) {
+    // Hide glyphs when an event is selected to prevent tooltip issues
+    if (events && events.length && !selectedEvent) {
       const eventGroup = g.append('g').attr('class', 'events-layer');
 
       // Build helpers to map dates to indices and topics to layers
@@ -537,33 +560,44 @@ export default function EngagementTimeline({
         glyph
           .on('mouseenter', onEnter)
           .on('mouseleave', onLeave)
-          .on('click', () => {
-            if (onDateChange) {
-              // mimic scrubbing selection with minimum duration check
-              let newStartDate = dayjs(ev.startDate);
-              let newEndDate = dayjs(ev.endDate);
-              
-              // Ensure minimum 2-day range
-              const durationMs = newEndDate.diff(newStartDate, 'millisecond');
-              const minDurationMs = 2 * 24 * 60 * 60 * 1000; // 2 days in milliseconds
-              
-              if (durationMs < minDurationMs) {
-                // Extend the end date to ensure minimum duration
-                newEndDate = newStartDate.add(2, 'day');
+          .on('click', (event) => {
+            // Only handle left clicks for event selection
+            if (event.button !== 0) return;
+            
+              if (onDateChange) {
+                // Clear hover state immediately to prevent stuck tooltip
+                setHoverEvent(null);
+                setSelectedEvent(ev); // Mark this event as selected to hide glyphs
+                eventGroup.selectAll('.event-start-line,.event-end-line').remove();
+                
+                // mimic scrubbing selection with minimum duration check
+                let newStartDate = dayjs(ev.startDate);
+                let newEndDate = dayjs(ev.endDate);
+                
+                // Ensure minimum 2-day range
+                const durationMs = newEndDate.diff(newStartDate, 'millisecond');
+                const minDurationMs = 2 * 24 * 60 * 60 * 1000; // 2 days in milliseconds
+                
+                if (durationMs < minDurationMs) {
+                  // Extend the end date to ensure minimum duration
+                  newEndDate = newStartDate.add(2, 'day');
+                }
+                
+                onDateChange(newStartDate, newEndDate);
               }
-              
-              onDateChange(newStartDate, newEndDate);
-            }
           });
       });
     }
 
-  }, [filteredData, sortedTopics, dimensions, hoverDate, isDragging, dragStartDate, dragEndDate, events, hoverEvent, onDateChange]);
+  }, [filteredData, sortedTopics, dimensions, hoverDate, isDragging, dragStartDate, dragEndDate, events, hoverEvent, selectedEvent, onDateChange]);
 
   // Global mouse up handler for drag completion
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       if (isDragging && dragStartDate && dragEndDate && onDateChange) {
+        // Clear selected event when manually dragging a new range
+        setSelectedEvent(null);
+        
         let newStartDate, newEndDate;
         if (dragStartDate.isBefore(dragEndDate)) {
           newStartDate = dragStartDate;
@@ -593,6 +627,41 @@ export default function EngagementTimeline({
     document.addEventListener('mouseup', handleGlobalMouseUp);
     return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
   }, [isDragging, dragStartDate, dragEndDate, onDateChange]);
+
+  // Global mouse move handler to clean up tooltips when mouse leaves chart area
+  useEffect(() => {
+    const handleGlobalMouseMove = (event) => {
+      if (!containerRef.current) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      const isInsideChart = (
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom
+      );
+      
+      if (!isInsideChart && !isDragging) {
+        setIsMouseInChart(false);
+        setHoverDate(null);
+        setTooltipVisible(false);
+        setHoverEvent(null);
+      }
+    };
+
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    return () => document.removeEventListener('mousemove', handleGlobalMouseMove);
+  }, [isDragging]);
+
+  // Global click handler to kill Event Window tooltip
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setHoverEvent(null);
+    };
+
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, []);
 
   if (loading) return <Loading />;
   if (error) return <ErrorBanner message={error} />;
@@ -660,7 +729,7 @@ export default function EngagementTimeline({
                 </div>
               </div>
             }
-            visible={hoverDate && !isDragging && !tooltipVisible && !hoverEvent}
+            visible={hoverDate && !isDragging && !tooltipVisible && !hoverEvent && isMouseInChart}
             placement="top"
             arrow={true}
             appendTo={() => document.body}
@@ -682,7 +751,7 @@ export default function EngagementTimeline({
                 </div>
               ) : null
             }
-            visible={!!hoverEvent}
+            visible={!!hoverEvent && isMouseInChart}
             placement="top"
             arrow={true}
             appendTo={() => document.body}
