@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import * as d3 from 'd3';
-import { FaChartBar } from 'react-icons/fa';
+import { FaChartBar, FaEye, FaEyeSlash } from 'react-icons/fa';
 import SectionTitle from './SectionTitle';
 
 // Enhanced mock data with engagement-based positioning
@@ -20,23 +20,23 @@ const mockData = {
     
     // Medium accountability (yellow/orange) keywords - neutral event terms
     { word: 'George Floyd', engagement: 18900, accountability: 0.6, cluster: 'neutral' },
-    { word: 'Protest', engagement: 16700, accountability: 0.55, cluster: 'neutral' },
-    { word: 'Assemble', engagement: 9200, accountability: 0.58, cluster: 'neutral' },
-    { word: 'March', engagement: 13400, accountability: 0.52, cluster: 'neutral' },
+    { word: 'Protest', engagement: 16700, accountability: 0.35, cluster: 'neutral' },
+    { word: 'Assemble', engagement: 9200, accountability: 0.48, cluster: 'neutral' },
+    { word: 'March', engagement: 13400, accountability: 0.32, cluster: 'neutral' },
     { word: 'Rally', engagement: 7800, accountability: 0.54, cluster: 'neutral' },
     { word: 'Demonstration', engagement: 6500, accountability: 0.56, cluster: 'neutral' },
     { word: 'Activism', engagement: 11200, accountability: 0.59, cluster: 'neutral' },
     { word: 'Movement', engagement: 15600, accountability: 0.57, cluster: 'neutral' },
     
     // Low accountability (red) keywords - negative opposition terms
-    { word: 'Thug', engagement: 3400, accountability: 0.15, cluster: 'negative' },
-    { word: 'Riots', engagement: 2800, accountability: 0.12, cluster: 'negative' },
-    { word: 'Blue Lives Matter', engagement: 4200, accountability: 0.18, cluster: 'negative' },
-    { word: 'All Lives Matter', engagement: 3800, accountability: 0.16, cluster: 'negative' },
-    { word: 'Violence', engagement: 2100, accountability: 0.08, cluster: 'negative' },
-    { word: 'Looting', engagement: 1800, accountability: 0.05, cluster: 'negative' },
-    { word: 'Chaos', engagement: 1500, accountability: 0.06, cluster: 'negative' },
-    { word: 'Anarchy', engagement: 1200, accountability: 0.04, cluster: 'negative' }
+    { word: 'Thug', engagement: 3400, accountability: 0.02, cluster: 'negative' },
+    { word: 'Riots', engagement: 2800, accountability: 0.05, cluster: 'negative' },
+    { word: 'Blue Lives Matter', engagement: 4200, accountability: 0.01, cluster: 'negative' },
+    { word: 'All Lives Matter', engagement: 3800, accountability: 0.09, cluster: 'negative' },
+    { word: 'Violence', engagement: 2100, accountability: 0.008, cluster: 'negative' },
+    { word: 'Looting', engagement: 1800, accountability: 0.02, cluster: 'negative' },
+    { word: 'Chaos', engagement: 1500, accountability: 0.025, cluster: 'negative' },
+    { word: 'Anarchy', engagement: 1200, accountability: 0.003, cluster: 'negative' }
   ]
 };
 
@@ -55,6 +55,7 @@ export default function TopVisualization({
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [hoveredWord, setHoveredWord] = useState(null);
+  const [legendVisible, setLegendVisible] = useState(true);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -79,7 +80,7 @@ export default function TopVisualization({
   useEffect(() => {
     if (!dimensions.width || !dimensions.height) return;
 
-    const margin = { top: 40, right: 140, bottom: 40, left: 40 };
+    const margin = { top: 20, right: 20, bottom: 20, left: 20 };
     const width = dimensions.width - margin.left - margin.right;
     const height = dimensions.height - margin.top - margin.bottom;
 
@@ -97,7 +98,7 @@ export default function TopVisualization({
     const xScale = d3.scaleLinear().domain([0, 1]).range([0, width]);
     const yScale = d3.scaleLinear().domain([0, 1]).range([height, 0]);
 
-    // Color scale for accountability - shifted for more realistic social media decorum
+    // Color scale for accountability levels
     const colorScale = d3.scaleLinear()
       .domain([0, 0.15, 0.35, 0.55, 0.75, 1])
       .range(['#dc2626', '#ea580c', '#f59e0b', '#eab308', '#16a34a', '#059669']);
@@ -137,6 +138,17 @@ export default function TopVisualization({
         // Distribute evenly around the circle
         const positionInRing = (index - 1) % 8;
         angle = (positionInRing / 8) * 2 * Math.PI;
+        
+        // Add specific spacing adjustments for certain word pairs
+        if (keyword.word === 'Looting') {
+          angle += 0.1; // Move "Looting" slightly clockwise
+        } else if (keyword.word === 'Rally') {
+          angle -= 0.1; // Move "Rally" slightly counter-clockwise
+        } else if (keyword.word === 'Riots') {
+          angle += 0.15; // Move "Riots" more clockwise for greater spacing
+        } else if (keyword.word === 'Assemble') {
+          angle -= 0.15; // Move "Assemble" more counter-clockwise for greater spacing
+        }
         
         // Add some randomness to avoid perfect circles
         const randomOffset = (Math.random() - 0.5) * 0.1;
@@ -200,7 +212,7 @@ export default function TopVisualization({
       }
     }
 
-    // Create filled semantic blobs using marching squares - adjusted thresholds for decorum
+    // Create accountability contour blobs using marching squares
     const accountabilityThresholds = [0.1, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85];
     
     accountabilityThresholds.forEach(threshold => {
@@ -221,7 +233,7 @@ export default function TopVisualization({
         .attr("transform", `scale(${width / gridSize}, ${height / gridSize})`);
     });
 
-    // Add engagement-based influence contours (energy field effect)
+    // Add engagement influence contours (subtle energy field effect)
     const influenceContours = d3.contours()
       .size([gridSize, gridSize])
       .thresholds(d3.range(0.5, 4, 0.5))(blobData.map(d => d.influence));
@@ -274,7 +286,7 @@ export default function TopVisualization({
       .style("pointer-events", "none")
       .text(d => d.word);
 
-    // Add engagement rings (subtle visual guides)
+    // Add subtle engagement rings as visual guides
     const maxRadius = d3.max(positionedKeywords, d => d.radius);
     const ringCount = 4;
     
@@ -294,96 +306,39 @@ export default function TopVisualization({
         .style("stroke-dasharray", "5,5");
     }
 
-    // Add enhanced legend
-    const legend = svg.append("g")
-      .attr("transform", `translate(${width + 20}, 0)`);
-
-    const legendData = [
-      { color: "#059669", label: "Very High Accountability", range: "0.75-1.0" },
-      { color: "#16a34a", label: "High Accountability", range: "0.55-0.75" },
-      { color: "#eab308", label: "Medium-High Accountability", range: "0.35-0.55" },
-      { color: "#f59e0b", label: "Medium Accountability", range: "0.15-0.35" },
-      { color: "#ea580c", label: "Low Accountability", range: "0.0-0.15" },
-      { color: "#dc2626", label: "Very Low Accountability", range: "0.0-0.15" }
-    ];
-
-    legend.append("text")
-      .attr("x", 0)
-      .attr("y", -10)
-      .style("font-size", "14px")
-      .style("font-weight", "bold")
-      .style("fill", "#333")
-      .text("Accountability Levels");
-
-    legend.selectAll("rect")
-      .data(legendData)
-      .enter()
-      .append("rect")
-      .attr("x", 0)
-      .attr("y", (d, i) => i * 25)
-      .attr("width", 15)
-      .attr("height", 15)
-      .style("fill", d => d.color)
-      .style("stroke", "#666")
-      .style("stroke-width", 1)
-      .style("border-radius", "2px");
-
-    legend.selectAll("text")
-      .data(legendData)
-      .enter()
-      .append("text")
-      .attr("x", 20)
-      .attr("y", (d, i) => i * 25 + 12)
-      .style("font-size", "11px")
-      .style("fill", "#333")
-      .text(d => d.label);
-
-    legend.selectAll(".range-text")
-      .data(legendData)
-      .enter()
-      .append("text")
-      .attr("class", "range-text")
-      .attr("x", 20)
-      .attr("y", (d, i) => i * 25 + 22)
-      .style("font-size", "9px")
-      .style("fill", "#666")
-      .text(d => d.range);
-
-    // Add title for the radial engagement approach
-    svg.append("text")
-      .attr("x", width / 2)
-      .attr("y", -10)
-      .attr("text-anchor", "middle")
-      .style("font-size", "16px")
-      .style("font-weight", "bold")
-      .style("fill", "#333")
-      .text("Radial Engagement Field");
-
   }, [dimensions.width, dimensions.height]);
+
+  const legendData = [
+    { color: "#059669", label: "Very High", range: "0.75-1.0" },
+    { color: "#16a34a", label: "High", range: "0.55-0.75" },
+    { color: "#eab308", label: "Medium-High", range: "0.35-0.55" },
+    { color: "#f59e0b", label: "Medium", range: "0.15-0.35" },
+    { color: "#ea580c", label: "Low", range: "0.0-0.15" },
+    { color: "#dc2626", label: "Very Low", range: "0.0-0.15" }
+  ];
 
   return (
     <div className="flex flex-col w-full h-full p-2">
       <SectionTitle
         icon={<FaChartBar />}
-        text="Semantic Topic Space"
+        text="COMPASS: COntour Map of Political Accountability in Semantic Space"
         helpContent={
           <div className="text-left">
-            <p>This visualization creates a radial engagement field where influence radiates from the center.</p>
+            <p>COMPASS creates a radial engagement field where influence radiates from the center.</p>
             <p>The layout represents:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li><span className="font-semibold">Center Focus:</span> Most engaged keyword at the center</li>
               <li><span className="font-semibold">Radial Energy:</span> Engagement decreases as you move outward</li>
-              <li><span className="font-semibold">Semantic Blobs:</span> Colored regions show accountability levels</li>
+              <li><span className="font-semibold">Accountability Contours:</span> Colored regions show political accountability levels</li>
               <li><span className="font-semibold">Energy Rings:</span> Subtle rings show engagement zones</li>
             </ul>
             <p className="mt-2">Hover over words to see detailed metrics. The visualization shows how engagement creates a force field around the central topic.</p>
           </div>
         }
       />
-      <div className="card shadow-md bg-base-300 flex-1 overflow-hidden">
-        <div className="card-body p-2 flex flex-col h-full">
+      <div className="flex-1 overflow-hidden relative">
           {hoveredWord && (
-            <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg p-3 border">
+            <div className="absolute top-4 left-4 z-20 bg-white rounded-lg shadow-lg p-3 border">
               <div className="font-bold text-lg">{hoveredWord.word}</div>
               <div className="text-sm text-gray-600">
                 Engagement: {hoveredWord.engagement.toLocaleString()}
@@ -396,8 +351,38 @@ export default function TopVisualization({
               </div>
             </div>
           )}
+          
+          {/* Legend Toggle Icon */}
+          <button
+            onClick={() => setLegendVisible(!legendVisible)}
+            className="absolute top-4 right-4 z-30 btn btn-sm btn-primary btn-circle"
+            title={legendVisible ? 'Hide Legend' : 'Show Legend'}
+          >
+            {legendVisible ? <FaEyeSlash /> : <FaEye />}
+          </button>
+
+          {/* Semi-transparent Legend Overlay */}
+          {legendVisible && (
+            <div className="absolute top-4 right-16 z-20 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4 border max-w-xs">
+              <div className="font-semibold text-sm text-gray-800 mb-3">Accountability</div>
+              <div className="space-y-2">
+                {legendData.map((item, index) => (
+                  <div key={index} className="flex items-center space-x-3">
+                    <div 
+                      className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-700">{item.label}</div>
+                      <div className="text-xs text-gray-500">{item.range}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div ref={containerRef} className="w-full h-full" style={{ minHeight: "400px" }} />
-        </div>
       </div>
     </div>
   );

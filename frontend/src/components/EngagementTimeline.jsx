@@ -509,14 +509,32 @@ export default function EngagementTimeline({
         return 110 + 140 * norm; // area size
       };
 
-      events.forEach((ev) => {
+      // Sort events by peakZ to determine size ranking
+      const sortedEvents = [...events].sort((a, b) => b.peakZ - a.peakZ);
+      
+      events.forEach((ev, index) => {
         const topic = ev.associatedTopic;
         const anchorDate = ev.maxDate || ev.topicPeakDate || ev.peakDate;
         const xPos = x(anchorDate);
         if (Number.isNaN(xPos)) return;
         const strokeColor = colorMap[topic]?.color || '#666';
-        const gray = Math.floor(192 + Math.random() * 63); // light-ish grayscale
-        const fillColor = `rgb(${gray},${gray},${gray})`;
+        
+        // Determine fill color based on size ranking
+        let fillColor;
+        const eventRank = sortedEvents.findIndex(e => e === ev);
+        if (eventRank === 0) {
+          // Biggest event - lighter dark grey
+          fillColor = '#404040';
+        } else if (eventRank === 1) {
+          // Second biggest - almost black
+          fillColor = '#1a1a1a';
+        } else if (eventRank === 2) {
+          // Third biggest - much lighter grey
+          fillColor = '#888888';
+        } else {
+          // All others - light grey
+          fillColor = '#999999';
+        }
 
         // Align along the very top of the chart (constant y)
         const yPos = 0;

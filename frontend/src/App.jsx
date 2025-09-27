@@ -7,7 +7,6 @@ import SidebarAbout from './components/SidebarAbout';
 import SidebarInfo from './components/SidebarInfo';
 import EngagementTimeline from './components/EngagementTimeline';
 import TopVisualization from './components/TopVisualization';
-import NetworkGraph from './components/NetworkGraph';
 import ContextPanel from './components/ContextPanel';
 import './App.css';
 
@@ -33,7 +32,6 @@ export default function App() {
   const [selectedState, setSelectedState] = useState('');
   const [selectedParty, setSelectedParty] = useState('both');
   const [selectedPlatform, setSelectedPlatform] = useState('both');
-  const [visualizationType, setVisualizationType] = useState('semantic'); // 'semantic' or 'network'
 
 
   // Sync initial theme (from HEAD, slightly adapted variable name from Incoming)
@@ -107,45 +105,17 @@ export default function App() {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 px-4 pb-4 h-[calc(100vh-4rem)] overflow-auto">
               {/* Middle section - TopVisualization and EngagementTimeline */}
               <div className="lg:col-span-3 flex flex-col h-full">
-                {/* Visualization Toggle and Content - fills available space */}
+                {/* COMPASS Visualization - fills available space */}
                 <div className="bg-base-200 rounded-lg shadow-lg overflow-hidden flex-1 min-h-0 flex flex-col">
-                  {/* Toggle buttons */}
-                  <div className="flex justify-center p-2 bg-base-300 border-b">
-                    <div className="btn-group">
-                      <button 
-                        className={`btn btn-sm ${visualizationType === 'semantic' ? 'btn-primary' : 'btn-outline'}`}
-                        onClick={() => setVisualizationType('semantic')}
-                      >
-                        Semantic Space
-                      </button>
-                      <button 
-                        className={`btn btn-sm ${visualizationType === 'network' ? 'btn-primary' : 'btn-outline'}`}
-                        onClick={() => setVisualizationType('network')}
-                      >
-                        Network Graph
-                      </button>
-                    </div>
-                  </div>
-                  
                   {/* Visualization content */}
                   <div className="flex-1 min-h-0">
-                    {visualizationType === 'semantic' ? (
-                      <TopVisualization
-                        activeTopics={topics}
-                        startDate={startDate}
-                        endDate={endDate}
-                        legislator={legislator}
-                        keyword={keyword}
-                      />
-                    ) : (
-                      <NetworkGraph
-                        activeTopics={topics}
-                        startDate={startDate}
-                        endDate={endDate}
-                        legislator={legislator}
-                        keyword={keyword}
-                      />
-                    )}
+                    <TopVisualization
+                      activeTopics={topics}
+                      startDate={startDate}
+                      endDate={endDate}
+                      legislator={legislator}
+                      keyword={keyword}
+                    />
                   </div>
                 </div>
 
