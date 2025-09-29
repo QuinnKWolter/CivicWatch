@@ -61,7 +61,6 @@ export default function EngagementTimeline({
   const [dragEndDate, setDragEndDate] = useState(null);
   const [events, setEvents] = useState([]);
   const [hoverEvent, setHoverEvent] = useState(null);
-  const [detectorMode, setDetectorMode] = useState('robust');
   const [isMouseInChart, setIsMouseInChart] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
@@ -117,14 +116,14 @@ export default function EngagementTimeline({
     }
 
     const computeAsync = () => {
-      const result = detectEvents({ filteredData, activeTopics, detectorMode });
+      const result = detectEvents({ filteredData, activeTopics });
       setEvents(result);
     };
 
     // Defer to keep timeline responsive
     const id = setTimeout(computeAsync, 0);
     return () => clearTimeout(id);
-  }, [filteredData, activeTopics, detectorMode]);
+  }, [filteredData, activeTopics]);
 
   // Responsive dimensions handling
   useEffect(() => {
@@ -465,19 +464,79 @@ export default function EngagementTimeline({
       }
     }
 
-    // Create axes
+    // Create responsive X-axis based on date range
+    const dateRange = d3.extent(parsedData, d => d.date);
+    const rangeDays = (dateRange[1] - dateRange[0]) / (1000 * 60 * 60 * 24);
+    
+    let tickCount, tickFormat, rotateLabels = false;
+    
+    if (rangeDays <= 14) {
+      // 2 weeks or less - show every day
+      tickCount = d3.timeDay.every(1);
+      tickFormat = d3.timeFormat("%b %d");
+      rotateLabels = true;
+    } else if (rangeDays <= 60) {
+      // 2 months or less - show every few days
+      tickCount = d3.timeDay.every(Math.ceil(rangeDays / 12));
+      tickFormat = d3.timeFormat("%b %d");
+      rotateLabels = true;
+    } else if (rangeDays <= 180) {
+      // 6 months or less - show weeks
+      tickCount = d3.timeWeek.every(1);
+      tickFormat = d3.timeFormat("%b %d");
+      rotateLabels = true;
+    } else if (rangeDays <= 365) {
+      // 1 year or less - show every 2 weeks
+      tickCount = d3.timeWeek.every(2);
+      tickFormat = d3.timeFormat("%b %d");
+      rotateLabels = true;
+    } else {
+      // More than 1 year - show months
+      tickCount = d3.timeMonth.every(1);
+      tickFormat = d3.timeFormat("%b '%y");
+      rotateLabels = true;
+    }
+
     const xAxis = d3.axisBottom(x)
-      .tickFormat(d3.timeFormat("%b '%y"))
+      .ticks(tickCount)
+      .tickFormat(tickFormat)
       .tickSize(-chartHeight)
       .tickPadding(10);
 
-    g.append("g")
+    const xAxisGroup = g.append("g")
       .attr("class", "axis axis--x")
       .attr("transform", `translate(0,${chartHeight})`)
-      .call(xAxis)
-      .selectAll("text")
-      .attr("transform", "rotate(-45)")
-      .style("text-anchor", "end")
+      .call(xAxis);
+
+    // Always add the end date if it's not already shown
+    const existingTicks = xAxis.scale().ticks(tickCount);
+    const endDate = dateRange[1];
+    const lastTickTime = existingTicks[existingTicks.length - 1]?.getTime();
+    const endDateTime = endDate.getTime();
+    
+    // Add end date tick if it's more than 1 day away from the last tick
+    if (Math.abs(endDateTime - lastTickTime) > 24 * 60 * 60 * 1000) {
+      xAxisGroup.append("g")
+        .attr("class", "tick")
+        .attr("transform", `translate(${x(endDate)}, 0)`)
+        .call(g => {
+          g.append("line")
+            .attr("y2", -chartHeight)
+            .style("stroke", "currentColor")
+            .style("stroke-opacity", 0.2);
+          g.append("text")
+            .attr("y", 10)
+            .attr("dy", "0.71em")
+            .style("text-anchor", "middle")
+            .style("font-size", "12px")
+            .text(tickFormat(endDate));
+        });
+    }
+
+    // Style the axis labels
+    xAxisGroup.selectAll("text")
+      .attr("transform", rotateLabels ? "rotate(-45)" : null)
+      .style("text-anchor", rotateLabels ? "end" : "middle")
       .style("font-size", "12px");
 
     g.selectAll(".axis--x line")
@@ -512,7 +571,7 @@ export default function EngagementTimeline({
       // Sort events by peakZ to determine size ranking
       const sortedEvents = [...events].sort((a, b) => b.peakZ - a.peakZ);
       
-      events.forEach((ev, index) => {
+      events.forEach((ev) => {
         const topic = ev.associatedTopic;
         const anchorDate = ev.maxDate || ev.topicPeakDate || ev.peakDate;
         const xPos = x(anchorDate);
@@ -689,7 +748,7 @@ export default function EngagementTimeline({
       <div className="p-2 pb-1">
         <SectionTitle
           icon={<FaChartLine />}
-          text="Engagement Timeline"
+          text="Topic Engagement Timeline"
           helpContent={
             <div className="text-left">
               <ul className="list-disc list-inside space-y-1">
@@ -702,23 +761,6 @@ export default function EngagementTimeline({
             </div>
           }
         />
-        <div className="flex items-center gap-2 px-2 pt-1">
-          <span className="text-xs opacity-80">Detector:</span>
-          <div className="join">
-            <button
-              className={`btn btn-xs join-item ${detectorMode === 'robust' ? 'btn-primary' : ''}`}
-              onClick={() => setDetectorMode('robust')}
-            >
-              Robust Z
-            </button>
-            <button
-              className={`btn btn-xs join-item ${detectorMode === 'cumulative' ? 'btn-primary' : ''}`}
-              onClick={() => setDetectorMode('cumulative')}
-            >
-              Cumulative Z
-            </button>
-          </div>
-        </div>
       </div>
       
       <div className="flex-1 relative min-h-0">

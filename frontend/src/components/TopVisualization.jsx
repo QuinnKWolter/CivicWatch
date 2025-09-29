@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import * as d3 from 'd3';
-import { FaChartBar, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaShieldAlt } from 'react-icons/fa';
 import SectionTitle from './SectionTitle';
 
 // Enhanced mock data with engagement-based positioning
@@ -320,11 +320,11 @@ export default function TopVisualization({
   return (
     <div className="flex flex-col w-full h-full p-2">
       <SectionTitle
-        icon={<FaChartBar />}
-        text="COMPASS: COntour Map of Political Accountability in Semantic Space"
+        icon={<FaShieldAlt />}
+        text="AEGIS: Accountability–Engagement Gradient In Semantic Space"
         helpContent={
           <div className="text-left">
-            <p>COMPASS creates a radial engagement field where influence radiates from the center.</p>
+            <p>AEGIS creates a radial engagement field where influence radiates from the center.</p>
             <p>The layout represents:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li><span className="font-semibold">Center Focus:</span> Most engaged keyword at the center</li>

@@ -46,7 +46,7 @@ function maybeBinWeekly(rows, activeTopics) {
   return binned;
 }
 
-export default function detectEvents({ filteredData, activeTopics, detectorMode = 'robust' }) {
+export default function detectEvents({ filteredData, activeTopics }) {
   if (!filteredData || !filteredData.length || !activeTopics || !activeTopics.length) return [];
 
   let rows = buildRows(filteredData, activeTopics);
@@ -98,7 +98,7 @@ export default function detectEvents({ filteredData, activeTopics, detectorMode 
   const allEvents = [];
   for (const peak of topPeaks) {
     const topicValues = topicValuesCache.get(peak.topic);
-    const event = determineEventBoundaries(rows, topicValues, peak, detectorMode);
+    const event = determineEventBoundaries(rows, topicValues, peak);
     if (event) {
       allEvents.push(event);
     }
@@ -135,7 +135,7 @@ function findLocalMaxima(values, rows, topic) {
   return peaks;
 }
 
-function determineEventBoundaries(rows, values, peak, detectorMode) {
+function determineEventBoundaries(rows, values, peak) {
   const peakIdx = peak.idx;
   const topic = peak.topic;
   
@@ -175,30 +175,15 @@ function determineEventBoundaries(rows, values, peak, detectorMode) {
     sigmasArr[i] = sigma;
   }
   
-  let startIdx, endIdx;
+  // Robust detection: Expand while Z > 1
+  let startIdx = peakIdx;
+  while (startIdx > 0 && zScores[startIdx - 1] > 1) {
+    startIdx--;
+  }
   
-  if (detectorMode === 'robust') {
-    // Expand while Z > 1
-    startIdx = peakIdx;
-    while (startIdx > 0 && zScores[startIdx - 1] > 1) {
-      startIdx--;
-    }
-    
-    endIdx = peakIdx;
-    while (endIdx < zScores.length - 1 && zScores[endIdx + 1] > 1) {
-      endIdx++;
-    }
-  } else {
-    // Expand while Z > 0.5 (more inclusive than robust)
-    startIdx = peakIdx;
-    while (startIdx > 0 && zScores[startIdx - 1] > 0.5) {
-      startIdx--;
-    }
-    
-    endIdx = peakIdx;
-    while (endIdx < zScores.length - 1 && zScores[endIdx + 1] > 0.5) {
-      endIdx++;
-    }
+  let endIdx = peakIdx;
+  while (endIdx < zScores.length - 1 && zScores[endIdx + 1] > 1) {
+    endIdx++;
   }
   
   // Validate minimum duration and prominence

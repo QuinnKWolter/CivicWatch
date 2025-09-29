@@ -11,8 +11,11 @@ export default function LegislatorContext({
   setLegislator,
   startDate,
   endDate,
+  // eslint-disable-next-line no-unused-vars
   selectedTopics,
+  // eslint-disable-next-line no-unused-vars
   keyword,
+  // eslint-disable-next-line no-unused-vars
   activeTopics
 }) {
   const [sortFilters, setSortFilters] = useState({
@@ -58,16 +61,16 @@ export default function LegislatorContext({
       }
     },
     topTopicsByPosts: [
-      { name: "Climate", value: 35, color: colorMap.climate?.color || "#8B5CF6" },
-      { name: "Infrastructure", value: 28, color: colorMap.capitol?.color || "#3B82F6" },
-      { name: "Fiscal Policy", value: 22, color: colorMap.rights?.color || "#06B6D4" },
-      { name: "Other", value: 15, color: "#6B7280" }
+      { name: "Climate", value: 35, color: colorMap.climate.color },
+      { name: "Capitol", value: 28, color: colorMap.capitol.color },
+      { name: "Rights", value: 22, color: colorMap.rights.color },
+      { name: "Immigra", value: 15, color: colorMap.immigra.color }
     ],
     topTopicsByEngagement: [
-      { name: "Infrastructure", value: 42, color: colorMap.capitol?.color || "#3B82F6" },
-      { name: "Climate", value: 31, color: colorMap.climate?.color || "#8B5CF6" },
-      { name: "Energy", value: 18, color: colorMap.gun?.color || "#F97316" },
-      { name: "Other", value: 9, color: "#6B7280" }
+      { name: "Capitol", value: 42, color: colorMap.capitol.color },
+      { name: "Climate", value: 31, color: colorMap.climate.color },
+      { name: "Gun", value: 18, color: colorMap.gun.color },
+      { name: "Covid", value: 9, color: colorMap.covid.color }
     ]
   };
 
@@ -140,6 +143,15 @@ export default function LegislatorContext({
     return null;
   };
 
+  // Add PropTypes for CustomTooltip
+  CustomTooltip.propTypes = {
+    active: PropTypes.bool,
+    payload: PropTypes.arrayOf(PropTypes.shape({
+      name: PropTypes.string,
+      value: PropTypes.number
+    }))
+  };
+
   // Use legislator prop to show actual data when available
   const displayData = legislator ? {
     name: legislator.name,
@@ -151,7 +163,7 @@ export default function LegislatorContext({
   return (
     <div className="h-full bg-base-100 rounded-lg shadow-lg overflow-y-auto">
       {/* Header with Back Button */}
-      <div className="sticky top-0 bg-base-200 border-b border-base-300 p-4 z-10">
+      <div className="sticky top-0 bg-base-200 border-b border-base-300 p-3 z-10">
         <div className="flex items-center justify-between">
           <button
             onClick={handleBack}
@@ -164,26 +176,26 @@ export default function LegislatorContext({
       </div>
 
       {/* Profile Content */}
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
         {/* Profile Header */}
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-4">
           <div className="flex-shrink-0">
-            <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center">
-              <FaUser size={32} className="text-primary-content" />
+            <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center">
+              <FaUser size={28} className="text-primary-content" />
             </div>
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-base-content">
+            <h1 className="text-xl font-bold text-base-content">
               {displayData.name} ({displayData.party} - {displayData.state})
             </h1>
-            <p className="text-base-content/70 mt-1">
+            <p className="text-sm text-base-content/70 mt-1">
               Republican • State Senator • Alaska
             </p>
           </div>
           <div className="flex-shrink-0">
-            <div className="bg-primary/10 border border-primary/20 rounded-lg px-4 py-3">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg px-3 py-2">
               <div className="text-xs text-primary font-semibold uppercase tracking-wide mb-1">Analysis Period</div>
-              <div className="text-base font-bold text-primary">
+              <div className="text-sm font-bold text-primary">
                 {startDate.format('MMM D, YYYY')} - {endDate.format('MMM D, YYYY')}
               </div>
             </div>
@@ -191,8 +203,8 @@ export default function LegislatorContext({
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-base-200 rounded-lg p-4 text-center relative">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-base-200 rounded-lg p-3 text-center relative">
             <div className="absolute top-2 right-2">
               <HelpTooltip 
                 content="Total number of social media posts made by the legislator across all platforms during the analysis period."
@@ -201,13 +213,13 @@ export default function LegislatorContext({
             </div>
             <div className="flex items-center justify-center mb-2">
               <FaChartLine className="text-blue-500 mr-2" size={20} />
-              <span className="font-semibold text-sm">Total Posts</span>
+              <span className="font-semibold text-sm">Total<br />Posts</span>
             </div>
-            <div className="text-2xl font-bold text-blue-500">
+            <div className="text-xl font-bold text-blue-500">
               {formatNumber(mockData.metrics.totalPosts)}
             </div>
             <div className="text-xs text-base-content/60 mt-1">
-              {formatNumber(mockData.breakdowns.posts.twitter)} Twitter & {formatNumber(mockData.breakdowns.posts.facebook)} Facebook
+              {formatNumber(mockData.breakdowns.posts.twitter)} Twitter<br />{formatNumber(mockData.breakdowns.posts.facebook)} Facebook
             </div>
           </div>
 
@@ -220,13 +232,13 @@ export default function LegislatorContext({
             </div>
             <div className="flex items-center justify-center mb-2">
               <FaUsers className="text-green-500 mr-2" size={20} />
-              <span className="font-semibold text-sm">Total Engagement</span>
+              <span className="font-semibold text-sm">Total<br />Engagement</span>
             </div>
-            <div className="text-2xl font-bold text-green-500">
+            <div className="text-xl font-bold text-green-500">
               {formatNumber(mockData.metrics.totalEngagement)}
             </div>
             <div className="text-xs text-base-content/60 mt-1">
-              {formatNumber(mockData.breakdowns.engagement.likes)} Likes & {formatNumber(mockData.breakdowns.engagement.shares)} Shares
+              {formatNumber(mockData.breakdowns.engagement.likes)} Likes<br />{formatNumber(mockData.breakdowns.engagement.shares)} Shares
             </div>
           </div>
 
@@ -239,9 +251,9 @@ export default function LegislatorContext({
             </div>
             <div className="flex items-center justify-center mb-2">
               <FaShieldAlt className="text-red-500 mr-2" size={20} />
-              <span className="font-semibold text-sm">Uncivil Posts</span>
+              <span className="font-semibold text-sm">Uncivil<br />Posts</span>
             </div>
-            <div className="text-2xl font-bold text-red-500">
+            <div className="text-xl font-bold text-red-500">
               {mockData.metrics.uncivilPosts}
             </div>
             <div className="text-xs text-base-content/60 mt-1">
@@ -258,9 +270,9 @@ export default function LegislatorContext({
             </div>
             <div className="flex items-center justify-center mb-2">
               <FaStar className="text-orange-500 mr-2" size={20} />
-              <span className="font-semibold text-sm">Low Credibility</span>
+              <span className="font-semibold text-sm">Low<br />Credibility</span>
             </div>
-            <div className="text-2xl font-bold text-orange-500">
+            <div className="text-xl font-bold text-orange-500">
               {mockData.metrics.lowCredibilityPosts}
             </div>
             <div className="text-xs text-base-content/60 mt-1">
@@ -270,10 +282,10 @@ export default function LegislatorContext({
         </div>
 
         {/* Rankings Section */}
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {/* State Rankings */}
-            <div className="bg-base-200 rounded-lg p-4 relative">
+            <div className="bg-base-200 rounded-lg p-3 relative">
               <div className="absolute top-2 right-2">
                 <HelpTooltip 
                   content="Performance rankings compared to other legislators from the same state. Percentiles show where this legislator stands among their state peers."
@@ -288,7 +300,7 @@ export default function LegislatorContext({
                 {Object.entries(mockData.rankings.state).map(([metric, ranking]) => (
                   <div key={metric} className="flex items-center justify-between">
                     <span className="text-sm text-base-content/70 capitalize">{metric.replace(/([A-Z])/g, ' $1').trim()}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRankingColor(ranking, metric)}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getRankingColor(ranking, metric)}`}>
                       {ranking}
                     </span>
                   </div>
@@ -297,7 +309,7 @@ export default function LegislatorContext({
             </div>
 
             {/* Party Rankings */}
-            <div className="bg-base-200 rounded-lg p-4 relative">
+            <div className="bg-base-200 rounded-lg p-3 relative">
               <div className="absolute top-2 right-2">
                 <HelpTooltip 
                   content="Performance rankings compared to other legislators from the same political party. Shows how this legislator performs within their party."
@@ -312,7 +324,7 @@ export default function LegislatorContext({
                 {Object.entries(mockData.rankings.party).map(([metric, ranking]) => (
                   <div key={metric} className="flex items-center justify-between">
                     <span className="text-sm text-base-content/70 capitalize">{metric.replace(/([A-Z])/g, ' $1').trim()}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRankingColor(ranking, metric)}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getRankingColor(ranking, metric)}`}>
                       {ranking}
                     </span>
                   </div>
@@ -321,7 +333,7 @@ export default function LegislatorContext({
             </div>
 
             {/* Overall Rankings */}
-            <div className="bg-base-200 rounded-lg p-4 relative">
+            <div className="bg-base-200 rounded-lg p-3 relative">
               <div className="absolute top-2 right-2">
                 <HelpTooltip 
                   content="Performance rankings compared to all legislators nationwide. Provides a comprehensive view of this legislator's standing across the entire dataset."
@@ -336,7 +348,7 @@ export default function LegislatorContext({
                 {Object.entries(mockData.rankings.overall).map(([metric, ranking]) => (
                   <div key={metric} className="flex items-center justify-between">
                     <span className="text-sm text-base-content/70 capitalize">{metric.replace(/([A-Z])/g, ' $1').trim()}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRankingColor(ranking, metric)}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getRankingColor(ranking, metric)}`}>
                       {ranking}
                     </span>
                   </div>
@@ -347,7 +359,7 @@ export default function LegislatorContext({
         </div>
 
         {/* Top Topics with Two Panes */}
-        <div className="bg-base-200 rounded-lg p-4">
+        <div className="bg-base-200 rounded-lg p-3">
           <h2 className="text-lg font-semibold text-base-content mb-4">Top Topics</h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* By Posts */}
@@ -443,7 +455,7 @@ export default function LegislatorContext({
         </div>
 
         {/* Explore Posts Section */}
-        <div className="bg-base-200 rounded-lg p-4">
+        <div className="bg-base-200 rounded-lg p-3">
           <h2 className="text-lg font-semibold text-base-content mb-4">Explore Posts</h2>
           
           {/* Sort Filters */}
