@@ -10,21 +10,11 @@ import TopVisualization from './components/TopVisualization';
 import ContextPanel from './components/ContextPanel';
 import './App.css';
 
-const INITIAL_TOPICS = [
-  'capitol',
-  'immigra',
-  'abortion',
-  'blacklivesmatter',
-  'climate',
-  'gun',
-  'rights',
-  'covid',
-];
-
 export default function App() {
   // State from HEAD (Current Change)
   const [panel, setPanel] = useState('sidebar'); // Manages which panel is open
-  const [topics, setTopics] = useState(INITIAL_TOPICS);
+  // Start with empty array - Sidebar will set top 10 by engagement as default
+  const [topics, setTopics] = useState([]);
   const [startDate, setStartDate] = useState(dayjs('2020-01-01'));
   const [endDate, setEndDate] = useState(dayjs('2021-12-31'));
   const [keyword, setKeyword] = useState('');
@@ -115,6 +105,7 @@ export default function App() {
                       endDate={endDate}
                       legislator={legislator}
                       keyword={keyword}
+                      selectedParty={selectedParty}
                     />
                   </div>
                 </div>
@@ -126,6 +117,7 @@ export default function App() {
                     startDate={startDate}
                     endDate={endDate}
                     onDateChange={handleDateChange}
+                    selectedParty={selectedParty}
                   />
                 </div>
               </div>
@@ -140,6 +132,7 @@ export default function App() {
                   legislator={legislator}
                   setLegislator={setLegislator}
                   activeTopics={topics}
+                  selectedParty={selectedParty}
                 />
               </div>
             </div>

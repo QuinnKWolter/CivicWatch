@@ -10,7 +10,8 @@ export default function ContextPanel({
   keyword,
   legislator,
   setLegislator,
-  activeTopics
+  activeTopics,
+  selectedParty
 }) {
   // If a legislator is selected, show the legislator context
   if (legislator) {
@@ -23,6 +24,7 @@ export default function ContextPanel({
         selectedTopics={selectedTopics}
         keyword={keyword}
         activeTopics={activeTopics}
+        selectedParty={selectedParty}
       />
     );
   }
@@ -36,6 +38,7 @@ export default function ContextPanel({
       keyword={keyword}
       setLegislator={setLegislator}
       activeTopics={activeTopics}
+      selectedParty={selectedParty}
     />
   );
 }
@@ -47,5 +50,6 @@ ContextPanel.propTypes = {
   keyword: PropTypes.string,
   legislator: PropTypes.object,
   setLegislator: PropTypes.func.isRequired,
-  activeTopics: PropTypes.arrayOf(PropTypes.string).isRequired
+  activeTopics: PropTypes.arrayOf(PropTypes.string).isRequired,
+  selectedParty: PropTypes.string.isRequired
 };

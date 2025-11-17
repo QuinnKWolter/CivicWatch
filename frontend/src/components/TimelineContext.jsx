@@ -17,56 +17,97 @@ import {
 } from 'react-icons/fa';
 import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
-import { colorMap, formatNumber } from '../utils/utils';
+import { formatNumber, topicNames, formatTopicLabel } from '../utils/utils';
 import HelpTooltip from './HelpTooltip';
-
-const DEFAULT_START = '2020-01-01';
-const DEFAULT_END = '2021-12-31';
-const DEFAULT_TOPICS = Object.keys(colorMap);
 
 export default function TimelineContext({ 
   startDate, 
   endDate, 
   selectedTopics = [], 
+  // eslint-disable-next-line no-unused-vars
   keyword = '', 
-  setLegislator
+  setLegislator,
+  selectedParty = 'both'
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchOverview = async () => {
+    const loadOverview = async () => {
       setLoading(true);
       try {
-        const isDefault =
-          startDate.format('YYYY-MM-DD') === DEFAULT_START &&
-          endDate.format('YYYY-MM-DD') === DEFAULT_END &&
-          selectedTopics.length === DEFAULT_TOPICS.length &&
-          selectedTopics.every(t => DEFAULT_TOPICS.includes(t)) &&
-          !keyword;
-        
-        const url = isDefault
-          ? '/api/default_overview_data/'
-          : `/api/overview_metrics/?start_date=${startDate.format('YYYY-MM-DD')}` +
-            `&end_date=${endDate.format('YYYY-MM-DD')}` +
-            `&topics=${selectedTopics.join(',')}` +
-            (keyword ? `&keyword=${encodeURIComponent(keyword)}` : '');
+        const params = {};
+        if (startDate) {
+          params.start_date = typeof startDate.format === 'function' 
+            ? startDate.format('YYYY-MM-DD') 
+            : startDate;
+        }
+        if (endDate) {
+          params.end_date = typeof endDate.format === 'function' 
+            ? endDate.format('YYYY-MM-DD') 
+            : endDate;
+        }
+        if (selectedTopics && selectedTopics.length > 0) {
+          params.topics = selectedTopics;
+        }
+        if (selectedParty && selectedParty !== 'both') {
+          params.party = selectedParty;
+        }
 
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error('Network response was not ok');
+        const queryString = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            value.forEach(v => queryString.append(key, v));
+          } else {
+            queryString.append(key, value);
+          }
+        });
 
-        setData(await resp.json());
+        const res = await fetch(`/api/default_overview_data/?${queryString.toString()}`);
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('Failed to load overview:', res.status, text.substring(0, 200));
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const overviewData = await res.json();
+        setData(overviewData);
         setError('');
-      } catch {
-        setError('Failed to load dashboard data. Please try again.');
+      } catch (err) {
+        console.error('Error loading overview data:', err);
+        setError('Failed to load overview data. Using default values.');
+        // Set default empty data structure
+        setData({
+          summaryMetrics: {
+            Democratic: {
+              totalPosts: 0,
+              totalLikes: 0,
+              totalRetweets: 0,
+              numberLegislators: 0,
+              avgInteractionScore: 0.0,
+              mostActiveState: null,
+              uncivilPosts: 0,
+              lowCredibilityPosts: 0
+            },
+            Republican: {
+              totalPosts: 0,
+              totalLikes: 0,
+              totalRetweets: 0,
+              numberLegislators: 0,
+              avgInteractionScore: 0.0,
+              mostActiveState: null,
+              uncivilPosts: 0,
+              lowCredibilityPosts: 0
+            }
+          }
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOverview();
-  }, [startDate, endDate, selectedTopics, keyword]);
+    loadOverview();
+  }, [startDate, endDate, selectedTopics, selectedParty]); // Reload when filters change
 
   if (loading) {
     return (
@@ -342,11 +383,14 @@ export default function TimelineContext({
                 <span className="font-semibold">Count:</span> {selectedTopics.length} topics
               </div>
               <div className="flex flex-wrap gap-1">
-                {selectedTopics.slice(0, 3).map(topic => (
-                  <span key={topic} className="px-2 py-1 bg-primary/20 text-primary text-xs rounded-full">
-                    {topic}
-                  </span>
-                ))}
+                {selectedTopics.slice(0, 3).map(topic => {
+                  const displayName = topicNames[topic] || formatTopicLabel(topic) || topic.charAt(0).toUpperCase() + topic.slice(1);
+                  return (
+                    <span key={topic} className="px-2 py-1 bg-primary/20 text-primary text-xs rounded-full">
+                      {displayName}
+                    </span>
+                  );
+                })}
                 {selectedTopics.length > 3 && (
                   <span className="px-2 py-1 bg-base-300 text-base-content/70 text-xs rounded-full">
                     +{selectedTopics.length - 3} more

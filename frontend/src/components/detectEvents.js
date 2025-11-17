@@ -8,11 +8,23 @@ function median(arr) {
 }
 
 function buildRows(filteredData, activeTopics) {
+  // Handle both string dates (YYYY-MM-DD) and Date objects
   const rows = filteredData
     .map(d => {
       const { date, ...topics } = d;
-      return { date: new Date(date), topics };
+      // Convert date to Date object if it's a string
+      let dateObj;
+      if (date instanceof Date) {
+        dateObj = date;
+      } else if (typeof date === 'string') {
+        // Handle YYYY-MM-DD format
+        dateObj = new Date(date + 'T00:00:00'); // Add time to avoid timezone issues
+      } else {
+        return null; // Skip invalid dates
+      }
+      return { date: dateObj, topics };
     })
+    .filter(r => r !== null && !isNaN(r.date.getTime())) // Filter out invalid dates
     .sort((a, b) => a.date - b.date);
   
   rows.forEach(r => {

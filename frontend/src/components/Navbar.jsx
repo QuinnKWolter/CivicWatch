@@ -28,68 +28,49 @@ export default function Navbar({
   };
   
   const handleExportCSV = async () => {
-  
-    if (isExporting) return;
+    // TODO: Implement client-side CSV export from static data
+    alert('CSV export not yet available - using static data sources');
+    return;
     
-    setIsExporting(true);
-    
-    
-    const params = new URLSearchParams();
-    
-    if (startDate && typeof startDate.format === 'function') {
-      params.append('start_date', startDate.format('YYYY-MM-DD'));
-    }
-    
-    if (endDate && typeof endDate.format === 'function') {
-      params.append('end_date', endDate.format('YYYY-MM-DD'));
-    }
-    
-    if (topics && Array.isArray(topics) && topics.length > 0) {
-      params.append('topics', topics.join(','));
-    }
-    
-    if (keyword) {
-      params.append('keyword', keyword);
-    }
-    
-    if (legislator?.name) {
-      params.append('legislator', legislator.name);
-    }
-    
-    
-    const exportUrl = `/api/export-posts-csv/?${params.toString()}`;
-    
-    try {
-     
-      const response = await fetch(exportUrl);
-      
-      if (!response.ok) {
-        throw new Error(`Export failed: ${response.status}`);
-      }
-      
-    
-      const blob = await response.blob();
-      
-     
-      const url = window.URL.createObjectURL(blob);
-      
-      
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `civicwatch_export_${new Date().toISOString().slice(0, 10)}.csv`;
-      
-     
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-   
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export failed:', error);
-      alert('Failed to export data. Please try again later.');
-    } finally {
-      setIsExporting(false);
-    }
+    // if (isExporting) return;
+    // setIsExporting(true);
+    // const params = new URLSearchParams();
+    // if (startDate && typeof startDate.format === 'function') {
+    //   params.append('start_date', startDate.format('YYYY-MM-DD'));
+    // }
+    // if (endDate && typeof endDate.format === 'function') {
+    //   params.append('end_date', endDate.format('YYYY-MM-DD'));
+    // }
+    // if (topics && Array.isArray(topics) && topics.length > 0) {
+    //   params.append('topics', topics.join(','));
+    // }
+    // if (keyword) {
+    //   params.append('keyword', keyword);
+    // }
+    // if (legislator?.name) {
+    //   params.append('legislator', legislator.name);
+    // }
+    // const exportUrl = `/api/export-posts-csv/?${params.toString()}`;
+    // try {
+    //   const response = await fetch(exportUrl);
+    //   if (!response.ok) {
+    //     throw new Error(`Export failed: ${response.status}`);
+    //   }
+    //   const blob = await response.blob();
+    //   const url = window.URL.createObjectURL(blob);
+    //   const a = document.createElement('a');
+    //   a.href = url;
+    //   a.download = `civicwatch_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    //   document.body.appendChild(a);
+    //   a.click();
+    //   document.body.removeChild(a);
+    //   window.URL.revokeObjectURL(url);
+    // } catch (error) {
+    //   console.error('Export failed:', error);
+    //   alert('Failed to export data. Please try again later.');
+    // } finally {
+    //   setIsExporting(false);
+    // }
   };
 
   return (

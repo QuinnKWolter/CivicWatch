@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
-import { FaUser, FaMapMarkerAlt, FaTimes, FaSearch, FaCalendarAlt } from 'react-icons/fa';
+import { FaUser, FaMapMarkerAlt, FaTimes, FaSearch, FaCalendarAlt, FaGlobe } from 'react-icons/fa';
 import { FaDemocrat, FaRepublican, FaArrowsAltH } from 'react-icons/fa';
 import { FaTwitter, FaFacebook } from 'react-icons/fa';
-import { colorMap, topicIcons } from '../utils/utils';
+import { topicIcons, getTopicColor, formatTopicLabel, topicNames } from '../utils/utils';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 
@@ -13,7 +13,7 @@ const FLASHPOINTS = [
   { label: 'January 6th Insurrection', range: ['2021-01-05', '2021-01-31'] },
   { label: '2020 BLM Protests', range: ['2020-05-24', '2020-07-31'] },
 ];
-const TOPICS = Object.keys(topicIcons).filter(topic => topic !== 'all');
+// TOPICS will be loaded from engagement_timeline.json data, not hardcoded
 const STATES = [
   { abbr: 'AL', name: 'Alabama' },
   { abbr: 'AK', name: 'Alaska' },
@@ -99,7 +99,6 @@ export default function Sidebar({
 }) {
   const [legislators, setLegislators] = useState([]);
   const [flashpoint, setFlashpoint] = useState('');
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [stateSearchTerm, setStateSearchTerm] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -111,14 +110,60 @@ export default function Sidebar({
   const dateDropdownRef = useRef();
   const keywordDropdownRef = useRef();
   const [inputValue, setInputValue] = useState('');
+  const [topicsByEngagement, setTopicsByEngagement] = useState([]);
 
-  // Initialize default topics (first 5) if none are selected
+  const [topicsLoading, setTopicsLoading] = useState(true);
+  const [topicsError, setTopicsError] = useState('');
+
+  // Load topics sorted by engagement from API
+  // Always order by overall engagement (not filtered by date range) for consistent ordering
   useEffect(() => {
-    if (activeTopics.length === 0) {
-      const defaultTopics = TOPICS.slice(0, 5);
+    const loadData = async () => {
+      setTopicsLoading(true);
+      setTopicsError('');
+      try {
+        const params = {};
+        // Don't filter by date range - always use overall engagement for consistent ordering
+        // Only filter by party if specified
+        if (selectedParty && selectedParty !== 'both') {
+          params.party = selectedParty;
+        }
+        params.limit = 500; // Get top 500 topics
+
+        const queryString = new URLSearchParams(params).toString();
+        const res = await fetch(`/api/engagement/topics/?${queryString}`);
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`HTTP error! status: ${res.status} - ${errorText.substring(0, 100)}`);
+        }
+        const topicsArray = await res.json();
+        
+        if (Array.isArray(topicsArray)) {
+          // Ensure topics are always sorted by engagement (API should return them sorted, but double-check)
+          setTopicsByEngagement(topicsArray);
+        } else {
+          throw new Error('Invalid response format');
+        }
+      } catch (err) {
+        console.error('Error loading topics in Sidebar:', err);
+        setTopicsError(err.message || 'Failed to load topics');
+        setTopicsByEngagement([]);
+      } finally {
+        setTopicsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [selectedParty]); // Removed startDate and endDate from dependencies - topics always ordered by overall engagement
+
+  // Initialize default topics (top 10 by engagement) if none are selected
+  useEffect(() => {
+    // Only set defaults if we have topics loaded and no topics are currently selected
+    if (topicsByEngagement.length > 0 && (!activeTopics || activeTopics.length === 0)) {
+      const defaultTopics = topicsByEngagement.slice(0, 10);
       setActiveTopics(defaultTopics);
     }
-  }, [activeTopics.length, setActiveTopics]);
+  }, [topicsByEngagement, activeTopics, setActiveTopics]);
 
   // Check if current date range is the default
   const isDefaultDateRange = () => {
@@ -153,19 +198,29 @@ export default function Sidebar({
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  // Fetch legislators
-  const fetchLegislators = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/legislators/');
-      if (!res.ok) throw new Error();
-      setLegislators(await res.json());
-    } catch {
-      console.error('Failed to fetch legislators');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Load legislators from API
+  useEffect(() => {
+    const fetchLegislators = async () => {
+      try {
+        const params = {};
+        if (selectedParty && selectedParty !== 'both') {
+          params.party = selectedParty;
+        }
+        if (selectedState) {
+          params.state = selectedState;
+        }
+        const queryString = new URLSearchParams(params).toString();
+        const res = await fetch(`/api/legislators/?${queryString}`);
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        const data = await res.json();
+        setLegislators(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to fetch legislators:', err);
+        setLegislators([]);
+      }
+    };
+    fetchLegislators();
+  }, [selectedParty, selectedState]);
 
   // Keep searchTerm in sync
   useEffect(() => {
@@ -215,7 +270,9 @@ export default function Sidebar({
     const filters = [];
     
     if (activeTopics.length > 0) {
-      const topicLabels = activeTopics.map(topic => topic.charAt(0).toUpperCase() + topic.slice(1));
+      const topicLabels = activeTopics.map(topic => 
+        topicNames[topic] || formatTopicLabel(topic) || topic.charAt(0).toUpperCase() + topic.slice(1)
+      );
       filters.push({ type: 'topics', label: `Topics: ${topicLabels.join(', ')}`, value: activeTopics });
     }
     if (keyword) {
@@ -337,25 +394,33 @@ export default function Sidebar({
             <div className="relative" ref={dateDropdownRef}>
               <Tippy
                 content={
-                  !isDefaultDateRange() ? (
-                    <div className="text-center">
-                      <div className="font-semibold text-sm mb-1">Date Range</div>
-                      <div className="text-xs mb-2">
-                        {dayjs(startDate).format('MMM D, YYYY')} to {dayjs(endDate).format('MMM D, YYYY')}
-                      </div>
-                      <div className="text-xs text-gray-400">Click to Clear Selection</div>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <div className="font-semibold text-sm mb-1">Date Range</div>
-                      <div className="text-xs mb-2">Full dataset range</div>
-                      <div className="text-xs text-gray-400">Click to Select Date Range</div>
-                    </div>
-                  )
+                  <div className="text-center px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md" style={{
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95))',
+                    border: '2px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                  }}>
+                    {!isDefaultDateRange() ? (
+                      <>
+                        <div className="font-bold text-base mb-2 text-white" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>📅 Date Range</div>
+                        <div className="text-sm mb-2 text-white opacity-95" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+                          {dayjs(startDate).format('MMM D, YYYY')} to {dayjs(endDate).format('MMM D, YYYY')}
+                        </div>
+                        <div className="text-xs text-white opacity-80" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>Click to Clear Selection</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-bold text-base mb-2 text-white" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>📅 Date Range</div>
+                        <div className="text-sm mb-2 text-white opacity-95" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>Full dataset range</div>
+                        <div className="text-xs text-white opacity-80" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>Click to Select Date Range</div>
+                      </>
+                    )}
+                  </div>
                 }
                 placement="bottom"
                 arrow
                 animation="scale-subtle"
+                duration={[200, 150]}
+                delay={[100, 0]}
               >
                 <button
                   onClick={() => {
@@ -555,7 +620,14 @@ export default function Sidebar({
                 </button>
               </Tippy>
               {stateDropdownOpen && (
-                <div className="absolute z-50 w-96 bg-base-200 border rounded mt-2 max-h-60 overflow-y-auto" style={{ left: '-160px' }}>
+                <div 
+                  className="absolute z-50 w-80 bg-base-200 border rounded-lg shadow-xl mt-2 max-h-60 overflow-y-auto"
+                  style={{ 
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    top: '100%'
+                  }}
+                >
                   <div className="p-2">
                     <div className="text-xs text-gray-500 mb-2">Select State</div>
                     <input
@@ -565,15 +637,21 @@ export default function Sidebar({
                       value={stateSearchTerm}
                       onChange={e => setStateSearchTerm(e.target.value)}
                     />
-                    {filteredStates.map(state => (
-                      <div
-                        key={state.abbr}
-                        className="p-2 hover:bg-base-300 cursor-pointer text-sm"
-                        onClick={() => handleStateSelect(state)}
-                      >
-                        {state.abbr} - {state.name}
+                    {filteredStates.length === 0 ? (
+                      <div className="p-2 text-center text-sm text-gray-500">
+                        No states found
                       </div>
-                    ))}
+                    ) : (
+                      filteredStates.map(state => (
+                        <div
+                          key={state.abbr}
+                          className="p-2 hover:bg-base-300 cursor-pointer text-sm"
+                          onClick={() => handleStateSelect(state)}
+                        >
+                          {state.abbr} - {state.name}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -607,7 +685,6 @@ export default function Sidebar({
                       setLegislator(null);
                       setSearchTerm('');
                     } else {
-                      if (!legislators.length) fetchLegislators();
                       setDropdownOpen(!dropdownOpen);
                     }
                   }}
@@ -634,7 +711,14 @@ export default function Sidebar({
                 </button>
               </Tippy>
               {dropdownOpen && (
-                <div className="absolute z-50 w-96 bg-base-200 border rounded mt-2 max-h-60 overflow-y-auto" style={{ left: '-160px' }}>
+                <div 
+                  className="absolute z-50 w-80 bg-base-200 border rounded-lg shadow-xl mt-2 max-h-60 overflow-y-auto"
+                  style={{ 
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    top: '100%'
+                  }}
+                >
                   <div className="p-2">
                     <div className="text-xs text-gray-500 mb-2">Search Legislator</div>
                     <input
@@ -644,8 +728,10 @@ export default function Sidebar({
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
                     />
-                    {loading ? (
-                      <div className="p-2 text-center text-sm">Loading...</div>
+                    {filtered.length === 0 ? (
+                      <div className="p-2 text-center text-sm text-gray-500">
+                        {legislators.length === 0 ? 'Loading legislators...' : 'No legislators found'}
+                      </div>
                     ) : (
                       filtered.map(leg => (
                         <div
@@ -653,7 +739,7 @@ export default function Sidebar({
                           className="p-2 hover:bg-base-300 cursor-pointer text-sm"
                           onClick={() => handleSelect(leg)}
                         >
-                          {leg.name} ({leg.party.charAt(0)} - {leg.state})
+                          {leg.name} ({leg.party?.charAt(0) || '?'} - {leg.state || 'N/A'})
                         </div>
                       ))
                     )}
@@ -694,45 +780,117 @@ export default function Sidebar({
         <div className="space-y-3">
           <div className="text-xs text-gray-500 font-medium">Topics</div>
           <div className="max-h-120 overflow-y-auto pr-2 custom-scrollbar">
-            <div className="grid grid-cols-2 gap-2 pb-2">
-              {TOPICS.map(topic => {
-                const Icon = topicIcons[topic];
-                const isActive = activeTopics.includes(topic);
-                const color = colorMap[topic]?.color || '#6B7280';
-                
-                return (
-                  <button
-                    key={topic}
-                    onClick={() => {
-                      const next = isActive
-                        ? activeTopics.filter(t => t !== topic)
-                        : [...activeTopics, topic];
-                      setActiveTopics(next);
-                    }}
-                    className={`relative p-3 rounded-lg border-2 transition-all duration-300 flex items-center space-x-2 ${
-                      isActive 
-                        ? 'border-current shadow-md' 
-                        : 'border-gray-200 hover:border-gray-300 bg-base-100 hover:bg-base-200'
-                    }`}
-                    style={{
-                      color: isActive ? color : '#6B7280',
-                      backgroundColor: isActive ? color + '15' : 'transparent'
-                    }}
-                  >
-                    <Icon size={16} className="flex-shrink-0" />
-                    <span className="text-xs font-medium truncate">
-                      {topic.charAt(0).toUpperCase() + topic.slice(1)}
-                    </span>
-                    {isActive && (
-                      <div 
-                        className="absolute top-1 right-1 w-2 h-2 rounded-full"
-                        style={{ backgroundColor: color }}
-                      />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {topicsLoading ? (
+              <div className="text-xs text-gray-400 text-center py-4">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="loading loading-spinner loading-xs"></div>
+                  <span>Loading topics...</span>
+                </div>
+              </div>
+            ) : topicsError ? (
+              <div className="text-xs text-red-400 text-center py-4">
+                <div>Error: {topicsError}</div>
+                <button 
+                  className="btn btn-xs btn-ghost mt-2"
+                  onClick={() => {
+                    setTopicsError('');
+                    setTopicsLoading(true);
+                    // Trigger reload by updating a dependency
+                    const loadData = async () => {
+                      try {
+                        const params = {};
+                        // Don't filter by date range - always use overall engagement
+                        if (selectedParty && selectedParty !== 'both') {
+                          params.party = selectedParty;
+                        }
+                        params.limit = 500;
+                        const queryString = new URLSearchParams(params).toString();
+                        const res = await fetch(`/api/engagement/topics/?${queryString}`);
+                        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                        const topicsArray = await res.json();
+                        if (Array.isArray(topicsArray)) {
+                          setTopicsByEngagement(topicsArray);
+                          setTopicsError('');
+                        }
+                      } catch (err) {
+                        setTopicsError(err.message);
+                      } finally {
+                        setTopicsLoading(false);
+                      }
+                    };
+                    loadData();
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            ) : topicsByEngagement.length === 0 ? (
+              <div className="text-xs text-gray-400 text-center py-4">
+                No topics available. The database may still be importing data.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-1.5 pb-2">
+                {topicsByEngagement.map(topic => {
+                  // Use FaGlobe as fallback icon if topic not in topicIcons
+                  const Icon = topicIcons[topic] || topicIcons.all || FaGlobe;
+                  const isActive = activeTopics.includes(topic);
+                  const color = getTopicColor(topic);
+                  const displayName = topicNames[topic] || formatTopicLabel(topic) || topic.charAt(0).toUpperCase() + topic.slice(1);
+                  
+                  return (
+                    <button
+                      key={topic}
+                      onClick={() => {
+                        const next = isActive
+                          ? activeTopics.filter(t => t !== topic)
+                          : [...activeTopics, topic];
+                        setActiveTopics(next);
+                      }}
+                      className={`relative p-2.5 rounded-lg border-2 transition-all duration-300 flex flex-row items-center justify-start space-x-2.5 ${
+                        isActive 
+                          ? 'shadow-md' 
+                          : 'border-gray-200 hover:border-gray-300 bg-base-100 hover:bg-base-200'
+                      }`}
+                      style={{
+                        borderColor: isActive ? color : undefined,
+                        background: isActive 
+                          ? `linear-gradient(135deg, ${color}dd, ${color}aa)` 
+                          : undefined,
+                        color: isActive ? 'white' : '#6B7280'
+                      }}
+                    >
+                      {Icon && (
+                        <Icon 
+                          size={16} 
+                          className="flex-shrink-0"
+                          style={{
+                            color: isActive ? 'white' : color,
+                            filter: isActive ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' : 'none'
+                          }}
+                        />
+                      )}
+                      <span 
+                        className="text-xs font-medium flex-1 text-left break-words"
+                        style={{
+                          textShadow: isActive ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
+                          fontWeight: isActive ? 'bold' : 'medium',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word'
+                        }}
+                      >
+                        {displayName}
+                      </span>
+                      {isActive && (
+                        <div 
+                          className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full border border-white flex-shrink-0"
+                          style={{ backgroundColor: color }}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

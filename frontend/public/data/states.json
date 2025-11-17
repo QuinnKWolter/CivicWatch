@@ -1,0 +1,252 @@
+[
+  {
+    "abbr": "AK",
+    "name": "Alaska",
+    "postCount": 4042
+  },
+  {
+    "abbr": "AL",
+    "name": "Alabama",
+    "postCount": 33285
+  },
+  {
+    "abbr": "AR",
+    "name": "Arkansas",
+    "postCount": 54084
+  },
+  {
+    "abbr": "AZ",
+    "name": "Arizona",
+    "postCount": 190536
+  },
+  {
+    "abbr": "CA",
+    "name": "California",
+    "postCount": 116174
+  },
+  {
+    "abbr": "CO",
+    "name": "Colorado",
+    "postCount": 42234
+  },
+  {
+    "abbr": "CT",
+    "name": "Connecticut",
+    "postCount": 37342
+  },
+  {
+    "abbr": "DE",
+    "name": "Delaware",
+    "postCount": 14268
+  },
+  {
+    "abbr": "FL",
+    "name": "Florida",
+    "postCount": 120848
+  },
+  {
+    "abbr": "GA",
+    "name": "Georgia",
+    "postCount": 81601
+  },
+  {
+    "abbr": "HI",
+    "name": "Hawaii",
+    "postCount": 5199
+  },
+  {
+    "abbr": "IA",
+    "name": "Iowa",
+    "postCount": 41483
+  },
+  {
+    "abbr": "ID",
+    "name": "Idaho",
+    "postCount": 10766
+  },
+  {
+    "abbr": "IL",
+    "name": "Illinois",
+    "postCount": 40923
+  },
+  {
+    "abbr": "IN",
+    "name": "Indiana",
+    "postCount": 23703
+  },
+  {
+    "abbr": "KS",
+    "name": "Kansas",
+    "postCount": 30218
+  },
+  {
+    "abbr": "KY",
+    "name": "Kentucky",
+    "postCount": 49573
+  },
+  {
+    "abbr": "LA",
+    "name": "Louisiana",
+    "postCount": 23030
+  },
+  {
+    "abbr": "MA",
+    "name": "Massachusetts",
+    "postCount": 134781
+  },
+  {
+    "abbr": "MD",
+    "name": "Maryland",
+    "postCount": 102889
+  },
+  {
+    "abbr": "ME",
+    "name": "Maine",
+    "postCount": 16785
+  },
+  {
+    "abbr": "MI",
+    "name": "Michigan",
+    "postCount": 60188
+  },
+  {
+    "abbr": "MN",
+    "name": "Minnesota",
+    "postCount": 143221
+  },
+  {
+    "abbr": "MO",
+    "name": "Missouri",
+    "postCount": 93473
+  },
+  {
+    "abbr": "MS",
+    "name": "Mississippi",
+    "postCount": 19148
+  },
+  {
+    "abbr": "MT",
+    "name": "Montana",
+    "postCount": 19476
+  },
+  {
+    "abbr": "NC",
+    "name": "North Carolina",
+    "postCount": 72304
+  },
+  {
+    "abbr": "ND",
+    "name": "North Dakota",
+    "postCount": 9584
+  },
+  {
+    "abbr": "NE",
+    "name": "Nebraska",
+    "postCount": 13522
+  },
+  {
+    "abbr": "NH",
+    "name": "New Hampshire",
+    "postCount": 162910
+  },
+  {
+    "abbr": "NJ",
+    "name": "New Jersey",
+    "postCount": 36934
+  },
+  {
+    "abbr": "NM",
+    "name": "New Mexico",
+    "postCount": 88283
+  },
+  {
+    "abbr": "NV",
+    "name": "Nevada",
+    "postCount": 41122
+  },
+  {
+    "abbr": "NY",
+    "name": "New York",
+    "postCount": 236847
+  },
+  {
+    "abbr": "OH",
+    "name": "Ohio",
+    "postCount": 45961
+  },
+  {
+    "abbr": "OK",
+    "name": "Oklahoma",
+    "postCount": 47658
+  },
+  {
+    "abbr": "OR",
+    "name": "Oregon",
+    "postCount": 34425
+  },
+  {
+    "abbr": "PA",
+    "name": "Pennsylvania",
+    "postCount": 140484
+  },
+  {
+    "abbr": "RI",
+    "name": "Rhode Island",
+    "postCount": 64519
+  },
+  {
+    "abbr": "SC",
+    "name": "South Carolina",
+    "postCount": 66242
+  },
+  {
+    "abbr": "SD",
+    "name": "South Dakota",
+    "postCount": 11028
+  },
+  {
+    "abbr": "TN",
+    "name": "Tennessee",
+    "postCount": 92311
+  },
+  {
+    "abbr": "TX",
+    "name": "Texas",
+    "postCount": 199029
+  },
+  {
+    "abbr": "UT",
+    "name": "Utah",
+    "postCount": 42263
+  },
+  {
+    "abbr": "VA",
+    "name": "Virginia",
+    "postCount": 116245
+  },
+  {
+    "abbr": "VT",
+    "name": "Vermont",
+    "postCount": 8613
+  },
+  {
+    "abbr": "WA",
+    "name": "Washington",
+    "postCount": 33425
+  },
+  {
+    "abbr": "WI",
+    "name": "Wisconsin",
+    "postCount": 38136
+  },
+  {
+    "abbr": "WV",
+    "name": "West Virginia",
+    "postCount": 26507
+  },
+  {
+    "abbr": "WY",
+    "name": "Wyoming",
+    "postCount": 7582
+  }
+]

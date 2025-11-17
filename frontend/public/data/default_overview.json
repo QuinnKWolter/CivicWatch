@@ -1,0 +1,24 @@
+{
+  "summaryMetrics": {
+    "Democratic": {
+      "totalPosts": 2253253,
+      "totalLikes": 64628504,
+      "totalRetweets": 3027531145,
+      "numberLegislators": 1895,
+      "avgInteractionScore": 0.5,
+      "mostActiveState": "NY",
+      "uncivilPosts": 0,
+      "lowCredibilityPosts": 188
+    },
+    "Republican": {
+      "totalPosts": 888565,
+      "totalLikes": 25464247,
+      "totalRetweets": 814801046,
+      "numberLegislators": 1641,
+      "avgInteractionScore": 0.49,
+      "mostActiveState": "AZ",
+      "uncivilPosts": 0,
+      "lowCredibilityPosts": 6675
+    }
+  }
+}

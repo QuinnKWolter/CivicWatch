@@ -1,388 +1,469 @@
 import { useRef, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import * as d3 from 'd3';
-import { FaEye, FaEyeSlash, FaShieldAlt } from 'react-icons/fa';
+import { FaChartBar } from 'react-icons/fa';
 import SectionTitle from './SectionTitle';
-
-// Enhanced mock data with engagement-based positioning
-const mockData = {
-  topic: 'BlackLivesMatter',
-  keywords: [
-    // High accountability (green) keywords - positive community terms
-    { word: 'Solidarity', engagement: 12500, accountability: 0.9, cluster: 'positive' },
-    { word: 'Brotherhood', engagement: 8900, accountability: 0.85, cluster: 'positive' },
-    { word: 'Stand Together', engagement: 11200, accountability: 0.88, cluster: 'positive' },
-    { word: 'Justice', engagement: 15600, accountability: 0.92, cluster: 'positive' },
-    { word: 'Equality', engagement: 13400, accountability: 0.87, cluster: 'positive' },
-    { word: 'Unity', engagement: 9800, accountability: 0.83, cluster: 'positive' },
-    { word: 'Peaceful', engagement: 7600, accountability: 0.81, cluster: 'positive' },
-    { word: 'Community', engagement: 14200, accountability: 0.89, cluster: 'positive' },
-    
-    // Medium accountability (yellow/orange) keywords - neutral event terms
-    { word: 'George Floyd', engagement: 18900, accountability: 0.6, cluster: 'neutral' },
-    { word: 'Protest', engagement: 16700, accountability: 0.35, cluster: 'neutral' },
-    { word: 'Assemble', engagement: 9200, accountability: 0.48, cluster: 'neutral' },
-    { word: 'March', engagement: 13400, accountability: 0.32, cluster: 'neutral' },
-    { word: 'Rally', engagement: 7800, accountability: 0.54, cluster: 'neutral' },
-    { word: 'Demonstration', engagement: 6500, accountability: 0.56, cluster: 'neutral' },
-    { word: 'Activism', engagement: 11200, accountability: 0.59, cluster: 'neutral' },
-    { word: 'Movement', engagement: 15600, accountability: 0.57, cluster: 'neutral' },
-    
-    // Low accountability (red) keywords - negative opposition terms
-    { word: 'Thug', engagement: 3400, accountability: 0.02, cluster: 'negative' },
-    { word: 'Riots', engagement: 2800, accountability: 0.05, cluster: 'negative' },
-    { word: 'Blue Lives Matter', engagement: 4200, accountability: 0.01, cluster: 'negative' },
-    { word: 'All Lives Matter', engagement: 3800, accountability: 0.09, cluster: 'negative' },
-    { word: 'Violence', engagement: 2100, accountability: 0.008, cluster: 'negative' },
-    { word: 'Looting', engagement: 1800, accountability: 0.02, cluster: 'negative' },
-    { word: 'Chaos', engagement: 1500, accountability: 0.025, cluster: 'negative' },
-    { word: 'Anarchy', engagement: 1200, accountability: 0.003, cluster: 'negative' }
-  ]
-};
+import { formatTopicLabel, topicNames } from '../utils/utils';
 
 export default function TopVisualization({
-  // eslint-disable-next-line no-unused-vars
   activeTopics,
-  // eslint-disable-next-line no-unused-vars
   startDate,
-  // eslint-disable-next-line no-unused-vars
   endDate,
   // eslint-disable-next-line no-unused-vars
   legislator,
   // eslint-disable-next-line no-unused-vars
-  keyword
+  keyword,
+  selectedParty = 'both'
 }) {
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [hoveredWord, setHoveredWord] = useState(null);
-  const [legendVisible, setLegendVisible] = useState(true);
+  const [topicsData, setTopicsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [hoveredTopic, setHoveredTopic] = useState(null);
 
+  // Load topics data from API
   useEffect(() => {
-    if (!containerRef.current) return;
+    const loadData = async () => {
+      if (!activeTopics || activeTopics.length === 0) {
+        setLoading(false);
+        setTopicsData([]);
+        setError(null);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+        const params = {};
+        if (startDate) {
+          params.start_date = typeof startDate.format === 'function' 
+            ? startDate.format('YYYY-MM-DD') 
+            : startDate;
+        }
+        if (endDate) {
+          params.end_date = typeof endDate.format === 'function' 
+            ? endDate.format('YYYY-MM-DD') 
+            : endDate;
+        }
+        if (selectedParty && selectedParty !== 'both') {
+          params.party = selectedParty;
+        }
+
+        // Get topic breakdowns for all active topics
+        const topicBreakdowns = await Promise.all(
+          activeTopics.map(async (topicLabel) => {
+            try {
+              const topicParams = { ...params, topic: topicLabel };
+              const queryString = new URLSearchParams();
+              Object.entries(topicParams).forEach(([key, value]) => {
+                if (Array.isArray(value)) {
+                  value.forEach(v => queryString.append(key, v));
+                } else {
+                  queryString.append(key, value);
+                }
+              });
+              const res = await fetch(`/api/topics/breakdown/?${queryString.toString()}`);
+              if (!res.ok) {
+                console.warn(`Failed to fetch breakdown for topic ${topicLabel}:`, res.status);
+                return null;
+              }
+              const data = await res.json();
+              return data;
+            } catch (err) {
+              console.error(`Error loading breakdown for topic ${topicLabel}:`, err);
+              return null;
+            }
+          })
+        );
+
+        // Filter out nulls and transform to treemap format
+        const topics = topicBreakdowns
+          .filter(t => t !== null && t !== undefined)
+          .map(topic => {
+            const partyBreakdown = topic.party_breakdown || {};
+            const democratic = parseInt(partyBreakdown['Democratic'] || 0);
+            const republican = parseInt(partyBreakdown['Republican'] || 0);
+            const total = democratic + republican;
+            
+            // Calculate party ratio (0 = 100% Republican, 0.5 = 50/50, 1 = 100% Democratic)
+            let ratio = 0.5; // Default to purple (50/50) if no party data
+            if (total > 0) {
+              ratio = democratic / total;
+            }
+
+            // Use post count as the value (size) for the treemap
+            const postCount = Object.values(partyBreakdown).reduce((sum, count) => sum + parseInt(count || 0), 0);
+
+            return {
+              name: topic.name || topic.topic_label || topic.topic,
+              topicLabel: topic.name || topic.topic_label || topic.topic,
+              displayName: topicNames[topic.name] || formatTopicLabel(topic.name || topic.topic_label || topic.topic) || topic.name || topic.topic,
+              value: postCount, // Use post count for size
+              count: postCount,
+              topic: topic.topic,
+              partyRatio: ratio,
+              democratic: democratic,
+              republican: republican,
+              partyBreakdown: partyBreakdown,
+              stateBreakdown: topic.state_breakdown || {}
+            };
+          })
+          .filter(d => d.value > 0); // Only show topics with posts
+
+        setTopicsData(topics);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading treemap data:', err);
+        setError(err.message);
+        setTopicsData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [activeTopics, startDate, endDate, selectedParty]);
+
+  // Update dimensions on resize and when container becomes available
+  useEffect(() => {
+    if (!containerRef.current) {
+      // Retry if container isn't ready yet
+      const timeout = setTimeout(() => {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            setDimensions({ width: rect.width, height: rect.height });
+          }
+        }
+      }, 100);
+      return () => clearTimeout(timeout);
+    }
 
     const updateDimensions = () => {
       const container = containerRef.current;
       if (!container) return;
-      const { width, height } = container.getBoundingClientRect();
-      setDimensions({ width, height });
+      const rect = container.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setDimensions({ width: rect.width, height: rect.height });
+      }
     };
 
+    // Initial measurement with multiple attempts (React timing issue)
     updateDimensions();
     
+    // Retry after a short delay to ensure DOM is ready
+    const retryTimeout = setTimeout(updateDimensions, 100);
+    const retryTimeout2 = setTimeout(updateDimensions, 300);
+    
+    // Use ResizeObserver for responsive updates
     const resizeObserver = new ResizeObserver(() => {
-      setTimeout(updateDimensions, 100);
+      // Debounce dimension updates
+      setTimeout(updateDimensions, 50);
     });
     
     resizeObserver.observe(containerRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
+    
+    return () => {
+      clearTimeout(retryTimeout);
+      clearTimeout(retryTimeout2);
+      resizeObserver.disconnect();
+    };
+  }, [topicsData.length]); // Re-run when data changes to ensure dimensions are set
 
+  // Render treemap
   useEffect(() => {
-    if (!dimensions.width || !dimensions.height) return;
+    // Early returns
+    if (loading) {
+      if (containerRef.current) {
+        d3.select(containerRef.current).selectAll('*').remove();
+      }
+      return;
+    }
+    
+    if (!topicsData || topicsData.length === 0) {
+      if (containerRef.current) {
+        d3.select(containerRef.current).selectAll('*').remove();
+      }
+      return;
+    }
 
-    const margin = { top: 20, right: 20, bottom: 20, left: 20 };
-    const width = dimensions.width - margin.left - margin.right;
-    const height = dimensions.height - margin.top - margin.bottom;
+    // If dimensions aren't set, try to get them from the container
+    if (!dimensions.width || !dimensions.height) {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          setDimensions({ width: rect.width, height: rect.height });
+          // Return here - will re-run when dimensions are set
+          return;
+        }
+      }
+      // If still no dimensions, wait a bit and retry
+      const timeout = setTimeout(() => {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            setDimensions({ width: rect.width, height: rect.height });
+          }
+        }
+      }, 100);
+      return () => clearTimeout(timeout);
+    }
 
     // Clear previous content
-    d3.select(containerRef.current).selectAll("*").remove();
+    d3.select(containerRef.current).selectAll('*').remove();
 
+    const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+    const width = Math.max(100, dimensions.width - margin.left - margin.right);
+    const height = Math.max(100, dimensions.height - margin.top - margin.bottom);
+
+    // Create hierarchy
+    const root = d3.hierarchy({ name: 'topics', children: topicsData })
+      .sum(d => d.value || 0)
+      .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+    // Create treemap layout
+    d3.treemap()
+      .size([width, height])
+      .padding(2)
+      .round(true)(root);
+
+    // Create SVG
     const svg = d3.select(containerRef.current)
-      .append("svg")
-      .attr("width", dimensions.width)
-      .attr("height", dimensions.height)
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+      .append('svg')
+      .attr('width', dimensions.width)
+      .attr('height', dimensions.height)
+      .append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Create scales
-    const xScale = d3.scaleLinear().domain([0, 1]).range([0, width]);
-    const yScale = d3.scaleLinear().domain([0, 1]).range([height, 0]);
-
-    // Color scale for accountability levels
+    // Color scale: Blue (1.0 = 100% Dem) -> Purple (0.5 = 50/50) -> Red (0.0 = 100% Rep)
     const colorScale = d3.scaleLinear()
-      .domain([0, 0.15, 0.35, 0.55, 0.75, 1])
-      .range(['#dc2626', '#ea580c', '#f59e0b', '#eab308', '#16a34a', '#059669']);
+      .domain([0, 0.5, 1])
+      .range(['#dc3545', '#764ba2', '#2196F3']); // Red -> Purple -> Blue
 
-    // Create background
-    svg.append("rect")
-      .attr("width", width)
-      .attr("height", height)
-      .style("fill", "#f8fafc")
-      .style("opacity", 0.3);
+    // Get leaves (actual topic nodes)
+    const leaves = root.leaves();
 
-    // Calculate engagement-based positioning
-    const maxEngagement = d3.max(mockData.keywords, d => d.engagement);
-    const minEngagement = d3.min(mockData.keywords, d => d.engagement);
-    
-    // Sort keywords by engagement (highest first)
-    const sortedKeywords = [...mockData.keywords].sort((a, b) => b.engagement - a.engagement);
-    
-    // Position keywords radially based on engagement
-    const positionedKeywords = sortedKeywords.map((keyword, index) => {
-      const engagementRatio = (keyword.engagement - minEngagement) / (maxEngagement - minEngagement);
-      
-      // Most engaged keyword goes to center, others radiate outward
-      let radius, angle;
-      
-      if (index === 0) {
-        // Center keyword
-        radius = 0;
-        angle = 0;
-      } else {
-        // Radial positioning for others
-        const baseRadius = 0.3; // Base distance from center
-        const radiusIncrement = 0.15; // How much further each ring is
-        const ringIndex = Math.floor((index - 1) / 8); // 8 keywords per ring
-        radius = baseRadius + (ringIndex * radiusIncrement);
-        
-        // Distribute evenly around the circle
-        const positionInRing = (index - 1) % 8;
-        angle = (positionInRing / 8) * 2 * Math.PI;
-        
-        // Add specific spacing adjustments for certain word pairs
-        if (keyword.word === 'Looting') {
-          angle += 0.1; // Move "Looting" slightly clockwise
-        } else if (keyword.word === 'Rally') {
-          angle -= 0.1; // Move "Rally" slightly counter-clockwise
-        } else if (keyword.word === 'Riots') {
-          angle += 0.15; // Move "Riots" more clockwise for greater spacing
-        } else if (keyword.word === 'Assemble') {
-          angle -= 0.15; // Move "Assemble" more counter-clockwise for greater spacing
-        }
-        
-        // Add some randomness to avoid perfect circles
-        const randomOffset = (Math.random() - 0.5) * 0.1;
-        radius += randomOffset;
-        angle += randomOffset;
-      }
-      
-      // Convert polar to cartesian coordinates
-      const x = 0.5 + radius * Math.cos(angle);
-      const y = 0.5 + radius * Math.sin(angle);
-      
-      return {
-        ...keyword,
-        x: Math.max(0.05, Math.min(0.95, x)),
-        y: Math.max(0.05, Math.min(0.95, y)),
-        radius: radius,
-        angle: angle,
-        engagementRatio: engagementRatio
-      };
-    });
-
-    // Generate semantic blob data using the new positioning
-    const gridSize = 100;
-    const blobData = new Array(gridSize * gridSize);
-    
-    for (let i = 0; i < gridSize; i++) {
-      for (let j = 0; j < gridSize; j++) {
-        const x = i / gridSize;
-        const y = j / gridSize;
-        
-        let totalInfluence = 0;
-        let weightedAccountability = 0;
-        let totalWeight = 0;
-        
-        // Calculate influence from each positioned word
-        positionedKeywords.forEach(word => {
-          const distance = Math.sqrt(Math.pow(x - word.x, 2) + Math.pow(y - word.y, 2));
-          
-          // Engagement determines the "force" of the influence
-          const force = (word.engagement / 20000) * 4;
-          
-          // Gaussian kernel for smooth falloff
-          const weight = force * Math.exp(-distance / 0.12);
-          
-          if (weight > 0.001) {
-            totalInfluence += weight;
-            weightedAccountability += weight * word.accountability;
-            totalWeight += weight;
-          }
-        });
-        
-        const index = i + j * gridSize;
-        if (totalWeight > 0) {
-          blobData[index] = {
-            influence: totalInfluence,
-            accountability: weightedAccountability / totalWeight
-          };
-        } else {
-          blobData[index] = { influence: 0, accountability: 0.5 };
-        }
-      }
-    }
-
-    // Create accountability contour blobs using marching squares
-    const accountabilityThresholds = [0.1, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85];
-    
-    accountabilityThresholds.forEach(threshold => {
-      const contours = d3.contours()
-        .size([gridSize, gridSize])
-        .thresholds([threshold])(blobData.map(d => d.accountability));
-      
-      // Create filled polygons for each accountability level
-      svg.selectAll(`.blob-${Math.floor(threshold * 10)}`)
-        .data(contours)
-        .enter()
-        .append("path")
-        .attr("class", `blob-${Math.floor(threshold * 10)}`)
-        .attr("d", d3.geoPath())
-        .style("fill", colorScale(threshold))
-        .style("opacity", 0.6)
-        .style("stroke", "none")
-        .attr("transform", `scale(${width / gridSize}, ${height / gridSize})`);
-    });
-
-    // Add engagement influence contours (subtle energy field effect)
-    const influenceContours = d3.contours()
-      .size([gridSize, gridSize])
-      .thresholds(d3.range(0.5, 4, 0.5))(blobData.map(d => d.influence));
-
-    svg.selectAll(".influence-contour")
-      .data(influenceContours)
+    // Add rectangles
+    const cells = svg.selectAll('g.cell')
+      .data(leaves)
       .enter()
-      .append("path")
-      .attr("class", "influence-contour")
-      .attr("d", d3.geoPath())
-      .style("fill", "none")
-      .style("stroke", "rgba(255,255,255,0.1)")
-      .style("stroke-width", 1)
-      .style("opacity", 0.6)
-      .attr("transform", `scale(${width / gridSize}, ${height / gridSize})`);
+      .append('g')
+      .attr('class', 'cell')
+      .attr('transform', d => `translate(${d.x0},${d.y0})`);
 
-    // Font size scale based on engagement
-    const fontSize = d3.scaleLinear()
-      .domain([0, d3.max(mockData.keywords, d => d.engagement)])
-      .range([14, 32]);
-
-    // Add words embedded in the semantic blobs (no individual circles)
-    const wordGroups = svg.selectAll(".word-group")
-      .data(positionedKeywords)
-      .enter()
-      .append("g")
-      .attr("class", "word-group")
-      .style("cursor", "pointer")
-      .on("mouseover", function(event, d) {
-        setHoveredWord(d);
-        d3.select(this).select("text").style("font-weight", "900");
-        d3.select(this).select("text").style("font-size", `${fontSize(d.engagement) + 2}px`);
+    cells.append('rect')
+      .attr('width', d => Math.max(0, d.x1 - d.x0))
+      .attr('height', d => Math.max(0, d.y1 - d.y0))
+      .attr('fill', d => colorScale(d.data.partyRatio || 0.5))
+      .attr('stroke', 'white')
+      .attr('stroke-width', 2)
+      .style('cursor', 'pointer')
+      .on('mouseover', function(event, d) {
+        setHoveredTopic(d.data);
+        d3.select(this)
+          .attr('stroke-width', 3)
+          .attr('opacity', 0.9);
       })
-      .on("mouseout", function(event, d) {
-        setHoveredWord(null);
-        d3.select(this).select("text").style("font-weight", "bold");
-        d3.select(this).select("text").style("font-size", `${fontSize(d.engagement)}px`);
+      .on('mouseout', function() {
+        setHoveredTopic(null);
+        d3.select(this)
+          .attr('stroke-width', 2)
+          .attr('opacity', 1);
+      })
+      .append('title')
+      .text(d => {
+        const demPct = (d.data.partyRatio * 100).toFixed(1);
+        const repPct = ((1 - d.data.partyRatio) * 100).toFixed(1);
+        return `${d.data.displayName}\nPosts: ${d.data.count.toLocaleString()}\n${demPct}% Democratic, ${repPct}% Republican`;
       });
 
-    // Add word text (no background circles)
-    wordGroups.append("text")
-      .attr("x", d => xScale(d.x))
-      .attr("y", d => yScale(d.y))
-      .attr("text-anchor", "middle")
-      .attr("dominant-baseline", "middle")
-      .style("font-size", d => `${fontSize(d.engagement)}px`)
-      .style("font-weight", "bold")
-      .style("fill", "#ffffff")
-      .style("text-shadow", "2px 2px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)")
-      .style("pointer-events", "none")
-      .text(d => d.word);
+    // Add text labels (only if rectangle is large enough)
+    cells.filter(d => {
+      const w = d.x1 - d.x0;
+      const h = d.y1 - d.y0;
+      return w > 60 && h > 30;
+    })
+      .append('text')
+      .attr('x', 5)
+      .attr('y', 15)
+      .attr('fill', 'white')
+      .attr('font-size', d => {
+        const w = d.x1 - d.x0;
+        const h = d.y1 - d.y0;
+        const area = w * h;
+        if (area > 10000) return 14;
+        if (area > 5000) return 12;
+        if (area > 2000) return 10;
+        return 8;
+      })
+      .attr('font-weight', 'bold')
+      .style('text-shadow', '1px 1px 2px rgba(0,0,0,0.8)')
+      .text(d => {
+        const name = d.data.displayName;
+        const maxLength = Math.floor((d.x1 - d.x0) / 6);
+        return name.length > maxLength ? name.substring(0, maxLength - 3) + '...' : name;
+      });
 
-    // Add subtle engagement rings as visual guides
-    const maxRadius = d3.max(positionedKeywords, d => d.radius);
-    const ringCount = 4;
-    
-    for (let i = 1; i <= ringCount; i++) {
-      const ringRadius = (maxRadius / ringCount) * i;
-      const centerX = xScale(0.5);
-      const centerY = yScale(0.5);
-      const scaledRadius = ringRadius * Math.min(width, height) * 0.8;
-      
-      svg.append("circle")
-        .attr("cx", centerX)
-        .attr("cy", centerY)
-        .attr("r", scaledRadius)
-        .style("fill", "none")
-        .style("stroke", "rgba(255,255,255,0.05)")
-        .style("stroke-width", 1)
-        .style("stroke-dasharray", "5,5");
-    }
+    // Cleanup function - capture ref value to avoid stale closure
+    const container = containerRef.current;
+    return () => {
+      if (container) {
+        d3.select(container).selectAll('*').remove();
+      }
+    };
+  }, [dimensions.width, dimensions.height, topicsData, loading]);
 
-  }, [dimensions.width, dimensions.height]);
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col w-full h-full p-2">
+        <SectionTitle
+          icon={<FaChartBar />}
+          text="Topic Treemap"
+          helpContent={
+            <div className="text-left">
+              <p>Visualization of selected topics by engagement and party distribution.</p>
+              <p><strong>Size:</strong> Proportional to number of posts</p>
+              <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
+            </div>
+          }
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-lg">Loading topic data...</div>
+        </div>
+      </div>
+    );
+  }
 
-  const legendData = [
-    { color: "#059669", label: "Very High", range: "0.75-1.0" },
-    { color: "#16a34a", label: "High", range: "0.55-0.75" },
-    { color: "#eab308", label: "Medium-High", range: "0.35-0.55" },
-    { color: "#f59e0b", label: "Medium", range: "0.15-0.35" },
-    { color: "#ea580c", label: "Low", range: "0.0-0.15" },
-    { color: "#dc2626", label: "Very Low", range: "0.0-0.15" }
-  ];
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col w-full h-full p-2">
+        <SectionTitle
+          icon={<FaChartBar />}
+          text="Topic Treemap"
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-red-500 mb-2">Error loading data</div>
+            <div className="text-sm text-gray-500">{error}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
+  // No topics selected
+  if (!activeTopics || activeTopics.length === 0) {
+    return (
+      <div className="flex flex-col w-full h-full p-2">
+        <SectionTitle
+          icon={<FaChartBar />}
+          text="Topic Treemap"
+          helpContent={
+            <div className="text-left">
+              <p>Visualization of selected topics by engagement and party distribution.</p>
+              <p><strong>Size:</strong> Proportional to number of posts</p>
+              <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
+            </div>
+          }
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-lg text-gray-500">Select topics in the sidebar to view treemap</div>
+        </div>
+      </div>
+    );
+  }
+
+  // No data available
+  if (topicsData.length === 0) {
+    return (
+      <div className="flex flex-col w-full h-full p-2">
+        <SectionTitle
+          icon={<FaChartBar />}
+          text="Topic Treemap"
+          helpContent={
+            <div className="text-left">
+              <p>Visualization of selected topics by engagement and party distribution.</p>
+              <p><strong>Size:</strong> Proportional to number of posts</p>
+              <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
+            </div>
+          }
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-lg text-gray-500">No data available for selected topics</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render treemap
   return (
     <div className="flex flex-col w-full h-full p-2">
       <SectionTitle
-        icon={<FaShieldAlt />}
-        text="AEGIS: Accountability–Engagement Gradient In Semantic Space"
+        icon={<FaChartBar />}
+        text="Topic Treemap"
         helpContent={
           <div className="text-left">
-            <p>AEGIS creates a radial engagement field where influence radiates from the center.</p>
-            <p>The layout represents:</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li><span className="font-semibold">Center Focus:</span> Most engaged keyword at the center</li>
-              <li><span className="font-semibold">Radial Energy:</span> Engagement decreases as you move outward</li>
-              <li><span className="font-semibold">Accountability Contours:</span> Colored regions show political accountability levels</li>
-              <li><span className="font-semibold">Energy Rings:</span> Subtle rings show engagement zones</li>
-            </ul>
-            <p className="mt-2">Hover over words to see detailed metrics. The visualization shows how engagement creates a force field around the central topic.</p>
+            <p>Visualization of selected topics by engagement and party distribution.</p>
+            <p><strong>Size:</strong> Proportional to number of posts</p>
+            <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
+            <p className="mt-2">Hover over rectangles to see detailed metrics.</p>
           </div>
         }
       />
-      <div className="flex-1 overflow-hidden relative">
-          {hoveredWord && (
-            <div className="absolute top-4 left-4 z-20 bg-white rounded-lg shadow-lg p-3 border">
-              <div className="font-bold text-lg">{hoveredWord.word}</div>
-              <div className="text-sm text-gray-600">
-                Engagement: {hoveredWord.engagement.toLocaleString()}
-              </div>
-              <div className="text-sm text-gray-600">
-                Accountability: {(hoveredWord.accountability * 100).toFixed(0)}%
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Cluster: {hoveredWord.cluster}
-              </div>
+      <div className="flex-1 overflow-hidden relative min-h-0">
+        {hoveredTopic && (
+          <div className="absolute top-4 left-4 z-20 bg-white rounded-lg shadow-lg p-3 border">
+            <div className="font-bold text-lg">{hoveredTopic.displayName}</div>
+            <div className="text-sm text-gray-600 mt-1">
+              Posts: {hoveredTopic.count.toLocaleString()}
             </div>
-          )}
-          
-          {/* Legend Toggle Icon */}
-          <button
-            onClick={() => setLegendVisible(!legendVisible)}
-            className="absolute top-4 right-4 z-30 btn btn-sm btn-primary btn-circle"
-            title={legendVisible ? 'Hide Legend' : 'Show Legend'}
-          >
-            {legendVisible ? <FaEyeSlash /> : <FaEye />}
-          </button>
+            {hoveredTopic.democratic > 0 || hoveredTopic.republican > 0 ? (
+              <>
+                <div className="text-sm text-gray-600 mt-1">
+                  Democratic: {hoveredTopic.democratic.toLocaleString()} ({((hoveredTopic.partyRatio) * 100).toFixed(1)}%)
+                </div>
+                <div className="text-sm text-gray-600">
+                  Republican: {hoveredTopic.republican.toLocaleString()} ({((1 - hoveredTopic.partyRatio) * 100).toFixed(1)}%)
+                </div>
+              </>
+            ) : (
+              <div className="text-xs text-gray-500 mt-1">No party data available</div>
+            )}
+          </div>
+        )}
 
-          {/* Semi-transparent Legend Overlay */}
-          {legendVisible && (
-            <div className="absolute top-4 right-16 z-20 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4 border max-w-xs">
-              <div className="font-semibold text-sm text-gray-800 mb-3">Accountability</div>
-              <div className="space-y-2">
-                {legendData.map((item, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <div 
-                      className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-700">{item.label}</div>
-                      <div className="text-xs text-gray-500">{item.range}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {/* Legend */}
+        <div className="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4 border max-w-xs">
+          <div className="font-semibold text-sm text-gray-800 mb-3">Party Distribution</div>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 rounded border-2 border-white shadow-sm" style={{ backgroundColor: '#2196F3' }} />
+              <div className="text-sm text-gray-700">100% Democratic</div>
             </div>
-          )}
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 rounded border-2 border-white shadow-sm" style={{ backgroundColor: '#764ba2' }} />
+              <div className="text-sm text-gray-700">50/50 Split</div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-4 h-4 rounded border-2 border-white shadow-sm" style={{ backgroundColor: '#dc3545' }} />
+              <div className="text-sm text-gray-700">100% Republican</div>
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="text-xs text-gray-500">
+              Rectangle size represents number of posts
+            </div>
+          </div>
+        </div>
 
-          <div ref={containerRef} className="w-full h-full" style={{ minHeight: "400px" }} />
+        <div 
+          ref={containerRef} 
+          className="w-full h-full" 
+          style={{ minHeight: '300px' }}
+        />
       </div>
     </div>
   );
@@ -393,5 +474,6 @@ TopVisualization.propTypes = {
   startDate: PropTypes.object.isRequired,
   endDate: PropTypes.object.isRequired,
   legislator: PropTypes.object,
-  keyword: PropTypes.string
+  keyword: PropTypes.string,
+  selectedParty: PropTypes.string
 };

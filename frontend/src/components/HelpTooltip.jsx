@@ -20,7 +20,11 @@ function HelpTooltip({ content, placement = 'top', className = '' }) {
     <div className={`inline-block ${className}`}>
       <Tippy
         content={
-          <div className="card p-3 max-w-xs text-sm">
+          <div className="px-4 py-3 max-w-xs text-sm rounded-xl shadow-2xl backdrop-blur-md text-white" style={{
+            background: 'linear-gradient(135deg, rgba(55, 65, 81, 0.95), rgba(31, 41, 55, 0.95))',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          }}>
             {content}
           </div>
         }
@@ -28,6 +32,8 @@ function HelpTooltip({ content, placement = 'top', className = '' }) {
         animation="scale-subtle"
         placement={placement}
         arrow={true}
+        duration={[200, 150]}
+        delay={[100, 0]}
       >
         <span className="cursor-help text-base-content/50 hover:text-base-content/80">
           <FaQuestionCircle />

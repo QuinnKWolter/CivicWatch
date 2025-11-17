@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { FaUser, FaArrowLeft, FaChartLine, FaUsers, FaShieldAlt, FaStar, FaGlobe, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
-import { FaRepublican } from 'react-icons/fa';
+import { FaUser, FaArrowLeft, FaChartLine, FaUsers, FaShieldAlt, FaStar, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { colorMap } from '../utils/utils';
+import { getTopicColor, topicNames, formatTopicLabel } from '../utils/utils';
 import HelpTooltip from './HelpTooltip';
 
 export default function LegislatorContext({ 
@@ -15,8 +14,9 @@ export default function LegislatorContext({
   selectedTopics,
   // eslint-disable-next-line no-unused-vars
   keyword,
+  activeTopics,
   // eslint-disable-next-line no-unused-vars
-  activeTopics
+  selectedParty = 'both' // Not used for individual legislator profiles
 }) {
   const [sortFilters, setSortFilters] = useState({
     date: 'desc', // desc, asc, none
@@ -25,82 +25,80 @@ export default function LegislatorContext({
     credibility: 'none'
   });
 
-  // Mock data for demonstration
-  const mockData = {
-    name: "Bert Stedman",
-    party: "R",
-    state: "AK",
-    metrics: {
-      totalPosts: 12656,
-      totalEngagement: 89432,
-      uncivilPosts: 234,
-      lowCredibilityPosts: 156
-    },
-    breakdowns: {
-      posts: { twitter: 9234, facebook: 3422 },
-      engagement: { likes: 67890, shares: 21542 }
-    },
-    rankings: {
-      state: {
-        totalPosts: "Top 15%",
-        totalEngagement: "Top 10%",
-        uncivilPosts: "Top 5%",
-        lowCredibilityPosts: "Top 8%"
-      },
-      party: {
-        totalPosts: "Top 30%",
-        totalEngagement: "Top 25%",
-        uncivilPosts: "Top 3%",
-        lowCredibilityPosts: "Top 12%"
-      },
-      overall: {
-        totalPosts: "Top 20%",
-        totalEngagement: "Top 15%",
-        uncivilPosts: "Top 2%",
-        lowCredibilityPosts: "Top 6%"
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Load legislator profile data from API
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!legislator?.legislator_id) {
+        setLoading(false);
+        setProfileData(null);
+        return;
       }
-    },
-    topTopicsByPosts: [
-      { name: "Climate", value: 35, color: colorMap.climate.color },
-      { name: "Capitol", value: 28, color: colorMap.capitol.color },
-      { name: "Rights", value: 22, color: colorMap.rights.color },
-      { name: "Immigra", value: 15, color: colorMap.immigra.color }
-    ],
-    topTopicsByEngagement: [
-      { name: "Capitol", value: 42, color: colorMap.capitol.color },
-      { name: "Climate", value: 31, color: colorMap.climate.color },
-      { name: "Gun", value: 18, color: colorMap.gun.color },
-      { name: "Covid", value: 9, color: colorMap.covid.color }
-    ]
+
+      setLoading(true);
+      setError(null);
+      try {
+        const params = {};
+        if (startDate) {
+          params.start_date = typeof startDate.format === 'function' 
+            ? startDate.format('YYYY-MM-DD') 
+            : startDate;
+        }
+        if (endDate) {
+          params.end_date = typeof endDate.format === 'function' 
+            ? endDate.format('YYYY-MM-DD') 
+            : endDate;
+        }
+        if (activeTopics && activeTopics.length > 0) {
+          params.topics = activeTopics;
+        }
+
+        const queryString = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            value.forEach(v => queryString.append(key, v));
+          } else {
+            queryString.append(key, value);
+          }
+        });
+
+        const res = await fetch(`/api/legislators/${legislator.legislator_id}/profile?${queryString.toString()}`);
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`HTTP error! status: ${res.status} - ${errorText.substring(0, 100)}`);
+        }
+        const profile = await res.json();
+        setProfileData(profile);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading legislator profile:', err);
+        setError(err.message);
+        setProfileData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [legislator?.legislator_id, startDate, endDate, activeTopics]);
+
+  // Helper to format chamber display
+  const formatChamber = (chamber) => {
+    if (!chamber) return '';
+    return chamber === 'H' ? 'House' : chamber === 'S' ? 'Senate' : chamber;
   };
 
-  const getRankingColor = (ranking, metric) => {
-    // Determine if this is a positive or negative metric
-    const isPositive = ['totalPosts', 'totalEngagement'].includes(metric);
-    const isNegative = ['uncivilPosts', 'lowCredibilityPosts'].includes(metric);
-    
-    // Extract the percentage number
-    const percentage = parseInt(ranking.match(/\d+/)[0]);
-    
-    if (isPositive) {
-      // For positive metrics, higher percentage is better
-      if (percentage <= 10) return "bg-green-100 text-green-800 border-green-200";
-      if (percentage <= 20) return "bg-green-50 text-green-700 border-green-100";
-      if (percentage <= 30) return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      if (percentage <= 40) return "bg-orange-100 text-orange-800 border-orange-200";
-      return "bg-red-100 text-red-800 border-red-200";
-    } else if (isNegative) {
-      // For negative metrics, lower percentage is better (inverted scale)
-      if (percentage <= 5) return "bg-red-100 text-red-800 border-red-200";
-      if (percentage <= 10) return "bg-orange-100 text-orange-800 border-orange-200";
-      if (percentage <= 20) return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      if (percentage <= 30) return "bg-green-50 text-green-700 border-green-100";
-      return "bg-green-100 text-green-800 border-green-200";
-    }
-    
-    // Fallback for unknown metrics
-    return "bg-gray-100 text-gray-800 border-gray-200";
+  // Helper to format party display
+  const formatParty = (party) => {
+    if (!party) return '';
+    if (party === 'Democratic') return 'Democrat';
+    if (party === 'Republican') return 'Republican';
+    return party;
   };
+
 
   const formatNumber = (num) => {
     if (num >= 1000000) {
@@ -152,13 +150,113 @@ export default function LegislatorContext({
     }))
   };
 
-  // Use legislator prop to show actual data when available
-  const displayData = legislator ? {
+  // Use profile data if available, otherwise use legislator basic info
+  const displayData = profileData || (legislator ? {
     name: legislator.name,
     party: legislator.party,
     state: legislator.state,
-    // Add other properties as needed
-  } : mockData;
+    chamber: legislator.chamber,
+    handle: legislator.handle,
+    metrics: {
+      totalPosts: 0,
+      totalEngagement: 0,
+      uncivilPosts: 0,
+      lowCredibilityPosts: 0
+    },
+    breakdowns: {
+      posts: { twitter: 0, facebook: 0 },
+      engagement: { likes: 0, shares: 0 }
+    },
+    topTopicsByPosts: [],
+    topTopicsByEngagement: []
+  } : null);
+
+  // Format topic data with colors and human-readable names
+  const formatTopics = (topics) => {
+    if (!topics || !Array.isArray(topics)) return [];
+    return topics.map(topic => {
+      const topicKey = topic.topic_label || topic.name;
+      const displayName = topicNames[topicKey] || formatTopicLabel(topicKey) || topicKey;
+      return {
+        ...topic,
+        color: getTopicColor(topicKey),
+        displayName: displayName
+      };
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <div className="animate-spin text-4xl text-primary mb-4">⏳</div>
+        <p className="text-lg">Loading legislator data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-4">
+        <div className="text-red-500 text-xl mb-2">⚠️</div>
+        <p className="text-lg font-semibold mb-2">Error loading legislator data</p>
+        <p className="text-sm text-base-content/70 text-center">{error}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            setLoading(true);
+            // Trigger reload
+            const loadProfile = async () => {
+              try {
+                const params = {};
+                if (startDate) {
+                  params.start_date = typeof startDate.format === 'function' 
+                    ? startDate.format('YYYY-MM-DD') 
+                    : startDate;
+                }
+                if (endDate) {
+                  params.end_date = typeof endDate.format === 'function' 
+                    ? endDate.format('YYYY-MM-DD') 
+                    : endDate;
+                }
+                if (activeTopics && activeTopics.length > 0) {
+                  params.topics = activeTopics;
+                }
+                const queryString = new URLSearchParams();
+                Object.entries(params).forEach(([key, value]) => {
+                  if (Array.isArray(value)) {
+                    value.forEach(v => queryString.append(key, v));
+                  } else {
+                    queryString.append(key, value);
+                  }
+                });
+                const res = await fetch(`/api/legislators/${legislator.legislator_id}/profile?${queryString.toString()}`);
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const profile = await res.json();
+                setProfileData(profile);
+                setError(null);
+              } catch (err) {
+                setError(err.message);
+              } finally {
+                setLoading(false);
+              }
+            };
+            loadProfile();
+          }}
+          className="btn btn-primary mt-4"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!displayData) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full">
+        <p className="text-lg">No legislator selected</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full bg-base-100 rounded-lg shadow-lg overflow-y-auto">
@@ -186,10 +284,11 @@ export default function LegislatorContext({
           </div>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-base-content">
-              {displayData.name} ({displayData.party} - {displayData.state})
+              {displayData.name} ({displayData.party?.charAt(0) || '?'} - {displayData.state || 'N/A'})
             </h1>
             <p className="text-sm text-base-content/70 mt-1">
-              Republican • State Senator • Alaska
+              {formatParty(displayData.party) || 'Unknown'} • {displayData.chamber ? `${formatChamber(displayData.chamber)}` : 'Unknown Chamber'} • {displayData.state || 'Unknown State'}
+              {displayData.handle && ` • @${displayData.handle}`}
             </p>
           </div>
           <div className="flex-shrink-0">
@@ -216,10 +315,11 @@ export default function LegislatorContext({
               <span className="font-semibold text-sm">Total<br />Posts</span>
             </div>
             <div className="text-xl font-bold text-blue-500">
-              {formatNumber(mockData.metrics.totalPosts)}
+              {formatNumber(displayData.metrics?.totalPosts || 0)}
             </div>
             <div className="text-xs text-base-content/60 mt-1">
-              {formatNumber(mockData.breakdowns.posts.twitter)} Twitter<br />{formatNumber(mockData.breakdowns.posts.facebook)} Facebook
+              {formatNumber(displayData.breakdowns?.posts?.twitter || 0)} Twitter<br />
+              {displayData.breakdowns?.posts?.facebook ? `${formatNumber(displayData.breakdowns.posts.facebook)} Facebook` : ''}
             </div>
           </div>
 
@@ -235,10 +335,11 @@ export default function LegislatorContext({
               <span className="font-semibold text-sm">Total<br />Engagement</span>
             </div>
             <div className="text-xl font-bold text-green-500">
-              {formatNumber(mockData.metrics.totalEngagement)}
+              {formatNumber(displayData.metrics?.totalEngagement || 0)}
             </div>
             <div className="text-xs text-base-content/60 mt-1">
-              {formatNumber(mockData.breakdowns.engagement.likes)} Likes<br />{formatNumber(mockData.breakdowns.engagement.shares)} Shares
+              {formatNumber(displayData.breakdowns?.engagement?.likes || 0)} Likes<br />
+              {formatNumber(displayData.breakdowns?.engagement?.shares || 0)} Retweets
             </div>
           </div>
 
@@ -254,7 +355,7 @@ export default function LegislatorContext({
               <span className="font-semibold text-sm">Uncivil<br />Posts</span>
             </div>
             <div className="text-xl font-bold text-red-500">
-              {mockData.metrics.uncivilPosts}
+              {displayData.metrics?.uncivilPosts || 0}
             </div>
             <div className="text-xs text-base-content/60 mt-1">
               Uncivil Posts
@@ -273,7 +374,7 @@ export default function LegislatorContext({
               <span className="font-semibold text-sm">Low<br />Credibility</span>
             </div>
             <div className="text-xl font-bold text-orange-500">
-              {mockData.metrics.lowCredibilityPosts}
+              {displayData.metrics?.lowCredibilityPosts || 0}
             </div>
             <div className="text-xs text-base-content/60 mt-1">
               Low Credibility Posts
@@ -281,82 +382,6 @@ export default function LegislatorContext({
           </div>
         </div>
 
-        {/* Rankings Section */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* State Rankings */}
-            <div className="bg-base-200 rounded-lg p-3 relative">
-              <div className="absolute top-2 right-2">
-                <HelpTooltip 
-                  content="Performance rankings compared to other legislators from the same state. Percentiles show where this legislator stands among their state peers."
-                  placement="left"
-                />
-              </div>
-              <h3 className="font-medium text-base-content mb-3 flex items-center">
-                <span className="px-2 py-1 bg-red-500 text-white rounded text-xs font-bold mr-2">AK</span>
-                State Rankings
-              </h3>
-              <div className="space-y-2">
-                {Object.entries(mockData.rankings.state).map(([metric, ranking]) => (
-                  <div key={metric} className="flex items-center justify-between">
-                    <span className="text-sm text-base-content/70 capitalize">{metric.replace(/([A-Z])/g, ' $1').trim()}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getRankingColor(ranking, metric)}`}>
-                      {ranking}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Party Rankings */}
-            <div className="bg-base-200 rounded-lg p-3 relative">
-              <div className="absolute top-2 right-2">
-                <HelpTooltip 
-                  content="Performance rankings compared to other legislators from the same political party. Shows how this legislator performs within their party."
-                  placement="left"
-                />
-              </div>
-              <h3 className="font-medium text-base-content mb-3 flex items-center">
-                <FaRepublican className="text-red-500 mr-2" size={20} />
-                Party Rankings
-              </h3>
-              <div className="space-y-2">
-                {Object.entries(mockData.rankings.party).map(([metric, ranking]) => (
-                  <div key={metric} className="flex items-center justify-between">
-                    <span className="text-sm text-base-content/70 capitalize">{metric.replace(/([A-Z])/g, ' $1').trim()}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getRankingColor(ranking, metric)}`}>
-                      {ranking}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Overall Rankings */}
-            <div className="bg-base-200 rounded-lg p-3 relative">
-              <div className="absolute top-2 right-2">
-                <HelpTooltip 
-                  content="Performance rankings compared to all legislators nationwide. Provides a comprehensive view of this legislator's standing across the entire dataset."
-                  placement="left"
-                />
-              </div>
-              <h3 className="font-medium text-base-content mb-3 flex items-center">
-                <FaGlobe className="text-green-500 mr-2" size={20} />
-                Overall Rankings
-              </h3>
-              <div className="space-y-2">
-                {Object.entries(mockData.rankings.overall).map(([metric, ranking]) => (
-                  <div key={metric} className="flex items-center justify-between">
-                    <span className="text-sm text-base-content/70 capitalize">{metric.replace(/([A-Z])/g, ' $1').trim()}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border whitespace-nowrap ${getRankingColor(ranking, metric)}`}>
-                      {ranking}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Top Topics with Two Panes */}
         <div className="bg-base-200 rounded-lg p-3">
@@ -376,7 +401,7 @@ export default function LegislatorContext({
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={mockData.topTopicsByPosts}
+                        data={formatTopics(displayData.topTopicsByPosts || [])}
                         cx="50%"
                         cy="50%"
                         innerRadius={30}
@@ -384,7 +409,7 @@ export default function LegislatorContext({
                         paddingAngle={2}
                         dataKey="value"
                       >
-                        {mockData.topTopicsByPosts.map((entry, index) => (
+                        {formatTopics(displayData.topTopicsByPosts || []).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -393,16 +418,20 @@ export default function LegislatorContext({
                   </ResponsiveContainer>
                 </div>
                 <div className="space-y-2">
-                  {mockData.topTopicsByPosts.map((topic) => (
-                    <div key={topic.name} className="flex items-center space-x-3">
-                      <div 
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: topic.color }}
-                      />
-                      <span className="text-sm font-medium text-base-content">{topic.name}</span>
-                      <span className="text-sm text-base-content/70">{topic.value}%</span>
-                    </div>
-                  ))}
+                  {formatTopics(displayData.topTopicsByPosts || []).length === 0 ? (
+                    <div className="text-xs text-base-content/50 text-center py-2">No topic data available</div>
+                  ) : (
+                    formatTopics(displayData.topTopicsByPosts || []).map((topic, idx) => (
+                      <div key={topic.name || idx} className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: topic.color }}
+                        />
+                        <span className="text-sm font-medium text-base-content">{topic.displayName || topic.name || topic.topic_label}</span>
+                        <span className="text-sm text-base-content/70">{topic.value}%</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -421,7 +450,7 @@ export default function LegislatorContext({
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={mockData.topTopicsByEngagement}
+                        data={formatTopics(displayData.topTopicsByEngagement || [])}
                         cx="50%"
                         cy="50%"
                         innerRadius={30}
@@ -429,7 +458,7 @@ export default function LegislatorContext({
                         paddingAngle={2}
                         dataKey="value"
                       >
-                        {mockData.topTopicsByEngagement.map((entry, index) => (
+                        {formatTopics(displayData.topTopicsByEngagement || []).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -438,16 +467,20 @@ export default function LegislatorContext({
                   </ResponsiveContainer>
                 </div>
                 <div className="space-y-2">
-                  {mockData.topTopicsByEngagement.map((topic) => (
-                    <div key={topic.name} className="flex items-center space-x-3">
-                      <div 
-                        className="w-4 h-4 rounded-full"
-                        style={{ backgroundColor: topic.color }}
-                      />
-                      <span className="text-sm font-medium text-base-content">{topic.name}</span>
-                      <span className="text-sm text-base-content/70">{topic.value}%</span>
-                    </div>
-                  ))}
+                  {formatTopics(displayData.topTopicsByEngagement || []).length === 0 ? (
+                    <div className="text-xs text-base-content/50 text-center py-2">No topic data available</div>
+                  ) : (
+                    formatTopics(displayData.topTopicsByEngagement || []).map((topic, idx) => (
+                      <div key={topic.name || idx} className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded-full"
+                          style={{ backgroundColor: topic.color }}
+                        />
+                        <span className="text-sm font-medium text-base-content">{topic.displayName || topic.name || topic.topic_label}</span>
+                        <span className="text-sm text-base-content/70">{topic.value}%</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -528,7 +561,7 @@ export default function LegislatorContext({
           <div className="pt-4 border-t border-base-300">
             <button className="btn btn-primary w-full">
               <FaChartLine className="mr-2" />
-              View Posts ({formatNumber(mockData.metrics.totalPosts)} total)
+              View Posts ({formatNumber(displayData.metrics?.totalPosts || 0)} total)
             </button>
           </div>
         </div>
@@ -545,5 +578,6 @@ LegislatorContext.propTypes = {
   endDate: PropTypes.object.isRequired,
   selectedTopics: PropTypes.arrayOf(PropTypes.string).isRequired,
   keyword: PropTypes.string,
-  activeTopics: PropTypes.arrayOf(PropTypes.string).isRequired
+  activeTopics: PropTypes.arrayOf(PropTypes.string).isRequired,
+  selectedParty: PropTypes.string
 };

@@ -65,3 +65,105 @@
   position: absolute;
   z-index: 1; /* Lower than the tooltip's z-index */
 }
+
+/* Shimmer animation for tooltips */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+/* Custom Tippy themes - match arrow colors to tooltip backgrounds */
+.tippy-box[data-theme~='custom-topic'] {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.tippy-box[data-theme~='custom-topic'] .tippy-arrow {
+  color: transparent;
+}
+
+/* Date tooltip theme - blue gradient */
+.tippy-box[data-theme~='date-tooltip'] {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.tippy-box[data-theme~='date-tooltip'] .tippy-arrow {
+  color: rgba(37, 99, 235, 0.95);
+}
+
+/* Event tooltip theme - purple gradient */
+.tippy-box[data-theme~='event-tooltip'] {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.tippy-box[data-theme~='event-tooltip'] .tippy-arrow {
+  color: rgba(124, 58, 237, 0.95);
+}
+
+/* Drag tooltip theme - orange gradient */
+.tippy-box[data-theme~='drag-tooltip'] {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.tippy-box[data-theme~='drag-tooltip'] .tippy-arrow {
+  color: rgba(234, 88, 12, 0.95);
+}
+
+/* Enhanced Tippy animations and styling */
+.tippy-box {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tippy-box[data-animation='scale-subtle'][data-state='visible'] {
+  animation: tippy-scale-subtle 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tippy-box[data-animation='scale-subtle'][data-state='hidden'] {
+  animation: tippy-scale-subtle 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  animation-direction: reverse;
+}
+
+@keyframes tippy-scale-subtle {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Enhanced arrow styling - no transitions for instant positioning */
+.tippy-arrow {
+  transition: none;
+}
+
+/* Smooth backdrop blur support */
+@supports (backdrop-filter: blur(10px)) {
+  .tippy-box {
+    backdrop-filter: blur(10px);
+  }
+}
+
+/* Force crosshair cursor on engagement timeline chart */
+canvas[data-chartjs-chart] {
+  cursor: crosshair !important;
+}
+
+/* Force crosshair cursor on chart container */
+.engagement-timeline-container canvas,
+.engagement-timeline-container {
+  cursor: crosshair !important;
+}

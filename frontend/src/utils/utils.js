@@ -39,6 +39,83 @@ export const topicNames = {
   covid: 'COVID-19'
 };
 
+// Helper function to extract a clean display name from topic_label
+// Format: "213_: New Year Wishes and Provisions___" -> "New Year Wishes and Provisions"
+// Also handles: "21_: George Floyd Protests and Justice___" -> "George Floyd Protests and Justice"
+export const formatTopicLabel = (topicLabel) => {
+  if (!topicLabel) return topicLabel;
+  // Remove trailing underscores and extract the description part
+  const match = topicLabel.match(/^\d+[_:]\s*(.+?)_*$/);
+  if (match && match[1]) {
+    let cleaned = match[1].trim();
+    // Remove leading ": " if present
+    cleaned = cleaned.replace(/^:\s*/, '');
+    // Remove trailing underscores
+    cleaned = cleaned.replace(/_+$/, '');
+    return cleaned.trim();
+  }
+  // Fallback: remove ": " prefix if present anywhere
+  return topicLabel.replace(/^:\s*/, '').trim();
+};
+
+// Helper function to convert HSL to hex color
+const hslToHex = (h, s, l) => {
+  s /= 100;
+  l /= 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  const m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+  
+  if (0 <= h && h < 60) {
+    r = c; g = x; b = 0;
+  } else if (60 <= h && h < 120) {
+    r = x; g = c; b = 0;
+  } else if (120 <= h && h < 180) {
+    r = 0; g = c; b = x;
+  } else if (180 <= h && h < 240) {
+    r = 0; g = x; b = c;
+  } else if (240 <= h && h < 300) {
+    r = x; g = 0; b = c;
+  } else if (300 <= h && h < 360) {
+    r = c; g = 0; b = x;
+  }
+  
+  r = Math.round((r + m) * 255);
+  g = Math.round((g + m) * 255);
+  b = Math.round((b + m) * 255);
+  
+  // Convert to hex
+  const toHex = (n) => {
+    const hex = n.toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+  
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
+// Helper function to generate a consistent color for a topic_label
+export const getTopicColor = (topicLabel) => {
+  // First check if it's in the colorMap (for backward compatibility)
+  if (colorMap[topicLabel]?.color) {
+    return colorMap[topicLabel].color;
+  }
+  
+  // Generate a hash-based color for topic_labels
+  let hash = 0;
+  for (let i = 0; i < topicLabel.length; i++) {
+    hash = topicLabel.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  // Generate a color from the hash (using HSL for better color distribution)
+  const hue = Math.abs(hash) % 360;
+  const saturation = 60 + (Math.abs(hash) % 20); // 60-80%
+  const lightness = 45 + (Math.abs(hash) % 15); // 45-60%
+  
+  // Convert HSL to hex for compatibility with gradient opacity
+  return hslToHex(hue, saturation, lightness);
+};
+
 // Function to format numbers with optional decimal truncation
 export const formatNumber = (num) => {
   if (num >= 1000000) {
