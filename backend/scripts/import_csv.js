@@ -39,40 +39,69 @@ async function importCSV() {
       .pipe(parse({
         columns: true,
         skip_empty_lines: true,
-        trim: true
+        trim: true,
+        relax_column_count: true, // Allow records with inconsistent column counts
+        skip_records_with_error: true, // Skip malformed records instead of failing
+        relax_quotes: true, // More lenient quote handling
+        escape: '"' // Ensure proper escaping
       }));
     
-    for await (const record of parser1) {
-      scanCount++;
-      
-      // Track unique legislators
-      if (record.lid && !legislatorsMap.has(record.lid)) {
-        // Ensure name is not null (required by schema) - use lid as fallback if name is missing
-        const name = record.name && record.name.trim() ? record.name.trim() : `Legislator ${record.lid}`;
-        legislatorsMap.set(record.lid, {
-          lid: record.lid,
-          name: name,
-          handle: record.handle || null,
-          state: record.state || null,
-          chamber: record.chamber || null,
-          party: record.party || null
-        });
+    // Handle parser errors gracefully
+    parser1.on('error', (err) => {
+      console.warn(`⚠️  Parser error (continuing): ${err.message}`);
+    });
+    
+    let skippedRecords1 = 0;
+    try {
+      for await (const record of parser1) {
+        // Skip null records (malformed ones that were skipped)
+        if (!record || !record.lid) {
+          skippedRecords1++;
+          continue;
+        }
+        
+        scanCount++;
+        
+        // Track unique legislators
+        if (record.lid && !legislatorsMap.has(record.lid)) {
+          // Ensure name is not null (required by schema) - use lid as fallback if name is missing
+          const name = record.name && record.name.trim() ? record.name.trim() : `Legislator ${record.lid}`;
+          legislatorsMap.set(record.lid, {
+            lid: record.lid,
+            name: name,
+            handle: record.handle || null,
+            state: record.state || null,
+            chamber: record.chamber || null,
+            party: record.party || null
+          });
+        }
+        
+        // Track unique topics
+        if (record.topic && !topicsMap.has(record.topic)) {
+          topicsMap.set(record.topic, {
+            topic: record.topic,
+            topic_label: record.topic_label || record.topic
+          });
+        }
+        
+        if (scanCount % 100000 === 0) {
+          console.log(`   Scanned ${scanCount.toLocaleString()} records... (${legislatorsMap.size} legislators, ${topicsMap.size} topics found)`);
+        }
       }
-      
-      // Track unique topics
-      if (record.topic && !topicsMap.has(record.topic)) {
-        topicsMap.set(record.topic, {
-          topic: record.topic,
-          topic_label: record.topic_label || record.topic
-        });
-      }
-      
-      if (scanCount % 100000 === 0) {
-        console.log(`   Scanned ${scanCount.toLocaleString()} records... (${legislatorsMap.size} legislators, ${topicsMap.size} topics found)`);
+    } catch (err) {
+      // If we hit a parsing error, log it but continue with what we have
+      if (err.code === 'CSV_RECORD_INCONSISTENT_COLUMNS') {
+        console.warn(`⚠️  Encountered malformed record at line ~${err.lines} (continuing with ${scanCount.toLocaleString()} records scanned so far)`);
+        console.warn(`   Error: ${err.message}`);
+      } else {
+        throw err; // Re-throw non-CSV errors
       }
     }
     
     console.log(`✓ First pass complete: ${scanCount.toLocaleString()} records scanned`);
+    if (skippedRecords1 > 0) {
+      console.log(`   ⚠️  Skipped ${skippedRecords1.toLocaleString()} malformed records`);
+    }
     console.log(`   Found ${legislatorsMap.size.toLocaleString()} unique legislators`);
     console.log(`   Found ${topicsMap.size.toLocaleString()} unique topics`);
     
@@ -96,6 +125,10 @@ async function importCSV() {
         columns: true,
         skip_empty_lines: true,
         trim: true,
+        relax_column_count: true, // Allow records with inconsistent column counts
+        skip_records_with_error: true, // Skip malformed records instead of failing
+        relax_quotes: true, // More lenient quote handling
+        escape: '"', // Ensure proper escaping
         cast: (value, context) => {
           // Custom casting for specific columns
           if (context.column === 'retweet_count' || context.column === 'like_count' || 
@@ -120,18 +153,45 @@ async function importCSV() {
         }
       }));
     
+    // Handle parser errors gracefully
+    parser2.on('error', (err) => {
+      console.warn(`⚠️  Parser error (continuing): ${err.message}`);
+    });
+    
     // Process records as they come in
-    for await (const record of parser2) {
-      recordCount++;
-      
-      // Add to batch
-      batch.push(record);
-      
-      // Process batch when it reaches BATCH_SIZE
-      if (batch.length >= BATCH_SIZE) {
-        await processBatch(client, batch);
-        batch = [];
-        console.log(`✓ Processed ${recordCount.toLocaleString()} posts (${Math.round(recordCount / 1000)}k)...`);
+    let skippedRecords2 = 0;
+    try {
+      for await (const record of parser2) {
+        // Skip null records (malformed ones that were skipped)
+        if (!record || !record.id || !record.lid || !record.topic) {
+          skippedRecords2++;
+          continue;
+        }
+        
+        recordCount++;
+        
+        // Add to batch
+        batch.push(record);
+        
+        // Process batch when it reaches BATCH_SIZE
+        if (batch.length >= BATCH_SIZE) {
+          await processBatch(client, batch);
+          batch = [];
+          console.log(`✓ Processed ${recordCount.toLocaleString()} posts (${Math.round(recordCount / 1000)}k)...`);
+        }
+      }
+    } catch (err) {
+      // If we hit a parsing error, log it but continue with what we have
+      if (err.code === 'CSV_RECORD_INCONSISTENT_COLUMNS') {
+        console.warn(`⚠️  Encountered malformed record at line ~${err.lines} (continuing with ${recordCount.toLocaleString()} records processed so far)`);
+        console.warn(`   Error: ${err.message}`);
+        // Process any remaining batch before continuing
+        if (batch.length > 0) {
+          await processBatch(client, batch);
+          console.log(`✓ Processed batch before error: ${recordCount.toLocaleString()} total posts`);
+        }
+      } else {
+        throw err; // Re-throw non-CSV errors
       }
     }
     
@@ -139,6 +199,10 @@ async function importCSV() {
     if (batch.length > 0) {
       await processBatch(client, batch);
       console.log(`✓ Processed final batch: ${recordCount.toLocaleString()} total posts`);
+    }
+    
+    if (skippedRecords2 > 0) {
+      console.log(`   ⚠️  Skipped ${skippedRecords2.toLocaleString()} malformed records during import`);
     }
     
     // Commit transaction

@@ -1,8 +1,9 @@
 import { useRef, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import * as d3 from 'd3';
-import { FaChartBar } from 'react-icons/fa';
-import SectionTitle from './SectionTitle';
+import Tippy from '@tippyjs/react';
+import 'tippy.js/dist/tippy.css';
+import HelpTooltip from './HelpTooltip';
 import { formatTopicLabel, topicNames } from '../utils/utils';
 
 export default function TopVisualization({
@@ -20,7 +21,9 @@ export default function TopVisualization({
   const [topicsData, setTopicsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [hoveredTopic, setHoveredTopic] = useState(null);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipContent, setTooltipContent] = useState(null);
+  const tippyInstanceRef = useRef(null);
 
   // Load topics data from API
   useEffect(() => {
@@ -260,22 +263,66 @@ export default function TopVisualization({
       .attr('stroke-width', 2)
       .style('cursor', 'pointer')
       .on('mouseover', function(event, d) {
-        setHoveredTopic(d.data);
+        const demPct = (d.data.partyRatio * 100).toFixed(1);
+        const repPct = ((1 - d.data.partyRatio) * 100).toFixed(1);
+        
+        // Create attractive tooltip content
+        const content = `
+          <div style="padding: 12px; min-width: 200px;">
+            <div style="font-weight: 600; font-size: 15px; color: #fff; margin-bottom: 10px; line-height: 1.3;">
+              ${d.data.displayName}
+            </div>
+            <div style="font-size: 13px; color: #e5e7eb; margin-bottom: 8px;">
+              <span style="font-weight: 500;">Posts:</span> 
+              <span style="color: #fff; font-weight: 600;">${d.data.count.toLocaleString()}</span>
+            </div>
+            ${d.data.democratic > 0 || d.data.republican > 0 ? `
+              <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 8px; margin-top: 8px;">
+                <div style="display: flex; align-items: center; margin-bottom: 6px; font-size: 12px;">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; margin-right: 8px;"></div>
+                  <span style="color: #d1d5db;">Democratic:</span>
+                  <span style="color: #fff; font-weight: 600; margin-left: auto;">${d.data.democratic.toLocaleString()}</span>
+                  <span style="color: #9ca3af; margin-left: 6px;">(${demPct}%)</span>
+                </div>
+                <div style="display: flex; align-items: center; font-size: 12px;">
+                  <div style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444; margin-right: 8px;"></div>
+                  <span style="color: #d1d5db;">Republican:</span>
+                  <span style="color: #fff; font-weight: 600; margin-left: auto;">${d.data.republican.toLocaleString()}</span>
+                  <span style="color: #9ca3af; margin-left: 6px;">(${repPct}%)</span>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+        
+        setTooltipContent(content);
+        setTooltipVisible(true);
+        
         d3.select(this)
           .attr('stroke-width', 3)
           .attr('opacity', 0.9);
       })
+      .on('mousemove', function(event) {
+        // Update tooltip position to follow cursor
+        if (tippyInstanceRef.current) {
+          tippyInstanceRef.current.setProps({
+            getReferenceClientRect: () => ({
+              width: 0,
+              height: 0,
+              top: event.clientY,
+              bottom: event.clientY,
+              left: event.clientX,
+              right: event.clientX,
+            }),
+          });
+        }
+      })
       .on('mouseout', function() {
-        setHoveredTopic(null);
+        setTooltipVisible(false);
+        setTooltipContent(null);
         d3.select(this)
           .attr('stroke-width', 2)
           .attr('opacity', 1);
-      })
-      .append('title')
-      .text(d => {
-        const demPct = (d.data.partyRatio * 100).toFixed(1);
-        const repPct = ((1 - d.data.partyRatio) * 100).toFixed(1);
-        return `${d.data.displayName}\nPosts: ${d.data.count.toLocaleString()}\n${demPct}% Democratic, ${repPct}% Republican`;
       });
 
     // Add text labels (only if rectangle is large enough)
@@ -317,19 +364,20 @@ export default function TopVisualization({
   // Loading state
   if (loading) {
     return (
-      <div className="flex flex-col w-full h-full p-2">
-        <SectionTitle
-          icon={<FaChartBar />}
-          text="Topic Treemap"
-          helpContent={
-            <div className="text-left">
-              <p>Visualization of selected topics by engagement and party distribution.</p>
-              <p><strong>Size:</strong> Proportional to number of posts</p>
-              <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
-            </div>
-          }
-        />
-        <div className="flex-1 flex items-center justify-center">
+      <div className="relative w-full h-full">
+        <div className="absolute top-2 right-2 z-10">
+          <HelpTooltip
+            content={
+              <div className="text-left">
+                <p>Visualization of selected topics by engagement and party distribution.</p>
+                <p className="mt-2"><strong>Size:</strong> Proportional to number of posts</p>
+                <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
+              </div>
+            }
+            placement="left"
+          />
+        </div>
+        <div className="flex items-center justify-center w-full h-full">
           <div className="text-lg">Loading topic data...</div>
         </div>
       </div>
@@ -339,12 +387,20 @@ export default function TopVisualization({
   // Error state
   if (error) {
     return (
-      <div className="flex flex-col w-full h-full p-2">
-        <SectionTitle
-          icon={<FaChartBar />}
-          text="Topic Treemap"
-        />
-        <div className="flex-1 flex items-center justify-center">
+      <div className="relative w-full h-full">
+        <div className="absolute top-2 right-2 z-10">
+          <HelpTooltip
+            content={
+              <div className="text-left">
+                <p>Visualization of selected topics by engagement and party distribution.</p>
+                <p className="mt-2"><strong>Size:</strong> Proportional to number of posts</p>
+                <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
+              </div>
+            }
+            placement="left"
+          />
+        </div>
+        <div className="flex items-center justify-center w-full h-full">
           <div className="text-center">
             <div className="text-red-500 mb-2">Error loading data</div>
             <div className="text-sm text-gray-500">{error}</div>
@@ -357,19 +413,20 @@ export default function TopVisualization({
   // No topics selected
   if (!activeTopics || activeTopics.length === 0) {
     return (
-      <div className="flex flex-col w-full h-full p-2">
-        <SectionTitle
-          icon={<FaChartBar />}
-          text="Topic Treemap"
-          helpContent={
-            <div className="text-left">
-              <p>Visualization of selected topics by engagement and party distribution.</p>
-              <p><strong>Size:</strong> Proportional to number of posts</p>
-              <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
-            </div>
-          }
-        />
-        <div className="flex-1 flex items-center justify-center">
+      <div className="relative w-full h-full">
+        <div className="absolute top-2 right-2 z-10">
+          <HelpTooltip
+            content={
+              <div className="text-left">
+                <p>Visualization of selected topics by engagement and party distribution.</p>
+                <p className="mt-2"><strong>Size:</strong> Proportional to number of posts</p>
+                <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
+              </div>
+            }
+            placement="left"
+          />
+        </div>
+        <div className="flex items-center justify-center w-full h-full">
           <div className="text-lg text-gray-500">Select topics in the sidebar to view treemap</div>
         </div>
       </div>
@@ -379,19 +436,20 @@ export default function TopVisualization({
   // No data available
   if (topicsData.length === 0) {
     return (
-      <div className="flex flex-col w-full h-full p-2">
-        <SectionTitle
-          icon={<FaChartBar />}
-          text="Topic Treemap"
-          helpContent={
-            <div className="text-left">
-              <p>Visualization of selected topics by engagement and party distribution.</p>
-              <p><strong>Size:</strong> Proportional to number of posts</p>
-              <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
-            </div>
-          }
-        />
-        <div className="flex-1 flex items-center justify-center">
+      <div className="relative w-full h-full">
+        <div className="absolute top-2 right-2 z-10">
+          <HelpTooltip
+            content={
+              <div className="text-left">
+                <p>Visualization of selected topics by engagement and party distribution.</p>
+                <p className="mt-2"><strong>Size:</strong> Proportional to number of posts</p>
+                <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
+              </div>
+            }
+            placement="left"
+          />
+        </div>
+        <div className="flex items-center justify-center w-full h-full">
           <div className="text-lg text-gray-500">No data available for selected topics</div>
         </div>
       </div>
@@ -400,71 +458,82 @@ export default function TopVisualization({
 
   // Render treemap
   return (
-    <div className="flex flex-col w-full h-full p-2">
-      <SectionTitle
-        icon={<FaChartBar />}
-        text="Topic Treemap"
-        helpContent={
-          <div className="text-left">
-            <p>Visualization of selected topics by engagement and party distribution.</p>
-            <p><strong>Size:</strong> Proportional to number of posts</p>
-            <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
-            <p className="mt-2">Hover over rectangles to see detailed metrics.</p>
-          </div>
-        }
-      />
-      <div className="flex-1 overflow-hidden relative min-h-0">
-        {hoveredTopic && (
-          <div className="absolute top-4 left-4 z-20 bg-white rounded-lg shadow-lg p-3 border">
-            <div className="font-bold text-lg">{hoveredTopic.displayName}</div>
-            <div className="text-sm text-gray-600 mt-1">
-              Posts: {hoveredTopic.count.toLocaleString()}
+    <div className="relative w-full h-full overflow-hidden">
+      {/* Help icon - floating top right */}
+      <div className="absolute top-3 right-3 z-30">
+        <HelpTooltip
+          content={
+            <div className="text-left">
+              <p>Visualization of selected topics by engagement and party distribution.</p>
+              <p className="mt-2"><strong>Size:</strong> Proportional to number of posts</p>
+              <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
+              <p className="mt-2">Hover over rectangles to see detailed metrics.</p>
             </div>
-            {hoveredTopic.democratic > 0 || hoveredTopic.republican > 0 ? (
-              <>
-                <div className="text-sm text-gray-600 mt-1">
-                  Democratic: {hoveredTopic.democratic.toLocaleString()} ({((hoveredTopic.partyRatio) * 100).toFixed(1)}%)
-                </div>
-                <div className="text-sm text-gray-600">
-                  Republican: {hoveredTopic.republican.toLocaleString()} ({((1 - hoveredTopic.partyRatio) * 100).toFixed(1)}%)
-                </div>
-              </>
-            ) : (
-              <div className="text-xs text-gray-500 mt-1">No party data available</div>
-            )}
-          </div>
-        )}
-
-        {/* Legend */}
-        <div className="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-4 border max-w-xs">
-          <div className="font-semibold text-sm text-gray-800 mb-3">Party Distribution</div>
-          <div className="space-y-2">
-            <div className="flex items-center space-x-3">
-              <div className="w-4 h-4 rounded border-2 border-white shadow-sm" style={{ backgroundColor: '#2196F3' }} />
-              <div className="text-sm text-gray-700">100% Democratic</div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-4 h-4 rounded border-2 border-white shadow-sm" style={{ backgroundColor: '#764ba2' }} />
-              <div className="text-sm text-gray-700">50/50 Split</div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-4 h-4 rounded border-2 border-white shadow-sm" style={{ backgroundColor: '#dc3545' }} />
-              <div className="text-sm text-gray-700">100% Republican</div>
-            </div>
-          </div>
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="text-xs text-gray-500">
-              Rectangle size represents number of posts
-            </div>
-          </div>
-        </div>
-
-        <div 
-          ref={containerRef} 
-          className="w-full h-full" 
-          style={{ minHeight: '300px' }}
+          }
+          placement="left"
         />
       </div>
+
+      {/* Tippy tooltip that follows cursor */}
+      <Tippy
+        content={<div dangerouslySetInnerHTML={{ __html: tooltipContent || '' }} />}
+        visible={tooltipVisible && !!tooltipContent}
+        followCursor="initial"
+        placement="top"
+        animation="scale-subtle"
+        duration={[150, 100]}
+        delay={[0, 0]}
+        arrow={true}
+        interactive={false}
+        appendTo={() => document.body}
+        onMount={(instance) => {
+          tippyInstanceRef.current = instance;
+        }}
+        popperOptions={{
+          modifiers: [
+            {
+              name: 'offset',
+              options: {
+                offset: [0, 10],
+              },
+            },
+          ],
+        }}
+        theme="custom-treemap"
+      >
+        <div style={{ position: 'absolute', pointerEvents: 'none', width: 0, height: 0, top: 0, left: 0 }} />
+      </Tippy>
+
+      {/* Compact legend - bottom right */}
+      <div className="absolute bottom-3 right-3 z-20 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 border border-gray-200">
+        <div className="flex items-center gap-4">
+          {/* Color scale indicator */}
+          <div className="flex items-center gap-1.5">
+            <div className="flex h-4 rounded overflow-hidden shadow-sm border border-white/50">
+              <div className="w-3" style={{ backgroundColor: '#dc3545' }}></div>
+              <div className="w-3" style={{ backgroundColor: '#764ba2' }}></div>
+              <div className="w-3" style={{ backgroundColor: '#2196F3' }}></div>
+            </div>
+            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">Party</span>
+          </div>
+          
+          {/* Size indicator */}
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
+              <div className="w-2 h-2 bg-gray-400 rounded"></div>
+              <div className="w-3 h-3 bg-gray-400 rounded"></div>
+              <div className="w-4 h-4 bg-gray-400 rounded"></div>
+            </div>
+            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">Size = Posts</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Treemap container - full space */}
+      <div 
+        ref={containerRef} 
+        className="w-full h-full" 
+      />
     </div>
   );
 }

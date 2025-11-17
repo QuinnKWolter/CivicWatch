@@ -167,3 +167,21 @@ canvas[data-chartjs-chart] {
 .engagement-timeline-container {
   cursor: crosshair !important;
 }
+
+/* Treemap tooltip theme - dark gradient */
+.tippy-box[data-theme~='custom-treemap'] {
+  background: linear-gradient(135deg, rgba(31, 41, 55, 0.98), rgba(17, 24, 39, 0.98));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  backdrop-filter: blur(12px);
+  border-radius: 10px;
+  padding: 0;
+}
+
+.tippy-box[data-theme~='custom-treemap'] .tippy-arrow {
+  color: rgba(31, 41, 55, 0.98);
+}
+
+.tippy-box[data-theme~='custom-treemap'] .tippy-content {
+  padding: 0;
+}
