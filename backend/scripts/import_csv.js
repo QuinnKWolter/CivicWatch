@@ -145,6 +145,13 @@ async function importCSV() {
             // Clamp to [0, 1] range
             return Math.max(0, Math.min(1, num));
           }
+          // Toxicity columns - preserve full precision, no clamping
+          if (context.column === 'tox_toxicity' || context.column === 'tox_severe_toxicity' ||
+              context.column === 'tox_obscene' || context.column === 'tox_threat' ||
+              context.column === 'tox_insult' || context.column === 'tox_identity_attack') {
+            const num = parseFloat(value);
+            return isNaN(num) ? null : num; // Preserve exact value, including scientific notation
+          }
           if (context.column === 'created_at') {
             // Handle date format YYYY-MM-DD
             return value || null;
@@ -301,7 +308,9 @@ async function processBatch(client, batch) {
   if (batch.length === 0) return;
   
   // Process in smaller sub-batches to avoid parameter limits (PostgreSQL has a limit of ~65k parameters)
-  const SUB_BATCH_SIZE = 5000; // 5000 records * 13 columns = 65k parameters (safe limit)
+  // 19 columns: 13 original + 6 toxicity columns
+  // 3000 records * 19 columns = 57k parameters (safe limit)
+  const SUB_BATCH_SIZE = 3000;
   
   for (let subStart = 0; subStart < batch.length; subStart += SUB_BATCH_SIZE) {
     const subBatch = batch.slice(subStart, subStart + SUB_BATCH_SIZE);
@@ -310,15 +319,21 @@ async function processBatch(client, batch) {
     
     for (let j = 0; j < subBatch.length; j++) {
       const record = subBatch[j];
-      const offset = j * 13; // 13 columns for posts
+      const offset = j * 19; // 19 columns for posts (13 original + 6 toxicity)
       placeholders.push(
-        `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13})`
+        `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15}, $${offset + 16}, $${offset + 17}, $${offset + 18}, $${offset + 19})`
       );
       // Helper function to clamp probability/score values to [0, 1]
       const clamp01 = (val) => {
         const num = parseFloat(val);
         if (isNaN(num)) return null;
         return Math.max(0, Math.min(1, num));
+      };
+      
+      // Helper function to parse toxicity scores with full precision
+      const parseToxicity = (val) => {
+        const num = parseFloat(val);
+        return isNaN(num) ? null : num; // Preserve exact value, including scientific notation
       };
       
       values.push(
@@ -334,7 +349,13 @@ async function processBatch(client, batch) {
         parseFloat(record.overperforming_score) || null,
         clamp01(record.civility_score), // Clamp to [0, 1]
         record.topic,
-        clamp01(record.topic_probability) // Clamp to [0, 1]
+        clamp01(record.topic_probability), // Clamp to [0, 1]
+        parseToxicity(record.tox_toxicity),
+        parseToxicity(record.tox_severe_toxicity),
+        parseToxicity(record.tox_obscene),
+        parseToxicity(record.tox_threat),
+        parseToxicity(record.tox_insult),
+        parseToxicity(record.tox_identity_attack)
       );
     }
     
@@ -344,7 +365,9 @@ async function processBatch(client, batch) {
           id, lid, created_at, text, attachment,
           retweet_count, like_count, count_misinfo,
           interaction_score, overperforming_score, civility_score,
-          topic, topic_probability
+          topic, topic_probability,
+          tox_toxicity, tox_severe_toxicity, tox_obscene,
+          tox_threat, tox_insult, tox_identity_attack
         ) VALUES ${placeholders.join(', ')}
         ON CONFLICT (id) DO UPDATE SET
           lid = EXCLUDED.lid,
@@ -358,7 +381,13 @@ async function processBatch(client, batch) {
           overperforming_score = EXCLUDED.overperforming_score,
           civility_score = EXCLUDED.civility_score,
           topic = EXCLUDED.topic,
-          topic_probability = EXCLUDED.topic_probability`,
+          topic_probability = EXCLUDED.topic_probability,
+          tox_toxicity = EXCLUDED.tox_toxicity,
+          tox_severe_toxicity = EXCLUDED.tox_severe_toxicity,
+          tox_obscene = EXCLUDED.tox_obscene,
+          tox_threat = EXCLUDED.tox_threat,
+          tox_insult = EXCLUDED.tox_insult,
+          tox_identity_attack = EXCLUDED.tox_identity_attack`,
         values
       );
     } catch (err) {
