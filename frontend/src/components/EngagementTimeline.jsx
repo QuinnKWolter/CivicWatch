@@ -1332,8 +1332,28 @@ export default function EngagementTimeline({
                 <li>Scroll to zoom in/out on the timeline.</li>
                 <li>Ctrl+drag to pan the timeline.</li>
                 <li>Right-click or click Reset to clear selection and reset zoom.</li>
-                <li>Vertical lines show: hovered date (blue), start/end dates (green/red), selected range (orange).</li>
               </ul>
+              <div className="mt-3 pt-3 border-t border-gray-300">
+                <p className="font-semibold mb-2">Vertical Line Legend:</p>
+                <ul className="list-none space-y-1.5">
+                  <li className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-blue-500/60 border-dashed border-t-2 border-blue-500"></div>
+                    <span>Blue dashed = Hovered date</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-green-500/70"></div>
+                    <span>Green = Start date</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-red-500/70"></div>
+                    <span>Red = End date</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-4 h-0.5 bg-orange-500/80 border-dashed border-t-2 border-orange-500"></div>
+                    <span>Orange dashed = Selected range</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           }
         />
@@ -1433,31 +1453,6 @@ export default function EngagementTimeline({
                 </button>
               )}
                 </div>
-            
-            {/* Legend for vertical lines */}
-            <div className="absolute bottom-2 left-2 flex flex-col gap-1 text-xs bg-black/70 text-white px-2 py-1 rounded">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-blue-500/60 border-dashed border-t-2 border-blue-500"></div>
-                <span>Hovered date</span>
-                </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-green-500/70"></div>
-                <span>Start date</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-0.5 bg-red-500/70"></div>
-                <span>End date</span>
-                  </div>
-              {selectedDateRange.start && (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5 bg-orange-500/80 border-dashed border-t-2 border-orange-500"></div>
-                  <span>Selected range</span>
-                </div>
-              )}
-              <div className="mt-1 pt-1 border-t border-white/20 text-[10px] opacity-75">
-                Drag to select • Scroll to zoom • Ctrl+drag to pan • Right-click to reset
-                </div>
-              </div>
           </div>
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500">

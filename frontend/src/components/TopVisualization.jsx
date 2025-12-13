@@ -465,9 +465,28 @@ export default function TopVisualization({
           content={
             <div className="text-left">
               <p>Visualization of selected topics by engagement and party distribution.</p>
-              <p className="mt-2"><strong>Size:</strong> Proportional to number of posts</p>
-              <p><strong>Color:</strong> Blue = Democratic, Purple = Mixed, Red = Republican</p>
               <p className="mt-2">Hover over rectangles to see detailed metrics.</p>
+              <div className="mt-3 pt-3 border-t border-gray-300">
+                <p className="font-semibold mb-2">Legend:</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-4 rounded overflow-hidden shadow-sm border border-gray-300">
+                      <div className="w-3" style={{ backgroundColor: '#dc3545' }}></div>
+                      <div className="w-3" style={{ backgroundColor: '#764ba2' }}></div>
+                      <div className="w-3" style={{ backgroundColor: '#2196F3' }}></div>
+                    </div>
+                    <span className="text-sm">Party: Red = Republican, Purple = Mixed, Blue = Democratic</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded"></div>
+                      <div className="w-3 h-3 bg-gray-400 rounded"></div>
+                      <div className="w-4 h-4 bg-gray-400 rounded"></div>
+                    </div>
+                    <span className="text-sm">Size = Number of posts</span>
+                  </div>
+                </div>
+              </div>
             </div>
           }
           placement="left"
@@ -503,31 +522,6 @@ export default function TopVisualization({
       >
         <div style={{ position: 'absolute', pointerEvents: 'none', width: 0, height: 0, top: 0, left: 0 }} />
       </Tippy>
-
-      {/* Compact legend - bottom right */}
-      <div className="absolute bottom-3 right-3 z-20 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 border border-gray-200">
-        <div className="flex items-center gap-4">
-          {/* Color scale indicator */}
-          <div className="flex items-center gap-1.5">
-            <div className="flex h-4 rounded overflow-hidden shadow-sm border border-white/50">
-              <div className="w-3" style={{ backgroundColor: '#dc3545' }}></div>
-              <div className="w-3" style={{ backgroundColor: '#764ba2' }}></div>
-              <div className="w-3" style={{ backgroundColor: '#2196F3' }}></div>
-            </div>
-            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">Party</span>
-          </div>
-          
-          {/* Size indicator */}
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-gray-400 rounded"></div>
-              <div className="w-3 h-3 bg-gray-400 rounded"></div>
-              <div className="w-4 h-4 bg-gray-400 rounded"></div>
-            </div>
-            <span className="text-xs font-medium text-gray-700 whitespace-nowrap">Size = Posts</span>
-          </div>
-        </div>
-      </div>
 
       {/* Treemap container - full space */}
       <div 
