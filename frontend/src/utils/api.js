@@ -1,9 +1,12 @@
 /**
  * API utility functions for making requests to the backend
  * All API calls go through the /api proxy configured in vite.config.js
+ * In production, uses /prototype03/api base path
  */
 
-const API_BASE = '/api';
+// Use Vite's BASE_URL (set in vite.config.js) + /api
+// BASE_URL will be '/' in dev and '/prototype03/' in production
+export const API_BASE = `${import.meta.env.BASE_URL}api`.replace('//', '/');
 
 /**
  * Build query string from params object
