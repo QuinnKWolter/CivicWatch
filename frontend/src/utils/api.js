@@ -4,9 +4,11 @@
  * In production, uses /prototype03/api base path
  */
 
-// Use Vite's BASE_URL (set in vite.config.js) + /api
+// Use Vite's BASE_URL (set in vite.config.js) + api
 // BASE_URL will be '/' in dev and '/prototype03/' in production
-export const API_BASE = `${import.meta.env.BASE_URL}api`.replace('//', '/');
+// This ensures API_BASE is '/api' in dev and '/prototype03/api' in production
+const baseUrl = import.meta.env.BASE_URL || '/';
+export const API_BASE = `${baseUrl}api`.replace('//', '/');
 
 /**
  * Build query string from params object

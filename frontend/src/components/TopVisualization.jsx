@@ -5,6 +5,7 @@ import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
 import HelpTooltip from './HelpTooltip';
 import { formatTopicLabel, topicNames } from '../utils/utils';
+import { API_BASE } from '../utils/api';
 
 export default function TopVisualization({
   activeTopics,
@@ -66,7 +67,7 @@ export default function TopVisualization({
                   queryString.append(key, value);
                 }
               });
-              const res = await fetch(`/api/topics/breakdown/?${queryString.toString()}`);
+              const res = await fetch(`${API_BASE}/topics/breakdown/?${queryString.toString()}`);
               if (!res.ok) {
                 console.warn(`Failed to fetch breakdown for topic ${topicLabel}:`, res.status);
                 return null;

@@ -19,6 +19,7 @@ import 'tippy.js/dist/tippy.css';
 import 'tippy.js/themes/light.css';
 import { formatNumber, topicNames, formatTopicLabel } from '../utils/utils';
 import HelpTooltip from './HelpTooltip';
+import { API_BASE } from '../utils/api';
 
 export default function TimelineContext({ 
   startDate, 
@@ -64,7 +65,7 @@ export default function TimelineContext({
           }
         });
 
-        const res = await fetch(`/api/default_overview_data/?${queryString.toString()}`);
+        const res = await fetch(`${API_BASE}/default_overview_data/?${queryString.toString()}`);
         if (!res.ok) {
           const text = await res.text();
           console.error('Failed to load overview:', res.status, text.substring(0, 200));

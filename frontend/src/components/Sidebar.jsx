@@ -7,6 +7,7 @@ import { FaTwitter, FaFacebook } from 'react-icons/fa';
 import { topicIcons, getTopicColor, formatTopicLabel, topicNames } from '../utils/utils';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
+import { API_BASE } from '../utils/api';
 
 // Constants
 const FLASHPOINTS = [
@@ -131,7 +132,7 @@ export default function Sidebar({
         params.limit = 500; // Get top 500 topics
 
         const queryString = new URLSearchParams(params).toString();
-        const res = await fetch(`/api/engagement/topics/?${queryString}`);
+        const res = await fetch(`${API_BASE}/engagement/topics/?${queryString}`);
         if (!res.ok) {
           const errorText = await res.text();
           throw new Error(`HTTP error! status: ${res.status} - ${errorText.substring(0, 100)}`);
@@ -210,7 +211,7 @@ export default function Sidebar({
           params.state = selectedState;
         }
         const queryString = new URLSearchParams(params).toString();
-        const res = await fetch(`/api/legislators/?${queryString}`);
+        const res = await fetch(`${API_BASE}/legislators/?${queryString}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         setLegislators(Array.isArray(data) ? data : []);
@@ -805,7 +806,7 @@ export default function Sidebar({
                         }
                         params.limit = 500;
                         const queryString = new URLSearchParams(params).toString();
-                        const res = await fetch(`/api/engagement/topics/?${queryString}`);
+                        const res = await fetch(`${API_BASE}/engagement/topics/?${queryString}`);
                         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                         const topicsArray = await res.json();
                         if (Array.isArray(topicsArray)) {

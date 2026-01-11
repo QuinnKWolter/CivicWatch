@@ -22,6 +22,7 @@ import { FaSpinner, FaChartLine } from 'react-icons/fa';
 import { formatNumber, getTopicColor, topicNames, formatTopicLabel } from '../utils/utils';
 import detectEvents from './detectEvents';
 import SectionTitle from './SectionTitle';
+import { API_BASE } from '../utils/api';
 
 // Extend dayjs with comparison plugins
 dayjs.extend(isSameOrAfter);
@@ -347,7 +348,7 @@ export default function EngagementTimeline({
           }
         });
 
-        const res = await fetch(`/api/engagement/timeline/?${queryString.toString()}`);
+        const res = await fetch(`${API_BASE}/engagement/timeline/?${queryString.toString()}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const allData = await res.json();
         setData(allData);

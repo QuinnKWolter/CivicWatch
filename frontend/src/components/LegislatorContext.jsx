@@ -4,6 +4,7 @@ import { FaUser, FaArrowLeft, FaChartLine, FaUsers, FaShieldAlt, FaStar, FaSort,
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { getTopicColor, topicNames, formatTopicLabel } from '../utils/utils';
 import HelpTooltip from './HelpTooltip';
+import { API_BASE } from '../utils/api';
 
 export default function LegislatorContext({ 
   legislator, 
@@ -65,7 +66,7 @@ export default function LegislatorContext({
           }
         });
 
-        const res = await fetch(`/api/legislators/${legislator.legislator_id}/profile?${queryString.toString()}`);
+        const res = await fetch(`${API_BASE}/legislators/${legislator.legislator_id}/profile?${queryString.toString()}`);
         if (!res.ok) {
           const errorText = await res.text();
           throw new Error(`HTTP error! status: ${res.status} - ${errorText.substring(0, 100)}`);
@@ -229,7 +230,7 @@ export default function LegislatorContext({
                     queryString.append(key, value);
                   }
                 });
-                const res = await fetch(`/api/legislators/${legislator.legislator_id}/profile?${queryString.toString()}`);
+                const res = await fetch(`${API_BASE}/legislators/${legislator.legislator_id}/profile?${queryString.toString()}`);
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const profile = await res.json();
                 setProfileData(profile);

@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { FaMapMarkerAlt, FaTimes } from 'react-icons/fa';
 import Tippy from '@tippyjs/react';
 import 'tippy.js/dist/tippy.css';
+import { API_BASE } from '../utils/api';
 
 export default function StateDropdown({
   selectedState,
@@ -28,7 +29,7 @@ export default function StateDropdown({
         }
 
         const queryString = new URLSearchParams(params).toString();
-        const res = await fetch(`/api/states/?${queryString}`);
+        const res = await fetch(`${API_BASE}/states/?${queryString}`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         setAllStates(data);
