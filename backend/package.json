@@ -7,7 +7,12 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "import-csv": "node scripts/import_csv.js"
+    "import-csv": "node scripts/import_csv.js",
+    "import-full": "node scripts/import_full_dataset.js",
+    "import-full-v2": "node scripts/import_full_dataset_v2.js",
+    "analyze-skipped": "node scripts/analyze_skipped_tweets.js",
+    "create-dump": "node scripts/create_dump.js",
+    "load-dump": "node scripts/load_dump.js"
   },
   "keywords": [],
   "author": "",
