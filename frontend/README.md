@@ -1,8 +1,25 @@
-# React + Vite
+# CivicWatch Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React (Vite) dashboard UI for exploring legislators’ posts by time, topic, geography, and party mix.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+npm run dev
+```
+
+Defaults:
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8500` (see `src/utils/api`)
+
+## Key UI pieces
+
+- `src/components/Sidebar.jsx`: filters (party/state/topics) + topic list behavior/icons
+- `src/components/TimelineContext.jsx`: top-level overview KPIs + metadata panels
+- `src/components/TopVisualization.jsx`: treemap + grid-map toggle (state grid heatmap)
+
+## Data contract (what the UI expects)
+
+- The UI calls backend endpoints under `/api/*`.
+- `TopVisualization` calls `/api/topics/breakdown` and expects `party_breakdown`, `state_breakdown`, and `state_party_breakdown`.

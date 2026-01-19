@@ -1,0 +1,13 @@
+{
+  "name": "civicwatch",
+  "version": "1.0.0",
+  "description": "CivicWatch - Legislative Activity Analysis Platform",
+  "type": "module",
+  "scripts": {
+    "start": "node start.js",
+    "dev": "node start.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
