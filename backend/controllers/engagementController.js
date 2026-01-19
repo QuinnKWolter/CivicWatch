@@ -54,18 +54,25 @@ export async function getEngagementTimeline(req, res) {
     // Note: If no topics specified, return all topics (frontend can filter client-side if needed)
 
     // Query to get daily engagement per topic and post counts
+    // v3 schema: Includes all engagement metrics (replies, quotes)
+    // Note: Removed HAVING clause to include topics with 0 engagement but posts
     const query = `
       SELECT 
         p.created_at as date,
         t.topic_label,
-        SUM(p.like_count + p.retweet_count) as engagement,
+        COALESCE(SUM(
+          COALESCE(p.like_count, 0) + 
+          COALESCE(p.retweet_count, 0) + 
+          COALESCE(p.reply_count, 0) + 
+          COALESCE(p.quote_count, 0)
+        ), 0) as engagement,
         COUNT(p.id) as post_count
       FROM posts p
       JOIN topics t ON p.topic = t.topic
       JOIN legislators l ON p.lid = l.lid
       ${dateFilter}${topicFilter}${partyFilter}
       GROUP BY p.created_at, t.topic_label
-      HAVING SUM(p.like_count + p.retweet_count) > 0
+      HAVING COUNT(p.id) > 0
       ORDER BY p.created_at, t.topic_label
     `;
 
@@ -118,7 +125,12 @@ export async function getTopicsByEngagement(req, res) {
       SELECT 
         t.topic_label,
         COUNT(p.id) as post_count,
-        SUM(p.like_count + p.retweet_count) as total_engagement
+        SUM(
+          COALESCE(p.like_count, 0) + 
+          COALESCE(p.retweet_count, 0) + 
+          COALESCE(p.reply_count, 0) + 
+          COALESCE(p.quote_count, 0)
+        ) as total_engagement
       FROM topics t
       JOIN posts p ON t.topic = p.topic
       JOIN legislators l ON p.lid = l.lid
@@ -151,8 +163,8 @@ export async function getTopicsByEngagement(req, res) {
 
     query += `
       GROUP BY t.topic_label
-      HAVING SUM(p.like_count + p.retweet_count) > 0
-      ORDER BY total_engagement DESC
+      HAVING COUNT(p.id) > 0
+      ORDER BY total_engagement DESC, post_count DESC
       LIMIT $${params.length + 1}
     `;
 

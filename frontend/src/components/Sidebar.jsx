@@ -157,11 +157,16 @@ export default function Sidebar({
     loadData();
   }, [selectedParty]); // Removed startDate and endDate from dependencies - topics always ordered by overall engagement
 
-  // Initialize default topics (top 10 by engagement) if none are selected
+  // Unknown topic identifier - always shown at bottom, unselected by default
+  const UNKNOWN_TOPIC = 'Unknown Topic (999)';
+
+  // Initialize default topics (top 3 by engagement, excluding unknown) if none are selected
   useEffect(() => {
     // Only set defaults if we have topics loaded and no topics are currently selected
     if (topicsByEngagement.length > 0 && (!activeTopics || activeTopics.length === 0)) {
-      const defaultTopics = topicsByEngagement.slice(0, 10);
+      const defaultTopics = topicsByEngagement
+        .filter(t => t !== UNKNOWN_TOPIC)
+        .slice(0, 3);
       setActiveTopics(defaultTopics);
     }
   }, [topicsByEngagement, activeTopics, setActiveTopics]);
@@ -306,8 +311,8 @@ export default function Sidebar({
   const activeFilters = getActiveFilters();
 
   return (
-    <aside className="w-64 h-full bg-base-200 shadow-xl p-4 relative flex flex-col">
-      <div className="flex-1 space-y-6 overflow-y-auto">
+    <aside className="w-64 h-full bg-base-200 shadow-xl p-4 relative flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col gap-6 min-h-0">
         {/* Party Toggle */}
         <div className="space-y-3">
           <div className="flex bg-base-300 rounded-lg p-1">
@@ -778,9 +783,10 @@ export default function Sidebar({
         </div>
 
         {/* Topic Selection - Redesigned */}
-        <div className="space-y-3">
-          <div className="text-xs text-gray-500 font-medium">Topics</div>
-          <div className="max-h-120 overflow-y-auto pr-2 custom-scrollbar">
+        {/* Only this section should scroll */}
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="text-xs text-gray-500 font-medium mb-3 shrink-0">Topics</div>
+          <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
             {topicsLoading ? (
               <div className="text-xs text-gray-400 text-center py-4">
                 <div className="flex items-center justify-center space-x-2">
@@ -831,12 +837,76 @@ export default function Sidebar({
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-1.5 pb-2">
-                {topicsByEngagement.map(topic => {
-                  // Use FaGlobe as fallback icon if topic not in topicIcons
-                  const Icon = topicIcons[topic] || topicIcons.all || FaGlobe;
+                {/* Regular topics (excluding unknown) */}
+                {topicsByEngagement
+                  .filter(topic => topic !== UNKNOWN_TOPIC)
+                  .map(topic => {
+                    // Use FaGlobe as fallback icon if topic not in topicIcons
+                    const Icon = topicIcons[topic] || topicIcons.all || FaGlobe;
+                    const isActive = activeTopics.includes(topic);
+                    const color = getTopicColor(topic);
+                    const displayName = topicNames[topic] || formatTopicLabel(topic) || topic.charAt(0).toUpperCase() + topic.slice(1);
+                    
+                    return (
+                      <button
+                        key={topic}
+                        onClick={() => {
+                          const next = isActive
+                            ? activeTopics.filter(t => t !== topic)
+                            : [...activeTopics, topic];
+                          setActiveTopics(next);
+                        }}
+                        className={`relative p-2.5 rounded-lg border-2 transition-all duration-300 flex flex-row items-center justify-start space-x-2.5 ${
+                          isActive 
+                            ? 'shadow-md' 
+                            : 'border-gray-200 hover:border-gray-300 bg-base-100 hover:bg-base-200'
+                        }`}
+                        style={{
+                          borderColor: isActive ? color : undefined,
+                          background: isActive 
+                            ? `linear-gradient(135deg, ${color}dd, ${color}aa)` 
+                            : undefined,
+                          color: isActive ? 'white' : '#6B7280'
+                        }}
+                      >
+                        {Icon && (
+                          <Icon 
+                            size={16} 
+                            className="flex-shrink-0"
+                            style={{
+                              color: isActive ? 'white' : color,
+                              filter: isActive ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' : 'none'
+                            }}
+                          />
+                        )}
+                        <span 
+                          className="text-xs font-medium flex-1 text-left break-words"
+                          style={{
+                            textShadow: isActive ? '0 1px 2px rgba(0,0,0,0.5)' : 'none',
+                            fontWeight: isActive ? 'bold' : 'medium',
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word'
+                          }}
+                        >
+                          {displayName}
+                        </span>
+                        {isActive && (
+                          <div 
+                            className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full border border-white flex-shrink-0"
+                            style={{ backgroundColor: color }}
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                
+                {/* Unknown Topic - always at bottom */}
+                {topicsByEngagement.includes(UNKNOWN_TOPIC) && (() => {
+                  const topic = UNKNOWN_TOPIC;
+                  const Icon = topicIcons[topic] || FaGlobe;
                   const isActive = activeTopics.includes(topic);
-                  const color = getTopicColor(topic);
-                  const displayName = topicNames[topic] || formatTopicLabel(topic) || topic.charAt(0).toUpperCase() + topic.slice(1);
+                  const color = getTopicColor(topic) || '#9CA3AF';
+                  const displayName = 'Unknown Topic';
                   
                   return (
                     <button
@@ -847,17 +917,17 @@ export default function Sidebar({
                           : [...activeTopics, topic];
                         setActiveTopics(next);
                       }}
-                      className={`relative p-2.5 rounded-lg border-2 transition-all duration-300 flex flex-row items-center justify-start space-x-2.5 ${
+                      className={`relative p-2.5 rounded-lg border-2 transition-all duration-300 flex flex-row items-center justify-start space-x-2.5 mt-2 border-dashed ${
                         isActive 
                           ? 'shadow-md' 
-                          : 'border-gray-200 hover:border-gray-300 bg-base-100 hover:bg-base-200'
+                          : 'border-gray-300 hover:border-gray-400 bg-base-100 hover:bg-base-200'
                       }`}
                       style={{
                         borderColor: isActive ? color : undefined,
                         background: isActive 
                           ? `linear-gradient(135deg, ${color}dd, ${color}aa)` 
                           : undefined,
-                        color: isActive ? 'white' : '#6B7280'
+                        color: isActive ? 'white' : '#9CA3AF'
                       }}
                     >
                       {Icon && (
@@ -889,7 +959,7 @@ export default function Sidebar({
                       )}
                     </button>
                   );
-                })}
+                })()}
               </div>
             )}
           </div>

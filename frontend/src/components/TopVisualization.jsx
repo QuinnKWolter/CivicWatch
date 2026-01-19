@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import * as d3 from 'd3';
 import Tippy from '@tippyjs/react';
@@ -25,6 +25,79 @@ export default function TopVisualization({
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [tooltipContent, setTooltipContent] = useState(null);
   const tippyInstanceRef = useRef(null);
+  const [viewMode, setViewMode] = useState('treemap'); // 'treemap' | 'grid'
+
+  const STATE_GRID = {
+    AK: [0, 0],
+    WA: [0, 2], ID: [1, 2], MT: [2, 2], ND: [3, 2], MN: [4, 2], WI: [5, 2], MI: [6, 2],
+    NY: [8, 2], CT: [9, 2], RI: [10, 2], MA: [11, 2],
+    OR: [0, 3], NV: [1, 3], WY: [2, 3], SD: [3, 3], IA: [4, 3], IL: [5, 3], IN: [6, 3],
+    OH: [7, 3], PA: [8, 3], NJ: [9, 3], DE: [10, 3],
+    CA: [0, 4], UT: [1, 4], CO: [2, 4], NE: [3, 4], MO: [4, 4], KY: [5, 4], WV: [6, 4],
+    VA: [7, 4], DC: [8, 4], MD: [9, 4],
+    AZ: [1, 5], NM: [2, 5], KS: [3, 5], AR: [4, 5], MS: [5, 5], TN: [6, 5], NC: [7, 5],
+    OK: [3, 6], LA: [4, 6], AL: [5, 6], GA: [6, 6], SC: [7, 6],
+    TX: [3, 7], FL: [7, 7],
+    VT: [10, 1], NH: [11, 1], ME: [11, 0],
+    HI: [0, 7],
+  };
+  const GRID_W = 12;
+  const GRID_H = 8;
+
+  const overallPartyTotals = useMemo(() => {
+    let dem = 0;
+    let rep = 0;
+    for (const t of topicsData || []) {
+      dem += t.democratic || 0;
+      rep += t.republican || 0;
+    }
+    return { dem, rep, total: dem + rep };
+  }, [topicsData]);
+
+  // Midpoint normalization for partisan hue:
+  // If Dems are more present overall, "neutral" should be that baseline, not 50/50.
+  const partisanMidpoint = useMemo(() => {
+    return overallPartyTotals.total > 0 ? overallPartyTotals.dem / overallPartyTotals.total : 0.5;
+  }, [overallPartyTotals.dem, overallPartyTotals.total]);
+
+  const aggregatedStateParty = useMemo(() => {
+    const totals = {};
+    for (const t of topicsData || []) {
+      const sb = t.statePartyBreakdown || {};
+      for (const [state, byParty] of Object.entries(sb)) {
+        const d = parseInt(byParty?.Democratic || 0, 10) || 0;
+        const r = parseInt(byParty?.Republican || 0, 10) || 0;
+        if (!totals[state]) totals[state] = { dem: 0, rep: 0 };
+        totals[state].dem += d;
+        totals[state].rep += r;
+      }
+    }
+    return totals;
+  }, [topicsData]);
+
+  const aggregatedStateTotals = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(aggregatedStateParty).map(([st, v]) => [st, (v.dem || 0) + (v.rep || 0)])
+    );
+  }, [aggregatedStateParty]);
+
+  const gridMax = useMemo(() => {
+    return Math.max(1, ...Object.values(aggregatedStateTotals).map(v => v || 0));
+  }, [aggregatedStateTotals]);
+
+  // Hue by party mix (R -> purple -> D), centered at partisanMidpoint instead of 0.5
+  const partyHue = useMemo(() => {
+    return d3
+      .scaleLinear()
+      .domain([0, partisanMidpoint, 1])
+      .range(['#dc3545', '#764ba2', '#2196F3'])
+      .clamp(true);
+  }, [partisanMidpoint]);
+
+  // Opacity by volume (so low-volume states are still visible, but subtle)
+  const intensity = useMemo(() => {
+    return d3.scaleSqrt().domain([0, gridMax]).range([0.12, 1]).clamp(true);
+  }, [gridMax]);
 
   // Load topics data from API
   useEffect(() => {
@@ -110,7 +183,8 @@ export default function TopVisualization({
               democratic: democratic,
               republican: republican,
               partyBreakdown: partyBreakdown,
-              stateBreakdown: topic.state_breakdown || {}
+              stateBreakdown: topic.state_breakdown || {},
+              statePartyBreakdown: topic.state_party_breakdown || {}
             };
           })
           .filter(d => d.value > 0); // Only show topics with posts
@@ -177,6 +251,12 @@ export default function TopVisualization({
 
   // Render treemap
   useEffect(() => {
+    if (viewMode !== 'treemap') {
+      if (containerRef.current) {
+        d3.select(containerRef.current).selectAll('*').remove();
+      }
+      return;
+    }
     // Early returns
     if (loading) {
       if (containerRef.current) {
@@ -240,10 +320,11 @@ export default function TopVisualization({
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    // Color scale: Blue (1.0 = 100% Dem) -> Purple (0.5 = 50/50) -> Red (0.0 = 100% Rep)
+    // Color scale: hue by party mix, centered at partisanMidpoint (baseline Dem share)
     const colorScale = d3.scaleLinear()
-      .domain([0, 0.5, 1])
-      .range(['#dc3545', '#764ba2', '#2196F3']); // Red -> Purple -> Blue
+      .domain([0, partisanMidpoint, 1])
+      .range(['#dc3545', '#764ba2', '#2196F3'])
+      .clamp(true);
 
     // Get leaves (actual topic nodes)
     const leaves = root.leaves();
@@ -259,7 +340,7 @@ export default function TopVisualization({
     cells.append('rect')
       .attr('width', d => Math.max(0, d.x1 - d.x0))
       .attr('height', d => Math.max(0, d.y1 - d.y0))
-      .attr('fill', d => colorScale(d.data.partyRatio || 0.5))
+      .attr('fill', d => colorScale(d.data.partyRatio ?? partisanMidpoint))
       .attr('stroke', 'white')
       .attr('stroke-width', 2)
       .style('cursor', 'pointer')
@@ -360,7 +441,21 @@ export default function TopVisualization({
         d3.select(container).selectAll('*').remove();
       }
     };
-  }, [dimensions.width, dimensions.height, topicsData, loading]);
+  }, [dimensions.width, dimensions.height, topicsData, loading, viewMode, partisanMidpoint]);
+
+  const gridCellSize = useRef(0);
+  const computedCellSize = (() => {
+    const w = dimensions.width || 0;
+    const h = dimensions.height || 0;
+    if (!w || !h) return 0;
+    // Leave a little padding around the grid
+    const padding = 16;
+    const maxW = Math.max(0, w - padding * 2);
+    const maxH = Math.max(0, h - padding * 2);
+    const cell = Math.floor(Math.min(maxW / GRID_W, maxH / GRID_H));
+    return Math.max(10, cell);
+  })();
+  gridCellSize.current = computedCellSize;
 
   // Loading state
   if (loading) {
@@ -460,13 +555,33 @@ export default function TopVisualization({
   // Render treemap
   return (
     <div className="relative w-full h-full overflow-hidden">
+      {/* View toggle (discrete) */}
+      <div className="absolute top-3 left-3 z-30">
+        <div className="join shadow-sm border border-base-300 bg-base-100/80 backdrop-blur rounded-full overflow-hidden">
+          <button
+            className={`join-item btn btn-xs ${viewMode === 'treemap' ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => setViewMode('treemap')}
+            type="button"
+          >
+            Treemap
+          </button>
+          <button
+            className={`join-item btn btn-xs ${viewMode === 'grid' ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={() => setViewMode('grid')}
+            type="button"
+          >
+            Map
+          </button>
+        </div>
+      </div>
+
       {/* Help icon - floating top right */}
       <div className="absolute top-3 right-3 z-30">
         <HelpTooltip
           content={
             <div className="text-left">
-              <p>Visualization of selected topics by engagement and party distribution.</p>
-              <p className="mt-2">Hover over rectangles to see detailed metrics.</p>
+              <p>Treemap: size = post count, hue = party mix (midpoint normalized).</p>
+              <p className="mt-2">Map: grid heatmap by state; hue = party mix, intensity = volume.</p>
               <div className="mt-3 pt-3 border-t border-gray-300">
                 <p className="font-semibold mb-2">Legend:</p>
                 <div className="space-y-2">
@@ -476,7 +591,7 @@ export default function TopVisualization({
                       <div className="w-3" style={{ backgroundColor: '#764ba2' }}></div>
                       <div className="w-3" style={{ backgroundColor: '#2196F3' }}></div>
                     </div>
-                    <span className="text-sm">Party: Red = Republican, Purple = Mixed, Blue = Democratic</span>
+                    <span className="text-sm">Hue: Red = Republican, Blue = Democratic, Purple = midpoint</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
@@ -494,41 +609,115 @@ export default function TopVisualization({
         />
       </div>
 
-      {/* Tippy tooltip that follows cursor */}
-      <Tippy
-        content={<div dangerouslySetInnerHTML={{ __html: tooltipContent || '' }} />}
-        visible={tooltipVisible && !!tooltipContent}
-        followCursor="initial"
-        placement="top"
-        animation="scale-subtle"
-        duration={[150, 100]}
-        delay={[0, 0]}
-        arrow={true}
-        interactive={false}
-        appendTo={() => document.body}
-        onMount={(instance) => {
-          tippyInstanceRef.current = instance;
-        }}
-        popperOptions={{
-          modifiers: [
-            {
-              name: 'offset',
-              options: {
-                offset: [0, 10],
-              },
-            },
-          ],
-        }}
-        theme="custom-treemap"
-      >
-        <div style={{ position: 'absolute', pointerEvents: 'none', width: 0, height: 0, top: 0, left: 0 }} />
-      </Tippy>
+      {viewMode === 'treemap' ? (
+        <>
+          {/* Tippy tooltip that follows cursor */}
+          <Tippy
+            content={<div dangerouslySetInnerHTML={{ __html: tooltipContent || '' }} />}
+            visible={tooltipVisible && !!tooltipContent}
+            followCursor="initial"
+            placement="top"
+            animation="scale-subtle"
+            duration={[150, 100]}
+            delay={[0, 0]}
+            arrow={true}
+            interactive={false}
+            appendTo={() => document.body}
+            onMount={(instance) => {
+              tippyInstanceRef.current = instance;
+            }}
+            popperOptions={{
+              modifiers: [
+                {
+                  name: 'offset',
+                  options: {
+                    offset: [0, 10],
+                  },
+                },
+              ],
+            }}
+            theme="custom-treemap"
+          >
+            <div style={{ position: 'absolute', pointerEvents: 'none', width: 0, height: 0, top: 0, left: 0 }} />
+          </Tippy>
 
-      {/* Treemap container - full space */}
-      <div 
-        ref={containerRef} 
-        className="w-full h-full" 
-      />
+          {/* Treemap container - full space */}
+          <div ref={containerRef} className="w-full h-full" />
+        </>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <div
+            className="relative"
+            style={{
+              width: gridCellSize.current ? gridCellSize.current * GRID_W : 0,
+              height: gridCellSize.current ? gridCellSize.current * GRID_H : 0,
+            }}
+          >
+            {Object.entries(STATE_GRID).map(([st, [x, y]]) => {
+              const dem = aggregatedStateParty[st]?.dem || 0;
+              const rep = aggregatedStateParty[st]?.rep || 0;
+              const total = dem + rep;
+              const ratio = total > 0 ? dem / total : null;
+              const v = aggregatedStateTotals[st] || 0;
+
+              const base = ratio === null ? 'rgba(255,255,255,0.10)' : partyHue(ratio);
+              const bg =
+                ratio === null
+                  ? 'rgba(255,255,255,0.06)'
+                  : d3.color(base).copy({ opacity: intensity(v) }).toString();
+              const border = v > 0 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)';
+              return (
+                <Tippy
+                  key={st}
+                  content={
+                    <div className="text-sm">
+                      <div className="font-semibold">{st}</div>
+                      <div>
+                        Posts: <span className="font-semibold">{v.toLocaleString()}</span>
+                      </div>
+                      {total > 0 ? (
+                        <div className="mt-1 text-xs text-base-content/70">
+                          <div>
+                            Dem: <span className="font-semibold">{dem.toLocaleString()}</span>
+                          </div>
+                          <div>
+                            Rep: <span className="font-semibold">{rep.toLocaleString()}</span>
+                          </div>
+                          <div>
+                            Dem share:{' '}
+                            <span className="font-semibold">{((dem / total) * 100).toFixed(1)}%</span>
+                            <span className="opacity-70"> (mid: {(partisanMidpoint * 100).toFixed(1)}%)</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-1 text-xs text-base-content/60">No party-coded data</div>
+                      )}
+                    </div>
+                  }
+                  placement="top"
+                  delay={[80, 0]}
+                >
+                  <div
+                    className="absolute rounded-md flex items-center justify-center text-[10px] font-semibold select-none"
+                    style={{
+                      left: x * gridCellSize.current,
+                      top: y * gridCellSize.current,
+                      width: gridCellSize.current,
+                      height: gridCellSize.current,
+                      background: bg,
+                      border: `1px solid ${border}`,
+                      color: v > 0 ? '#fff' : 'rgba(255,255,255,0.55)',
+                      boxShadow: v > 0 ? '0 1px 6px rgba(0,0,0,0.18)' : 'none',
+                    }}
+                  >
+                    {st}
+                  </div>
+                </Tippy>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

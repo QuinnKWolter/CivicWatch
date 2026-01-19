@@ -1,5 +1,31 @@
-// Import necessary icons
-import { FaHospitalUser, FaFistRaised, FaLeaf, FaVirus, FaBalanceScale, FaGlobe } from 'react-icons/fa';
+import {
+  FaHospitalUser,
+  FaFistRaised,
+  FaLeaf,
+  FaVirus,
+  FaBalanceScale,
+  FaGlobe,
+  FaCogs,
+  FaGavel,
+  FaHeartbeat,
+  FaDollarSign,
+  FaGlobeAmericas,
+  FaGraduationCap,
+  FaHandsHelping,
+  FaTag,
+  FaShieldAlt,
+  FaHardHat,
+  FaPassport,
+  FaBus,
+  FaBolt,
+  FaTheaterMasks,
+  FaHome,
+  FaTractor,
+  FaMicrochip,
+  FaMountain,
+  FaLandmark,
+  FaQuestionCircle,
+} from 'react-icons/fa';
 import { GiCapitol, GiBrickWall, GiPistolGun } from 'react-icons/gi';
 
 // Export topic icons as components
@@ -12,7 +38,35 @@ export const topicIcons = {
   climate: FaLeaf,
   gun: GiPistolGun,
   rights: FaBalanceScale,
-  covid: FaVirus
+  covid: FaVirus,
+
+  // --------------------------------------------------------------------------
+  // CAP topic set (full labels)
+  // --------------------------------------------------------------------------
+  'Government Operations': FaCogs,
+  'Civil Rights': FaBalanceScale,
+  'Law and Crime': FaGavel,
+  'Health': FaHeartbeat,
+  'Macroeconomics': FaDollarSign,
+  'International Affairs': FaGlobeAmericas,
+  'Education': FaGraduationCap,
+  'Social Welfare': FaHandsHelping,
+  'Unclassified': FaTag,
+  'Defense': FaShieldAlt,
+  'Labor': FaHardHat,
+  'Environment': FaLeaf,
+  'Immigration': FaPassport,
+  'Transportation': FaBus,
+  'Energy': FaBolt,
+  'Culture': FaTheaterMasks,
+  'Housing': FaHome,
+  'Agriculture': FaTractor,
+  'Technology': FaMicrochip,
+  'Public Lands': FaMountain,
+  'Banking, Finance, and Domestic Commerce': FaLandmark,
+  'Unknown Topic': FaQuestionCircle,
+  // Sidebar's special-case label
+  'Unknown Topic (999)': FaQuestionCircle,
 };
 
 // Export color map with accessible color scheme (no party differentiation)
@@ -36,7 +90,32 @@ export const topicNames = {
   climate: 'Climate Change',
   gun: 'Gun Rights',
   rights: 'Civil Rights',
-  covid: 'COVID-19'
+  covid: 'COVID-19',
+
+  // CAP topic labels (identity mapping, but explicit for consistency)
+  'Government Operations': 'Government Operations',
+  'Civil Rights': 'Civil Rights',
+  'Law and Crime': 'Law and Crime',
+  'Health': 'Health',
+  'Macroeconomics': 'Macroeconomics',
+  'International Affairs': 'International Affairs',
+  'Education': 'Education',
+  'Social Welfare': 'Social Welfare',
+  'Unclassified': 'Unclassified',
+  'Defense': 'Defense',
+  'Labor': 'Labor',
+  'Environment': 'Environment',
+  'Immigration': 'Immigration',
+  'Transportation': 'Transportation',
+  'Energy': 'Energy',
+  'Culture': 'Culture',
+  'Housing': 'Housing',
+  'Agriculture': 'Agriculture',
+  'Technology': 'Technology',
+  'Public Lands': 'Public Lands',
+  'Banking, Finance, and Domestic Commerce': 'Banking, Finance, and Domestic Commerce',
+  'Unknown Topic': 'Unknown Topic',
+  'Unknown Topic (999)': 'Unknown Topic',
 };
 
 // Helper function to extract a clean display name from topic_label

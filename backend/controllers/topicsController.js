@@ -39,8 +39,7 @@ export async function getAllTopics(req, res) {
 
     query += `
       GROUP BY t.topic, t.topic_label
-      HAVING COUNT(p.id) > 0
-      ORDER BY total_engagement DESC
+      ORDER BY total_engagement DESC NULLS LAST, post_count DESC
     `;
 
     const result = await pool.query(query, params);
@@ -117,10 +116,7 @@ export async function getTopicBreakdown(req, res) {
     let stateQuery = `
       SELECT 
         l.state,
-        COUNT(p.id) as post_count,
-        SUM(p.like_count) as total_likes,
-        SUM(p.retweet_count) as total_retweets,
-        SUM(p.like_count + p.retweet_count) as total_engagement
+        COUNT(p.id) as post_count
       FROM posts p
       JOIN legislators l ON p.lid = l.lid
       WHERE p.topic = $1
@@ -150,11 +146,49 @@ export async function getTopicBreakdown(req, res) {
       stateParamIndex++;
     }
 
-    stateQuery += ` AND l.state IS NOT NULL GROUP BY l.state ORDER BY total_engagement DESC LIMIT 20`;
+    // For mapping, we want state totals that match the party mix (D/R only)
+    stateQuery += ` AND l.state IS NOT NULL AND l.party IN ('Democratic','Republican') GROUP BY l.state ORDER BY post_count DESC`;
 
-    const [partyResult, stateResult] = await Promise.all([
+    // Get state-by-party breakdown (for partisan shading in grid map)
+    let statePartyQuery = `
+      SELECT 
+        l.state,
+        l.party,
+        COUNT(p.id) as post_count
+      FROM posts p
+      JOIN legislators l ON p.lid = l.lid
+      WHERE p.topic = $1
+    `;
+
+    const statePartyParams = [topicId];
+    let statePartyParamIndex = 2;
+
+    if (start_date) {
+      statePartyQuery += ` AND p.created_at >= $${statePartyParamIndex}`;
+      statePartyParams.push(start_date);
+      statePartyParamIndex++;
+    }
+
+    if (end_date) {
+      statePartyQuery += ` AND p.created_at <= $${statePartyParamIndex}`;
+      statePartyParams.push(end_date);
+      statePartyParamIndex++;
+    }
+
+    if (party && party !== 'both') {
+      const partyMap = { 'D': 'Democratic', 'R': 'Republican' };
+      const partyValue = partyMap[party] || party;
+      statePartyQuery += ` AND l.party = $${statePartyParamIndex}`;
+      statePartyParams.push(partyValue);
+      statePartyParamIndex++;
+    }
+
+    statePartyQuery += ` AND l.state IS NOT NULL AND l.party IN ('Democratic','Republican') GROUP BY l.state, l.party ORDER BY l.state ASC`;
+
+    const [partyResult, stateResult, statePartyResult] = await Promise.all([
       pool.query(partyQuery, params),
-      pool.query(stateQuery, stateParams)
+      pool.query(stateQuery, stateParams),
+      pool.query(statePartyQuery, statePartyParams)
     ]);
 
     // Get topic info
@@ -172,11 +206,18 @@ export async function getTopicBreakdown(req, res) {
       stateBreakdown[row.state] = row.post_count;
     });
 
+    const statePartyBreakdown = {};
+    statePartyResult.rows.forEach(row => {
+      if (!statePartyBreakdown[row.state]) statePartyBreakdown[row.state] = {};
+      statePartyBreakdown[row.state][row.party] = row.post_count;
+    });
+
     res.json({
       topic: topicInfo.topic,
       name: topicInfo.topic_label,
       party_breakdown: partyBreakdown,
-      state_breakdown: stateBreakdown
+      state_breakdown: stateBreakdown,
+      state_party_breakdown: statePartyBreakdown
     });
   } catch (error) {
     console.error('Error fetching topic breakdown:', error);

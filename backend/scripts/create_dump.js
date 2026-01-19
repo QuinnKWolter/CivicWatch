@@ -28,10 +28,13 @@ const DB_NAME = process.env.DB_NAME || 'civicwatch';
 const DB_USER = process.env.DB_USER || 'postgres';
 const DB_PASSWORD = process.env.DB_PASSWORD || 'postgres';
 
-// Output file (default: civicwatch_dump_YYYYMMDD_HHMMSS.sql)
-const outputFile = process.argv[2] || (() => {
+// Output file format: 'custom' (faster, compressed) or 'sql' (portable, readable)
+// Custom format is ~3-5x faster for large databases and produces smaller files
+const format = process.argv[2] || 'custom'; // 'custom' or 'sql'
+const outputFile = process.argv[3] || (() => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19).replace('T', '_');
-  return join(__dirname, '..', `civicwatch_dump_${timestamp}.sql`);
+  const ext = format === 'custom' ? '.dump' : '.sql';
+  return join(__dirname, '..', `civicwatch_dump_${timestamp}${ext}`);
 })();
 
 async function createDump() {
@@ -42,6 +45,7 @@ async function createDump() {
   console.log(`Host:     ${DB_HOST}`);
   console.log(`Port:     ${DB_PORT}`);
   console.log(`User:     ${DB_USER}`);
+  console.log(`Format:   ${format === 'custom' ? 'Custom (compressed, fast)' : 'SQL (portable, readable)'}`);
   console.log(`Output:   ${outputFile}`);
   console.log('');
 
@@ -52,6 +56,7 @@ async function createDump() {
     `-p ${DB_PORT}`,
     `-U ${DB_USER}`,
     `-d ${DB_NAME}`,
+    format === 'custom' ? '-F c' : '-F p', // Custom format or plain SQL
     '--no-owner',
     '--no-privileges',
     '--clean',
@@ -82,7 +87,17 @@ async function createDump() {
     console.log(`Size: ${sizeMB} MB`);
     console.log('');
     console.log('To restore this dump, run:');
-    console.log(`  npm run load-dump "${outputFile}"`);
+    if (format === 'custom') {
+      console.log(`  npm run load-dump "${outputFile}"`);
+      console.log('');
+      console.log('Note: Custom format is faster and produces smaller files.');
+      console.log('      For SQL format, use: npm run create-dump sql [output_file]');
+    } else {
+      console.log(`  npm run load-dump "${outputFile}"`);
+      console.log('');
+      console.log('Note: SQL format is portable and human-readable.');
+      console.log('      For faster custom format, use: npm run create-dump custom [output_file]');
+    }
     console.log('='.repeat(70));
     
   } catch (error) {

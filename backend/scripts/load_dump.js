@@ -150,22 +150,48 @@ async function loadDump() {
   console.log('Restoring database...');
   console.log('');
   
-  // Build psql command
-  const psqlCmd = [
-    'psql',
-    `-h ${DB_HOST}`,
-    `-p ${DB_PORT}`,
-    `-U ${DB_USER}`,
-    `-d ${DB_NAME}`,
-    '-v ON_ERROR_STOP=1',
-    `-f "${resolvedDumpFile}"`
-  ].join(' ');
+  // Detect format: custom format (.dump) uses pg_restore, SQL format (.sql) uses psql
+  const isCustomFormat = resolvedDumpFile.endsWith('.dump');
+  const restoreTool = isCustomFormat ? 'pg_restore' : 'psql';
+  const formatName = isCustomFormat ? 'custom (compressed)' : 'plain SQL';
+  
+  console.log(`Detected format: ${formatName}`);
+  console.log(`Using tool: ${restoreTool}`);
+  console.log('');
+  
+  // Build restore command based on format
+  let restoreCmd;
+  if (isCustomFormat) {
+    // Custom format: use pg_restore (faster, supports parallel restore)
+    restoreCmd = [
+      'pg_restore',
+      `-h ${DB_HOST}`,
+      `-p ${DB_PORT}`,
+      `-U ${DB_USER}`,
+      `-d ${DB_NAME}`,
+      '--no-owner',
+      '--no-privileges',
+      '--verbose',
+      `"${resolvedDumpFile}"`
+    ].join(' ');
+  } else {
+    // Plain SQL format: use psql
+    restoreCmd = [
+      'psql',
+      `-h ${DB_HOST}`,
+      `-p ${DB_PORT}`,
+      `-U ${DB_USER}`,
+      `-d ${DB_NAME}`,
+      '-v ON_ERROR_STOP=1',
+      `-f "${resolvedDumpFile}"`
+    ].join(' ');
+  }
   
   // Set password in environment
   const env = { ...process.env, PGPASSWORD: DB_PASSWORD };
   
   try {
-    const { stdout, stderr } = await execAsync(psqlCmd, { env });
+    const { stdout, stderr } = await execAsync(restoreCmd, { env });
     
     if (stdout) {
       console.log(stdout);
@@ -220,10 +246,15 @@ async function loadDump() {
     console.error('');
     console.error('Make sure:');
     console.error('  1. PostgreSQL is running');
-    console.error('  2. psql is installed and in your PATH');
+    console.error(`  2. ${restoreTool} is installed and in your PATH`);
     console.error('  3. Database credentials in .env are correct');
     console.error('  4. You have permission to create databases');
     console.error('  5. You have permission to access the database');
+    if (isCustomFormat) {
+      console.error('  6. For custom format dumps, pg_restore is required');
+    } else {
+      console.error('  6. For SQL format dumps, psql is required');
+    }
     process.exit(1);
   }
 }

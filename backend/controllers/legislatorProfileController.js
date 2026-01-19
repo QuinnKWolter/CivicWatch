@@ -45,15 +45,16 @@ export async function getLegislatorProfile(req, res) {
     }
 
     // Get metrics
+    // Note: interaction_score and civility_score removed in v2 schema
+    // Using tox_toxicity > 0.5 as proxy for uncivil posts
     const metricsQuery = `
       SELECT 
         COUNT(*) as total_posts,
         SUM(p.like_count + p.retweet_count) as total_engagement,
         SUM(p.like_count) as total_likes,
         SUM(p.retweet_count) as total_retweets,
-        AVG(p.interaction_score) as avg_interaction_score,
-        AVG(p.civility_score) as avg_civility_score,
-        SUM(CASE WHEN p.civility_score < 0.5 THEN 1 ELSE 0 END) as uncivil_posts,
+        AVG(p.tox_toxicity) as avg_toxicity,
+        SUM(CASE WHEN p.tox_toxicity > 0.5 THEN 1 ELSE 0 END) as uncivil_posts,
         SUM(p.count_misinfo) as low_credibility_posts
       FROM posts p
       JOIN topics t ON p.topic = t.topic
