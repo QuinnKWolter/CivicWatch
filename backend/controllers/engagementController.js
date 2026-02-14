@@ -6,7 +6,7 @@ import pool from '../config/database.js';
  */
 export async function getEngagementTimeline(req, res) {
   try {
-    const { start_date, end_date, topics, party } = req.query;
+    const { start_date, end_date, topics, party, legislator } = req.query;
 
     // Build date filter
     let dateFilter = '';
@@ -51,6 +51,16 @@ export async function getEngagementTimeline(req, res) {
       params.push(partyValue);
       paramIndex++;
     }
+
+    // Build legislator filter
+    let legislatorFilter = '';
+    if (legislator) {
+      legislatorFilter = (dateFilter || topicFilter || partyFilter)
+        ? ` AND p.lid = $${paramIndex}`
+        : `WHERE p.lid = $${paramIndex}`;
+      params.push(legislator);
+      paramIndex++;
+    }
     // Note: If no topics specified, return all topics (frontend can filter client-side if needed)
 
     // Query to get daily engagement per topic and post counts
@@ -70,7 +80,7 @@ export async function getEngagementTimeline(req, res) {
       FROM posts p
       JOIN topics t ON p.topic = t.topic
       JOIN legislators l ON p.lid = l.lid
-      ${dateFilter}${topicFilter}${partyFilter}
+      ${dateFilter}${topicFilter}${partyFilter}${legislatorFilter}
       GROUP BY p.created_at, t.topic_label
       HAVING COUNT(p.id) > 0
       ORDER BY p.created_at, t.topic_label
@@ -119,7 +129,7 @@ export async function getEngagementTimeline(req, res) {
  */
 export async function getTopicsByEngagement(req, res) {
   try {
-    const { start_date, end_date, limit = 500, party } = req.query;
+    const { start_date, end_date, limit = 500, party, legislator } = req.query;
 
     let query = `
       SELECT 
@@ -155,6 +165,11 @@ export async function getTopicsByEngagement(req, res) {
       const partyValue = partyMap[party] || party;
       params.push(partyValue);
       conditions.push(`l.party = $${params.length}`);
+    }
+
+    if (legislator) {
+      params.push(legislator);
+      conditions.push(`p.lid = $${params.length}`);
     }
 
     if (conditions.length > 0) {

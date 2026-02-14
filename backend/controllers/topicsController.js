@@ -55,7 +55,7 @@ export async function getAllTopics(req, res) {
  */
 export async function getTopicBreakdown(req, res) {
   try {
-    const { topic, start_date, end_date, party } = req.query;
+    const { topic, start_date, end_date, party, legislator } = req.query;
 
     if (!topic) {
       return res.status(400).json({ error: 'Topic parameter is required (topic_label)' });
@@ -110,6 +110,12 @@ export async function getTopicBreakdown(req, res) {
       paramIndex++;
     }
 
+    if (legislator) {
+      partyQuery += ` AND p.lid = $${paramIndex}`;
+      params.push(legislator);
+      paramIndex++;
+    }
+
     partyQuery += ` AND l.party IS NOT NULL GROUP BY l.party`;
 
     // Get state breakdown
@@ -143,6 +149,12 @@ export async function getTopicBreakdown(req, res) {
       const partyValue = partyMap[party] || party;
       stateQuery += ` AND l.party = $${stateParamIndex}`;
       stateParams.push(partyValue);
+      stateParamIndex++;
+    }
+
+    if (legislator) {
+      stateQuery += ` AND p.lid = $${stateParamIndex}`;
+      stateParams.push(legislator);
       stateParamIndex++;
     }
 
@@ -180,6 +192,12 @@ export async function getTopicBreakdown(req, res) {
       const partyValue = partyMap[party] || party;
       statePartyQuery += ` AND l.party = $${statePartyParamIndex}`;
       statePartyParams.push(partyValue);
+      statePartyParamIndex++;
+    }
+
+    if (legislator) {
+      statePartyQuery += ` AND p.lid = $${statePartyParamIndex}`;
+      statePartyParams.push(legislator);
       statePartyParamIndex++;
     }
 

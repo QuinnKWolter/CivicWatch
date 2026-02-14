@@ -247,7 +247,8 @@ export default function EngagementTimeline({
   startDate, 
   endDate, 
   onDateChange,
-  selectedParty = 'both'
+  selectedParty = 'both',
+  legislator
 }) {
   const chartRef = useRef(null);
   const chartInstanceRef = useRef(null);
@@ -338,6 +339,9 @@ export default function EngagementTimeline({
         if (selectedParty && selectedParty !== 'both') {
           params.party = selectedParty;
         }
+        if (legislator?.legislator_id) {
+          params.legislator = legislator.legislator_id;
+        }
 
         const queryString = new URLSearchParams();
         Object.entries(params).forEach(([key, value]) => {
@@ -363,7 +367,7 @@ export default function EngagementTimeline({
     };
 
     loadData();
-  }, [startDate, endDate, activeTopics, selectedParty]);
+  }, [startDate, endDate, activeTopics, selectedParty, legislator]);
 
   // Use only the activeTopics that exist in the data
   const effectiveTopics = useMemo(() => {
@@ -1470,5 +1474,8 @@ EngagementTimeline.propTypes = {
   startDate: PropTypes.object,
   endDate: PropTypes.object,
   onDateChange: PropTypes.func,
-  selectedParty: PropTypes.string
+  selectedParty: PropTypes.string,
+  legislator: PropTypes.shape({
+    legislator_id: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+  })
 };

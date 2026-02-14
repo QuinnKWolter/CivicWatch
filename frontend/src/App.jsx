@@ -118,6 +118,7 @@ export default function App() {
                     endDate={endDate}
                     onDateChange={handleDateChange}
                     selectedParty={selectedParty}
+                    legislator={legislator}
                   />
                 </div>
               </div>

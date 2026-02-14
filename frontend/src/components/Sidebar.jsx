@@ -129,6 +129,9 @@ export default function Sidebar({
         if (selectedParty && selectedParty !== 'both') {
           params.party = selectedParty;
         }
+        if (legislator?.legislator_id) {
+          params.legislator = legislator.legislator_id;
+        }
         params.limit = 500; // Get top 500 topics
 
         const queryString = new URLSearchParams(params).toString();
@@ -155,7 +158,7 @@ export default function Sidebar({
     };
 
     loadData();
-  }, [selectedParty]); // Removed startDate and endDate from dependencies - topics always ordered by overall engagement
+  }, [selectedParty, legislator]); // Removed startDate and endDate from dependencies - topics always ordered by overall engagement
 
   // Unknown topic identifier - always shown at bottom, unselected by default
   const UNKNOWN_TOPIC = 'Unknown Topic (999)';
@@ -809,6 +812,9 @@ export default function Sidebar({
                         // Don't filter by date range - always use overall engagement
                         if (selectedParty && selectedParty !== 'both') {
                           params.party = selectedParty;
+                        }
+                        if (legislator?.legislator_id) {
+                          params.legislator = legislator.legislator_id;
                         }
                         params.limit = 500;
                         const queryString = new URLSearchParams(params).toString();

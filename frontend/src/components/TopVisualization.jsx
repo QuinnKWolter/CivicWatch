@@ -11,7 +11,6 @@ export default function TopVisualization({
   activeTopics,
   startDate,
   endDate,
-  // eslint-disable-next-line no-unused-vars
   legislator,
   // eslint-disable-next-line no-unused-vars
   keyword,
@@ -126,6 +125,9 @@ export default function TopVisualization({
         if (selectedParty && selectedParty !== 'both') {
           params.party = selectedParty;
         }
+        if (legislator?.legislator_id) {
+          params.legislator = legislator.legislator_id;
+        }
 
         // Get topic breakdowns for all active topics
         const topicBreakdowns = await Promise.all(
@@ -201,7 +203,7 @@ export default function TopVisualization({
     };
 
     loadData();
-  }, [activeTopics, startDate, endDate, selectedParty]);
+  }, [activeTopics, startDate, endDate, selectedParty, legislator]);
 
   // Update dimensions on resize and when container becomes available
   useEffect(() => {
