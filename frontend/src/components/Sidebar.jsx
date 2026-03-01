@@ -548,21 +548,27 @@ export default function Sidebar({
                 </button>
               </Tippy>
               {keywordDropdownOpen && (
-                <div className="absolute z-50 w-80 bg-base-200 border rounded mt-2 p-4" style={{ left: '-80px' }}>
-                  <div className="text-xs text-gray-500 mb-3">Keyword Search</div>
+                <div 
+                  className="absolute z-50 bg-base-200 border rounded mt-2 p-2"
+                  style={{
+                    left: '50%',              
+                    transform: 'translateX(-50%)',
+                    minWidth: '150px',        
+                    maxWidth: '220px',       
+                    width: '100%'             
+                  }}>
+                  <div className="text-xs text-gray-500 mb-1">Keyword Search</div>
                   <div className="relative">
-                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
+                    <FaSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
                     <input
                       type="text"
-                      className="input input-bordered w-full pl-10"
+                      className="input input-bordered w-full pl-8 text-xs"
                       placeholder="Enter keywords..."
                       value={inputValue}
                       onChange={e => {
                         const v = e.target.value;
                         setInputValue(v);
-                        if (v.trim() === '') {
-                          setKeyword(null);
-                        }
+                        if (v.trim() === '') setKeyword(null);
                       }}
                     />
                   </div>
@@ -629,23 +635,27 @@ export default function Sidebar({
                 </button>
               </Tippy>
               {stateDropdownOpen && (
-                <div 
-                  className="absolute z-50 w-80 bg-base-200 border rounded-lg shadow-xl mt-2 max-h-60 overflow-y-auto"
-                  style={{ 
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    top: '100%'
-                  }}
-                >
-                  <div className="p-2">
-                    <div className="text-xs text-gray-500 mb-2">Select State</div>
-                    <input
-                      type="text"
-                      className="input input-bordered input-sm w-full mb-2"
-                      placeholder="Search states..."
-                      value={stateSearchTerm}
-                      onChange={e => setStateSearchTerm(e.target.value)}
-                    />
+                  <div
+                    className="absolute z-50 bg-base-200 border rounded mt-2 p-2 max-h-60 overflow-y-auto"
+                    style={{
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      minWidth: '150px',
+                      maxWidth: '220px',
+                      width: '100%',
+                    }}
+                  >
+                    <div className="text-xs text-gray-500 mb-1">Select State</div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        className="input input-bordered w-full input-sm text-xs"
+                        placeholder="Search states..."
+                        value={stateSearchTerm}
+                        onChange={e => setStateSearchTerm(e.target.value)}
+                      />
+                    </div>
+
                     {filteredStates.length === 0 ? (
                       <div className="p-2 text-center text-sm text-gray-500">
                         No states found
@@ -654,7 +664,7 @@ export default function Sidebar({
                       filteredStates.map(state => (
                         <div
                           key={state.abbr}
-                          className="p-2 hover:bg-base-300 cursor-pointer text-sm"
+                          className="p-2 hover:bg-base-300 cursor-pointer text-sm rounded"
                           onClick={() => handleStateSelect(state)}
                         >
                           {state.abbr} - {state.name}
@@ -662,9 +672,8 @@ export default function Sidebar({
                       ))
                     )}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
             {/* Legislator Bubble */}
             <div className="relative" ref={dropdownRef}>
@@ -725,9 +734,10 @@ export default function Sidebar({
                   style={{ 
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    top: '100%'
-                  }}
-                >
+                    minWidth: '150px',
+                    maxWidth: '220px',
+                    width: '100%'   
+                  }}>
                   <div className="p-2">
                     <div className="text-xs text-gray-500 mb-2">Search Legislator</div>
                     <input
