@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { getTopicColor, topicNames, formatTopicLabel } from '../utils/utils';
 import HelpTooltip from './HelpTooltip';
 import { API_BASE } from '../utils/api';
+import LegislatorPosts from './LegislatorPosts';
 
 export default function LegislatorContext({ 
   legislator, 
@@ -29,6 +30,7 @@ export default function LegislatorContext({
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showPosts, setShowPosts] = useState(false);
 
   // Load legislator profile data from API
   useEffect(() => {
@@ -560,10 +562,28 @@ export default function LegislatorContext({
           
           {/* Action Button */}
           <div className="pt-4 border-t border-base-300">
-            <button className="btn btn-primary w-full">
+            {/* <button className="btn btn-primary w-full">
               <FaChartLine className="mr-2" />
               View Posts ({formatNumber(displayData.metrics?.totalPosts || 0)} total)
+            </button> */}
+
+            <button
+              className="btn btn-primary w-full"
+              onClick={() => setShowPosts(prev => !prev)}
+              disabled={!legislator} // optional: only clickable if legislator selected
+            >
+              <FaChartLine className="mr-2" />
+              {showPosts ? 'Hide Posts' : `View Posts (${formatNumber(displayData.metrics?.totalPosts || 0)} total)`}
             </button>
+            {showPosts && legislator && (
+            <LegislatorPosts
+              legislator={legislator}
+              sortFilters={sortFilters}
+              startDate={startDate}
+              endDate={endDate}
+            />
+          )}
+
           </div>
         </div>
       </div>

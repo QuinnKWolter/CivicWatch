@@ -8,6 +8,8 @@ import { getLegislatorProfile } from '../controllers/legislatorProfileController
 import { exportPostsCSV } from '../controllers/postsController.js';
 import { getDateRange } from '../controllers/datesController.js';
 
+import { getPostsJSON } from '../controllers/postsControllerJson.js';
+
 const router = express.Router();
 
 // Date Range
@@ -39,5 +41,6 @@ router.get('/topics/breakdown/', getTopicBreakdown);
 router.get('/engagement/timeline/', getEngagementTimeline);
 router.get('/engagement/topics/', getTopicsByEngagement);
 
+router.get('/posts-json/', getPostsJSON);
 export default router;
 

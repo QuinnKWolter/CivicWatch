@@ -633,7 +633,7 @@ export default function Sidebar({
                     <FaMapMarkerAlt size={20} />
                   )}
                 </button>
-              </Tippy>
+              </Tippy>    
               {stateDropdownOpen && (
                   <div
                     className="absolute z-50 bg-base-200 border rounded mt-2 p-2 max-h-60 overflow-y-auto"
