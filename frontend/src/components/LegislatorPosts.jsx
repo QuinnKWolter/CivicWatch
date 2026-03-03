@@ -28,17 +28,29 @@ export default function LegislatorPosts({ legislator, sortFilters, startDate, en
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
       })
-      .then(data => {
-          console.log("API response:", data); 
+      // .then(data => {
+      //     console.log("API response:", data); 
 
-          if (Array.isArray(data)) {
-            setPosts(data);
-          } else if (Array.isArray(data.posts)) {
-            setPosts(data.posts);
-          } else {
-            setPosts([]);
-          }
-        })
+      //     if (Array.isArray(data)) {
+      //       setPosts(data);
+      //     } else if (Array.isArray(data.posts)) {
+      //       setPosts(data.posts);
+      //     } else {
+      //       setPosts([]);
+      //     }
+      //   })
+      .then(data => {
+  console.log("Full API response:", data);
+
+  const postsArray =
+    Array.isArray(data) ? data :
+    Array.isArray(data.posts) ? data.posts : [];
+
+  console.log("Total posts returned:", postsArray.length);
+  console.log("First post object:", postsArray[0]);
+
+  setPosts(postsArray);
+})
       .finally(() => setLoading(false));
   }, [legislator, sortFilters, startDate, endDate]);
 
@@ -71,7 +83,7 @@ export default function LegislatorPosts({ legislator, sortFilters, startDate, en
               {posts.map(post => (
                 <tr key={post.id || post.tweet_id}>
                   <td>{dayjs(post.created_at || post.date).format('YYYY-MM-DD')}</td>
-                  <td className="max-w-xs truncate">{post.text}</td>
+                  <td className="max-w-xs">{post.text}</td>
                 </tr>
               ))}
             </tbody>
