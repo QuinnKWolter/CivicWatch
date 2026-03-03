@@ -28,29 +28,18 @@ export default function LegislatorPosts({ legislator, sortFilters, startDate, en
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
       })
-      // .then(data => {
-      //     console.log("API response:", data); 
-
-      //     if (Array.isArray(data)) {
-      //       setPosts(data);
-      //     } else if (Array.isArray(data.posts)) {
-      //       setPosts(data.posts);
-      //     } else {
-      //       setPosts([]);
-      //     }
-      //   })
       .then(data => {
-  console.log("Full API response:", data);
+        console.log("Full API response:", data);
 
-  const postsArray =
-    Array.isArray(data) ? data :
-    Array.isArray(data.posts) ? data.posts : [];
+        const postsArray =
+          Array.isArray(data) ? data :
+          Array.isArray(data.posts) ? data.posts : [];
 
-  console.log("Total posts returned:", postsArray.length);
-  console.log("First post object:", postsArray[0]);
+        console.log("Total posts returned:", postsArray.length);
+        console.log("First post object:", postsArray[0]);
 
-  setPosts(postsArray);
-})
+        setPosts(postsArray);
+      })
       .finally(() => setLoading(false));
   }, [legislator, sortFilters, startDate, endDate]);
 
