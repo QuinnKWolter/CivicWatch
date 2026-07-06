@@ -1,0 +1,30 @@
+:root {
+  --color-ink: #1a1917;
+  --color-paper: #f5f1e7;
+  --color-card: #ffffff;
+  --color-rule: #d9d2c1;
+  --color-mute: #6b6659;
+  --color-mute-soft: #9c9787;
+  --color-ballot-blue: #274b6e;
+  --color-ballot-red: #a13530;
+  --color-independent: #7a6a4a;
+  --color-seal: #8a5a1a;
+  --color-signal: #3a6c4c;
+  --color-warn: #a86a1f;
+  --color-error: #8a2a20;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --radius-chip: 4px;
+  --radius-card: 6px;
+  --radius-panel: 10px;
+  --type-display: "Fraunces", "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --type-body: "Instrument Sans", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --type-mono: "JetBrains Mono", "Cascadia Mono", ui-monospace, monospace;
+}

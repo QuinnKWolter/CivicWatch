@@ -1,0 +1,17 @@
+.postgres-data/
+.postgres-log/
+node_modules/
+.svelte-kit/
+build/
+dist/
+.env
+.env.*
+!.env.example
+
+# Local database restore artifacts. Keep SQL scripts under database/scripts tracked.
+/civicwatch_postgres_full_*.dump
+/civicwatch_postgres_full_*.sql
+
+coverage/
+playwright-report/
+test-results/
