@@ -14,8 +14,8 @@ DO $$
 BEGIN
   CREATE EXTENSION IF NOT EXISTS pg_trgm;
 EXCEPTION
-  WHEN insufficient_privilege THEN
-    RAISE NOTICE 'Skipping pg_trgm extension: insufficient privilege.';
+  WHEN OTHERS THEN
+    RAISE NOTICE 'Skipping optional pg_trgm extension: %', SQLERRM;
 END
 $$;
 
@@ -23,8 +23,8 @@ DO $$
 BEGIN
   CREATE EXTENSION IF NOT EXISTS unaccent;
 EXCEPTION
-  WHEN insufficient_privilege THEN
-    RAISE NOTICE 'Skipping unaccent extension: insufficient privilege.';
+  WHEN OTHERS THEN
+    RAISE NOTICE 'Skipping optional unaccent extension: %', SQLERRM;
 END
 $$;
 
