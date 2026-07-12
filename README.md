@@ -78,6 +78,12 @@ runs both app packages.
 - API health: `http://127.0.0.1:4000/api/v1/health`
 - API docs: `http://127.0.0.1:4000/docs`
 
+On Bash, local Postgres startup is automatic:
+
+- If `.env` points at `localhost:55432`, the launcher starts `.postgres-data`.
+- If `.env` points at a remote host such as `picso102.sci.pitt.edu:5432`, the
+  launcher skips `.postgres-data` and uses the remote database.
+
 If Postgres is already running and you only want the app processes:
 
 ```powershell
@@ -101,6 +107,7 @@ DB_PORT=5432
 DB_NAME=civicwatch
 DB_USER=civicwatch
 DB_PASSWORD=replace-me
+CIVICWATCH_START_LOCAL_POSTGRES=auto
 API_HOST=127.0.0.1
 API_PORT=4004
 API_BASE_URL=https://your-api.example.com/api/v1
@@ -126,6 +133,26 @@ when the same deployment also runs a SvelteKit web process. If your database
 password contains URI-special characters, set `DATABASE_URL` explicitly instead
 of the split `DB_*` values.
 
+If your remote `.env` contains `DATABASE_URL`, it takes precedence over the
+split `DB_*` values. For PICSO102, either use:
+
+```txt
+DATABASE_URL=postgres://civicwatch:PASSWORD@picso102.sci.pitt.edu:5432/civicwatch
+```
+
+or remove/comment `DATABASE_URL` and use:
+
+```txt
+DB_HOST=picso102.sci.pitt.edu
+DB_PORT=5432
+DB_NAME=civicwatch
+DB_USER=civicwatch
+DB_PASSWORD=PASSWORD
+```
+
+With either version, `pnpm run start:local:bash` will skip local `.postgres-data`
+because the database host is not `localhost:55432`.
+
 If the app is mounted under a subpath such as `/prototype04`, build with:
 
 ```txt
@@ -147,10 +174,10 @@ point at a managed or separately supervised Postgres instance. If you really do
 want to run the restored local cluster on Linux, call
 `bash ./scripts/start-civicwatch.sh --production` instead.
 
-For a production-like development run on Linux, use:
+For a production-like development run on Linux, use the same command:
 
 ```bash
-pnpm run start:local:bash -- --skip-db-start
+pnpm run start:local:bash
 ```
 
 ## Useful Commands

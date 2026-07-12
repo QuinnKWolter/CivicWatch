@@ -53,6 +53,28 @@ die() {
   exit 1
 }
 
+pg_host_from_url() {
+  local url="${1:-}"
+  [[ "$url" == postgres://* || "$url" == postgresql://* ]] || return 0
+
+  local rest="${url#*://}"
+  rest="${rest#*@}"
+  printf '%s' "${rest%%[:/]*}"
+}
+
+is_local_host() {
+  local host
+  host="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  case "$host" in
+    localhost|127.0.0.1|::1)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 skip_db_start=false
 production=false
 
@@ -81,7 +103,9 @@ cd "$repo_root"
 
 load_dotenv "$repo_root/.env"
 
-export POSTGRES_HOST="${POSTGRES_HOST:-${DB_HOST:-localhost}}"
+database_url_host="$(pg_host_from_url "${DATABASE_URL:-}")"
+
+export POSTGRES_HOST="${POSTGRES_HOST:-${DB_HOST:-${database_url_host:-localhost}}}"
 if [[ -z "${POSTGRES_PORT:-}" ]]; then
   if [[ -n "${DB_PORT:-}" ]]; then
     export POSTGRES_PORT="$DB_PORT"
@@ -112,7 +136,27 @@ export WEB_PORT="${WEB_PORT:-3000}"
 data_dir="$repo_root/.postgres-data"
 log_dir="$repo_root/.postgres-log"
 
+start_local_postgres=false
 if [[ "$skip_db_start" == false ]]; then
+  case "${CIVICWATCH_START_LOCAL_POSTGRES:-auto}" in
+    true|TRUE|1|yes|YES)
+      start_local_postgres=true
+      ;;
+    false|FALSE|0|no|NO)
+      start_local_postgres=false
+      ;;
+    auto|'')
+      if is_local_host "$POSTGRES_HOST" && [[ "$POSTGRES_PORT" == "55432" ]]; then
+        start_local_postgres=true
+      fi
+      ;;
+    *)
+      die "CIVICWATCH_START_LOCAL_POSTGRES must be true, false, or auto."
+      ;;
+  esac
+fi
+
+if [[ "$start_local_postgres" == true ]]; then
   [[ -d "$data_dir" ]] || die "Postgres data directory not found at $data_dir. Restore the CivicWatch dump before launching, or pass --skip-db-start for remote Postgres."
   command -v pg_ctl >/dev/null 2>&1 || die "pg_ctl was not found on PATH. Add PostgreSQL's bin directory to PATH, then run this script again."
 
@@ -128,6 +172,8 @@ if [[ "$skip_db_start" == false ]]; then
       -l "$log_dir/postgres.log" \
       start
   fi
+else
+  printf 'Skipping local Postgres startup; using database target %s:%s/%s.\n' "$POSTGRES_HOST" "$POSTGRES_PORT" "$POSTGRES_DB"
 fi
 
 if [[ "$production" == true ]]; then
