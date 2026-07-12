@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "start:local": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\start-civicwatch.ps1",
-    "start:local:linux": "bash ./scripts/start-civicwatch.sh",
+    "start:local:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\start-civicwatch.ps1",
+    "start:local:bash": "bash ./scripts/start-local.sh",
+    "start:local:linux": "bash ./scripts/start-local.sh",
     "start:prod:linux": "bash ./scripts/start-civicwatch.sh --production --skip-db-start",
     "dev": "concurrently \"pnpm --dir apps/api run dev\" \"pnpm --dir apps/web run dev\"",
     "build": "pnpm --dir apps/api run build && pnpm --dir apps/web run build",

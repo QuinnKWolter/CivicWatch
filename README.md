@@ -68,7 +68,7 @@ pnpm run start:local
 On Linux/macOS:
 
 ```bash
-pnpm run start:local:linux
+pnpm run start:local:bash
 ```
 
 The launcher reads `.env`, starts the isolated Postgres cluster if needed, and
@@ -87,7 +87,7 @@ pnpm run start:local -- -SkipDbStart
 On Linux/macOS, the equivalent is:
 
 ```bash
-pnpm run start:local:linux -- --skip-db-start
+pnpm run start:local:bash -- --skip-db-start
 ```
 
 ## Linux Production
@@ -96,13 +96,42 @@ For a production Linux host, set `.env` or process-manager environment variables
 for the remote database and public API URL:
 
 ```txt
-DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DBNAME
+DB_HOST=picso102.sci.pitt.edu
+DB_PORT=5432
+DB_NAME=civicwatch
+DB_USER=civicwatch
+DB_PASSWORD=replace-me
 API_HOST=127.0.0.1
-API_PORT=4000
+API_PORT=4004
 API_BASE_URL=https://your-api.example.com/api/v1
 PUBLIC_API_BASE_URL=https://your-api.example.com/api/v1
+PUBLIC_BASE_PATH=
 WEB_HOST=127.0.0.1
 WEB_PORT=3000
+```
+
+This matches the prototype-style backend env shape:
+
+```txt
+DB_HOST=picso102.sci.pitt.edu
+DB_PORT=5432
+DB_NAME=civicwatch
+DB_USER=civicwatch
+DB_PASSWORD=...
+PORT=8500
+```
+
+CivicWatch accepts `PORT` as an `API_PORT` alias, but `API_PORT` is clearer
+when the same deployment also runs a SvelteKit web process. If your database
+password contains URI-special characters, set `DATABASE_URL` explicitly instead
+of the split `DB_*` values.
+
+If the app is mounted under a subpath such as `/prototype04`, build with:
+
+```txt
+PUBLIC_BASE_PATH=/prototype04
+PUBLIC_API_BASE_URL=/prototype04/api/v1
+API_BASE_URL=http://127.0.0.1:4004/api/v1
 ```
 
 Then install dependencies, build, and start the built Node servers:
@@ -117,6 +146,12 @@ pnpm run start:prod:linux
 point at a managed or separately supervised Postgres instance. If you really do
 want to run the restored local cluster on Linux, call
 `bash ./scripts/start-civicwatch.sh --production` instead.
+
+For a production-like development run on Linux, use:
+
+```bash
+pnpm run start:local:bash -- --skip-db-start
+```
 
 ## Useful Commands
 

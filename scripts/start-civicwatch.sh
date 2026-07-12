@@ -81,12 +81,28 @@ cd "$repo_root"
 
 load_dotenv "$repo_root/.env"
 
-export POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
-export POSTGRES_PORT="${POSTGRES_PORT:-55432}"
-export POSTGRES_DB="${POSTGRES_DB:-civicwatch_explore}"
-export POSTGRES_USER="${POSTGRES_USER:-postgres}"
-export DATABASE_URL="${DATABASE_URL:-postgres://${POSTGRES_USER}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}}"
-export API_PORT="${API_PORT:-4000}"
+export POSTGRES_HOST="${POSTGRES_HOST:-${DB_HOST:-localhost}}"
+if [[ -z "${POSTGRES_PORT:-}" ]]; then
+  if [[ -n "${DB_PORT:-}" ]]; then
+    export POSTGRES_PORT="$DB_PORT"
+  elif [[ -n "${DB_HOST:-}" || -n "${DB_NAME:-}" || -n "${DB_USER:-}" || -n "${DB_PASSWORD:-}" ]]; then
+    export POSTGRES_PORT="5432"
+  else
+    export POSTGRES_PORT="55432"
+  fi
+fi
+export POSTGRES_DB="${POSTGRES_DB:-${DB_NAME:-civicwatch_explore}}"
+export POSTGRES_USER="${POSTGRES_USER:-${DB_USER:-postgres}}"
+
+if [[ -z "${DATABASE_URL:-}" ]]; then
+  if [[ -n "${DB_PASSWORD:-}" ]]; then
+    export DATABASE_URL="postgres://${POSTGRES_USER}:${DB_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+  else
+    export DATABASE_URL="postgres://${POSTGRES_USER}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+  fi
+fi
+
+export API_PORT="${API_PORT:-${PORT:-4000}}"
 export API_HOST="${API_HOST:-127.0.0.1}"
 export API_BASE_URL="${API_BASE_URL:-http://127.0.0.1:${API_PORT}/api/v1}"
 export PUBLIC_API_BASE_URL="${PUBLIC_API_BASE_URL:-$API_BASE_URL}"
