@@ -1,5 +1,21 @@
 import postgres from 'postgres';
 
+function postgresSslMode() {
+  const mode = (
+    process.env.PGSSLMODE ??
+    process.env.DB_SSL ??
+    process.env.POSTGRES_SSL ??
+    ''
+  ).toLowerCase();
+
+  if (mode === 'require' || mode === 'true' || mode === '1') return 'require';
+  if (mode === 'prefer') return 'prefer';
+  if (mode === 'allow') return 'allow';
+  if (mode === 'disable' || mode === 'false' || mode === '0') return false;
+
+  return false;
+}
+
 function databaseUrlFromEnv() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
 
@@ -22,6 +38,7 @@ function databaseUrlFromEnv() {
 export const DATABASE_URL = databaseUrlFromEnv();
 
 export const sql = postgres(DATABASE_URL, {
+  ssl: postgresSslMode(),
   max: 12,
   idle_timeout: 20,
   connect_timeout: 10,

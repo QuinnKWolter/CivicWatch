@@ -107,6 +107,7 @@ DB_PORT=5432
 DB_NAME=civicwatch
 DB_USER=civicwatch
 DB_PASSWORD=replace-me
+DB_SSL=require
 CIVICWATCH_START_LOCAL_POSTGRES=auto
 API_HOST=127.0.0.1
 API_PORT=4004
@@ -125,6 +126,7 @@ DB_PORT=5432
 DB_NAME=civicwatch
 DB_USER=civicwatch
 DB_PASSWORD=...
+DB_SSL=require
 PORT=8500
 ```
 
@@ -148,6 +150,7 @@ DB_PORT=5432
 DB_NAME=civicwatch
 DB_USER=civicwatch
 DB_PASSWORD=PASSWORD
+DB_SSL=require
 ```
 
 With either version, `pnpm run start:local:bash` will skip local `.postgres-data`
