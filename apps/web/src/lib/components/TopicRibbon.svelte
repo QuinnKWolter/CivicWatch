@@ -1035,7 +1035,6 @@
           class="table-scroll"
           role="region"
           aria-label={`${title} data table`}
-          tabindex="0"
         >
           <table>
             <caption class="visually-hidden">
@@ -1375,6 +1374,7 @@
     overflow-wrap: anywhere;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   .band-copy > span {
@@ -1399,6 +1399,7 @@
 
   .band-item.medium .band-copy strong {
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .band-item.medium .band-copy > span:last-child {

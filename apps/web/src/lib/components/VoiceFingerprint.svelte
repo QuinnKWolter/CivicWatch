@@ -637,13 +637,6 @@
 </script>
 
 <figure class="fingerprint">
-  <p
-    id={descriptionId}
-    class="visually-hidden"
-  >
-    {chartDescription}
-  </p>
-
   <figcaption>
     <div class="heading-copy">
       <h2>{title}</h2>
@@ -702,6 +695,13 @@
       </dl>
     {/if}
   </figcaption>
+
+  <p
+    id={descriptionId}
+    class="visually-hidden"
+  >
+    {chartDescription}
+  </p>
 
   {#if visibleRows.length}
     {#if showLegend}
@@ -913,7 +913,6 @@
           class="table-scroll"
           role="region"
           aria-label={`${title} data table`}
-          tabindex="0"
         >
           <table>
             <caption class="visually-hidden">

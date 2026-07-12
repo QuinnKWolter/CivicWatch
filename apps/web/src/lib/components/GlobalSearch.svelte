@@ -80,9 +80,9 @@
   let status = $state('');
   let recent = $state<string[]>([]);
 
-  let input: HTMLInputElement;
-  let dialog: HTMLDivElement;
-  let triggerButton: HTMLButtonElement;
+  let input = $state<HTMLInputElement>();
+  let dialog = $state<HTMLDivElement>();
+  let triggerButton = $state<HTMLButtonElement>();
 
   let timer: ReturnType<typeof setTimeout> | undefined;
   let controller: AbortController | undefined;
@@ -960,7 +960,6 @@
           spellcheck={false}
           aria-controls={resultsId}
           aria-describedby={statusId}
-          aria-expanded={queryReady}
           oninput={handleInput}
           onkeydown={handleInputKeydown}
           oncompositionstart={() => {
@@ -1330,7 +1329,7 @@
       var(--color-rule, #d9d2c1);
   }
 
-  .search-icon {
+  .search-form :global(.search-icon) {
     color: var(--color-mute, #6b6659);
   }
 

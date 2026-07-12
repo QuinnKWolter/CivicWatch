@@ -102,21 +102,33 @@
     'WY'
   ];
 
-  let legislators = $state<any[]>(
-    Array.isArray(initialLegislators) ? [...initialLegislators] : []
-  );
+  function initialLegislatorRows(): any[] {
+    return Array.isArray(initialLegislators)
+      ? [...initialLegislators]
+      : [];
+  }
 
-  let q = $state(initialQ.slice(0, 120));
-  let stateFilter = $state(normalizeState(initialState));
-  let party = $state<PartyFilter>(normalizeParty(initialParty));
+  function initialTotalCount(rows: any[]): number | null {
+    return typeof initialTotal === 'number' &&
+      Number.isInteger(initialTotal) &&
+      initialTotal >= rows.length
+      ? initialTotal
+      : rows.length;
+  }
+
+  const seededLegislators = initialLegislatorRows();
+  const seededQuery = (() => initialQ.slice(0, 120))();
+  const seededStateFilter = (() => normalizeState(initialState))();
+  const seededParty = (() => normalizeParty(initialParty))();
+
+  let legislators = $state<any[]>(seededLegislators);
+  let q = $state(seededQuery);
+  let stateFilter = $state(seededStateFilter);
+  let party = $state<PartyFilter>(seededParty);
   let loading = $state(false);
   let error = $state('');
   let total = $state<number | null>(
-    typeof initialTotal === 'number' &&
-      Number.isInteger(initialTotal) &&
-      initialTotal >= legislators.length
-      ? initialTotal
-      : legislators.length
+    initialTotalCount(seededLegislators)
   );
 
   let timer: ReturnType<typeof setTimeout> | undefined;

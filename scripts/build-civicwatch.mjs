@@ -31,19 +31,54 @@ function loadDotEnv(path) {
   }
 }
 
-function run(command, args) {
-  const result = spawnSync(command, args, {
+function pnpmInvocation() {
+  const currentExecutor = process.env.npm_execpath;
+
+  if (currentExecutor?.includes('pnpm')) {
+    return {
+      command: process.execPath,
+      prefixArgs: [currentExecutor]
+    };
+  }
+
+  if (process.platform === 'win32') {
+    const pnpmScript = resolve(
+      process.env.APPDATA ?? '',
+      'npm/node_modules/pnpm/bin/pnpm.cjs'
+    );
+
+    if (existsSync(pnpmScript)) {
+      return {
+        command: process.execPath,
+        prefixArgs: [pnpmScript]
+      };
+    }
+  }
+
+  return {
+    command: 'pnpm',
+    prefixArgs: []
+  };
+}
+
+const pnpm = pnpmInvocation();
+
+function run(args) {
+  const result = spawnSync(pnpm.command, [...pnpm.prefixArgs, ...args], {
     cwd: repoRoot,
     env: process.env,
-    shell: process.platform === 'win32',
     stdio: 'inherit'
   });
+
+  if (result.error) {
+    console.error(result.error.message);
+  }
 
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
 loadDotEnv(envPath);
 
-run('pnpm', ['--dir', 'apps/api', 'run', 'build']);
-run('pnpm', ['--dir', 'apps/web', 'exec', 'svelte-kit', 'sync']);
-run('pnpm', ['--dir', 'apps/web', 'run', 'build']);
+run(['--dir', 'apps/api', 'run', 'build']);
+run(['--dir', 'apps/web', 'exec', 'svelte-kit', 'sync']);
+run(['--dir', 'apps/web', 'run', 'build']);

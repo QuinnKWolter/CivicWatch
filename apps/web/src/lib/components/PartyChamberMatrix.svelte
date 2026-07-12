@@ -527,7 +527,6 @@
       class="table-scroll"
       role="region"
       aria-label="Scrollable party-by-chamber matrix"
-      tabindex="0"
     >
       <table>
         <caption class="visually-hidden">

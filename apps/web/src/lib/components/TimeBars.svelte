@@ -615,7 +615,6 @@
           class="table-scroll"
           role="region"
           aria-label={`${label} data table`}
-          tabindex="0"
         >
           <table>
             <caption class="visually-hidden">

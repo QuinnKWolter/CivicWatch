@@ -1974,24 +1974,26 @@
     legislators and Enter to open a profile.
   </p>
 
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_noninteractive_tabindex -->
   <div
     bind:this={chartHost}
     class:busy={layoutBusy}
     class="chart-viewport"
     style={`height:${chartHeight}px`}
+    tabindex="0"
+    role="application"
+    aria-label="Interactive chamber view of legislators"
+    aria-describedby={`${captionId} ${summaryId} ${instructionsId}`}
+    aria-busy={layoutBusy}
+    onpointermove={handlePointerMove}
+    onpointerleave={handlePointerLeave}
+    onclick={handleCanvasClick}
+    onfocus={handleCanvasFocus}
+    onkeydown={handleKeydown}
   >
     <canvas
       bind:this={canvas}
-      tabindex="0"
-      role="img"
-      aria-label="Interactive chamber view of legislators"
-      aria-describedby={`${captionId} ${summaryId} ${instructionsId}`}
-      aria-busy={layoutBusy}
-      onpointermove={handlePointerMove}
-      onpointerleave={handlePointerLeave}
-      onclick={handleCanvasClick}
-      onfocus={handleCanvasFocus}
-      onkeydown={handleKeydown}
+      aria-hidden="true"
     ></canvas>
 
     {#if chartWidth > 0}

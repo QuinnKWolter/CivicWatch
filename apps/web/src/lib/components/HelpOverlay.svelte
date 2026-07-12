@@ -51,8 +51,12 @@
   const titleId = `${componentId}-title`;
   const descriptionId = `${componentId}-description`;
 
-  let dialog: HTMLDivElement;
-  let activeTab = $state<HelpTab>(initialTab);
+  function initialHelpTab(): HelpTab {
+    return initialTab;
+  }
+
+  let dialog = $state<HTMLDivElement>();
+  let activeTab = $state<HelpTab>(initialHelpTab());
   let returnFocus: HTMLElement | null = null;
   let previousBodyOverflow = '';
 
@@ -388,7 +392,7 @@
       </div>
 
       <div class="dialog-body">
-        <section
+        <div
           id={panelId('overview')}
           role="tabpanel"
           aria-labelledby={tabId('overview')}
@@ -429,9 +433,9 @@
               text and its available metadata.
             </span>
           </div>
-        </section>
+        </div>
 
-        <section
+        <div
           id={panelId('usage')}
           role="tabpanel"
           aria-labelledby={tabId('usage')}
@@ -489,9 +493,9 @@
               </span>
             </li>
           </ol>
-        </section>
+        </div>
 
-        <section
+        <div
           id={panelId('data')}
           role="tabpanel"
           aria-labelledby={tabId('data')}
@@ -536,7 +540,7 @@
               available.
             </span>
           </div>
-        </section>
+        </div>
       </div>
 
       {#if hasFooterLinks}
