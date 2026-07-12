@@ -45,4 +45,5 @@ function run(command, args) {
 loadDotEnv(envPath);
 
 run('pnpm', ['--dir', 'apps/api', 'run', 'build']);
+run('pnpm', ['--dir', 'apps/web', 'exec', 'svelte-kit', 'sync']);
 run('pnpm', ['--dir', 'apps/web', 'run', 'build']);

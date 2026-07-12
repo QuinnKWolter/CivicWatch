@@ -168,9 +168,15 @@ Then install dependencies, build, and start the built Node servers:
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm run db:prepare
 pnpm run build
 pnpm run start:prod:linux
 ```
+
+`pnpm run db:prepare` reads `.env`, honors `DB_SSL=require`, and creates the
+`app_*` materialized helper views used by the API. Run it once after restoring
+or pointing at a new database. The command is safe to repeat when the underlying
+snapshot changes; it will rebuild the helper views and indexes.
 
 `pnpm run build` loads the root `.env` before building. That is required for
 subpath deployments because SvelteKit must see `PUBLIC_BASE_PATH=/prototype04`
@@ -200,7 +206,7 @@ pnpm run db:stop
 
 `pnpm run check` validates the API TypeScript project and the SvelteKit app.
 `pnpm run db:prepare` applies the exploration views/index prep script against
-the local `civicwatch_explore` database.
+the database described by `.env`.
 
 ## Troubleshooting
 
@@ -209,6 +215,9 @@ the local `civicwatch_explore` database.
   according to `POSTGRES_DUMP_README.md`.
 - Client lookups return 404: confirm the API is running and
   `PUBLIC_API_BASE_URL` points to `/api/v1`.
+- Landing page returns 500 with `relation "app_legislator_summary" does not
+  exist`: run `pnpm run db:prepare` against the active database, then restart
+  the API/web process.
 - Port conflicts: this app uses Postgres `55432`, API `4000`, and web `5173`
   by default. Adjust `.env` for Postgres/API conflicts; the Svelte dev port
   lives in `apps/web/package.json`.

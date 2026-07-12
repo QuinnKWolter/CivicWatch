@@ -15,7 +15,7 @@
     "test": "pnpm --dir apps/api run test && pnpm --dir apps/web run test",
     "db:start": "pg_ctl -D .\\.postgres-data -o \"-p 55432 -c listen_addresses=localhost -c shared_buffers=1GB -c work_mem=32MB -c maintenance_work_mem=1GB\" -l .\\.postgres-log\\postgres.log start",
     "db:stop": "pg_ctl -D .\\.postgres-data stop",
-    "db:prepare": "psql -h localhost -p 55432 -U postgres -d civicwatch_explore -v ON_ERROR_STOP=1 -f .\\database\\scripts\\prepare_explore.sql"
+    "db:prepare": "node ./scripts/prepare-db.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
