@@ -172,6 +172,11 @@ pnpm run build
 pnpm run start:prod:linux
 ```
 
+`pnpm run build` loads the root `.env` before building. That is required for
+subpath deployments because SvelteKit must see `PUBLIC_BASE_PATH=/prototype04`
+at build time; otherwise the browser will request assets from `/_app/...`
+instead of `/prototype04/_app/...`.
+
 `start:prod:linux` passes `--skip-db-start` because production should usually
 point at a managed or separately supervised Postgres instance. If you really do
 want to run the restored local cluster on Linux, call

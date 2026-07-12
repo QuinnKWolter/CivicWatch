@@ -10,7 +10,7 @@
     "start:local:linux": "bash ./scripts/start-local.sh",
     "start:prod:linux": "bash ./scripts/start-civicwatch.sh --production --skip-db-start",
     "dev": "concurrently \"pnpm --dir apps/api run dev\" \"pnpm --dir apps/web run dev\"",
-    "build": "pnpm --dir apps/api run build && pnpm --dir apps/web run build",
+    "build": "node ./scripts/build-civicwatch.mjs",
     "check": "pnpm --dir apps/api run check && pnpm --dir apps/web run check",
     "test": "pnpm --dir apps/api run test && pnpm --dir apps/web run test",
     "db:start": "pg_ctl -D .\\.postgres-data -o \"-p 55432 -c listen_addresses=localhost -c shared_buffers=1GB -c work_mem=32MB -c maintenance_work_mem=1GB\" -l .\\.postgres-log\\postgres.log start",
