@@ -1,4 +1,5 @@
 <script lang="ts">
+  import AnimatedNumber from '$lib/components/AnimatedNumber.svelte';
   import AsyncSampler from '$lib/components/AsyncSampler.svelte';
   import ChamberView from '$lib/components/ChamberView.svelte';
   import EntryMicrovisual from '$lib/components/EntryMicrovisual.svelte';
@@ -450,8 +451,11 @@
       </p>
 
       <h1>
-        Explore {postCountLabel} public posts from
-        {legislatorCountLabel} U.S. state legislators.
+        Explore
+        <AnimatedNumber value={rowCounts.posts} fallback={postCountLabel} />
+        public posts from
+        <AnimatedNumber value={rowCounts.legislators} fallback={legislatorCountLabel} />
+        U.S. state legislators.
       </h1>
 
       <p class="lede">
@@ -471,23 +475,6 @@
         meta={metaPayload}
         compactMode
       />
-
-      <dl class="hero-metrics">
-        <div>
-          <dt>States</dt>
-          <dd>{stateCountLabel}</dd>
-        </div>
-
-        <div>
-          <dt>Topic areas</dt>
-          <dd>{topicCountLabel}</dd>
-        </div>
-
-        <div>
-          <dt>Coverage</dt>
-          <dd>{coverageLabel}</dd>
-        </div>
-      </dl>
     </aside>
   </div>
 </section>
@@ -590,18 +577,17 @@
         open
       >
         <summary>
-          <span>
+          <span class="overview-summary-copy">
             <strong>Chamber roll call</strong>
             <em>
               Legislators represented in the current public snapshot.
             </em>
           </span>
+          <span class="overview-cue" aria-hidden="true"></span>
         </summary>
 
         <div class="overview-panel-body">
           <PanelHeader
-            title="Chamber roll call"
-            caption="A compact view of legislators represented in the current public snapshot."
             source="legislator_index"
             count={chamberRows.length}
             compact
@@ -616,18 +602,17 @@
         open
       >
         <summary>
-          <span>
+          <span class="overview-summary-copy">
             <strong>Topic mix</strong>
             <em>
               Leading topic categories by post volume.
             </em>
           </span>
+          <span class="overview-cue" aria-hidden="true"></span>
         </summary>
 
         <div class="overview-panel-body">
           <PanelHeader
-            title="Topic mix"
-            caption="Leading topic categories by post volume. Uncategorized remains visible where present."
             source="topic_party_breakdown"
             count={topicRows.length}
             compact
@@ -649,29 +634,23 @@
         open
       >
         <summary>
-          <span>
+          <span class="overview-summary-copy">
             <strong>State volume</strong>
             <em>
               All available states and jurisdictions, scaled by post volume.
             </em>
           </span>
+          <span class="overview-cue" aria-hidden="true"></span>
         </summary>
 
         <div class="overview-panel-body">
-          <PanelHeader
-            title="State volume"
-            caption="All available states and jurisdictions, scaled by post volume."
-            source="topic_state_breakdown"
-            count={stateRows.length}
-            compact
-          />
-
           <StateGrid
             states={stateRows}
             sort="state"
             showLegend
             showSummary
             showStateName
+            maxBlockSize="380px"
           />
         </div>
       </details>
@@ -744,9 +723,10 @@
 
   .hero-facts {
     display: grid;
-    gap: 14px;
+    gap: 10px;
     min-width: 0;
-    padding: 14px;
+    width: min(100%, 460px);
+    padding: 12px;
     background: color-mix(
       in srgb,
       var(--color-card, #fff) 82%,
@@ -754,55 +734,6 @@
     );
     border: 1px solid var(--color-rule, #d9d2c1);
     border-radius: 6px;
-  }
-
-  .hero-metrics {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1px;
-    margin: 0;
-    overflow: hidden;
-    border: 1px solid var(--color-rule, #d9d2c1);
-    border-radius: 6px;
-  }
-
-  .hero-metrics div {
-    display: grid;
-    gap: 3px;
-    min-width: 0;
-    padding: 10px;
-    background: var(--color-card, #fff);
-  }
-
-  .hero-metrics dt,
-  .hero-metrics dd {
-    margin: 0;
-  }
-
-  .hero-metrics dt {
-    color: var(--color-mute, #6b6659);
-    font-size: 0.64rem;
-    font-weight: 650;
-    line-height: 0.95rem;
-    letter-spacing: 0.055em;
-    text-transform: uppercase;
-  }
-
-  .hero-metrics dd {
-    overflow: hidden;
-    color: var(--color-ink, #1a1917);
-    font-family: var(
-      --type-mono,
-      'JetBrains Mono',
-      ui-monospace,
-      monospace
-    );
-    font-size: 0.78rem;
-    font-weight: 650;
-    line-height: 1.1rem;
-    font-variant-numeric: tabular-nums;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .entry-section,
@@ -942,12 +873,15 @@
     display: flex;
     gap: 12px;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     min-height: 60px;
     padding: 14px 16px;
     color: var(--color-ink, #1a1917);
     cursor: pointer;
     list-style: none;
+    list-style-type: none;
+    appearance: none;
+    -webkit-appearance: none;
     background: color-mix(
       in srgb,
       var(--color-card, #fff) 88%,
@@ -962,30 +896,66 @@
 
   .overview-panel > summary::-webkit-details-marker {
     display: none;
+    content: '';
   }
 
-  .overview-panel > summary::after {
-    content: '+';
+  .overview-panel > summary::marker {
+    content: '';
+    font-size: 0;
+  }
+
+  .overview-summary-copy {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .overview-cue {
     display: grid;
+    margin-inline-start: auto;
     width: 28px;
     height: 28px;
     flex: 0 0 auto;
     place-items: center;
-    color: var(--color-mute, #6b6659);
-    font-family: var(
-      --type-mono,
-      'JetBrains Mono',
-      ui-monospace,
-      monospace
-    );
-    font-size: 1rem;
-    line-height: 1;
     border: 1px solid var(--color-rule, #d9d2c1);
     border-radius: 999px;
+    transition:
+      border-color 140ms ease,
+      background-color 140ms ease,
+      transform 140ms ease;
   }
 
-  .overview-panel[open] > summary::after {
-    content: '–';
+  .overview-cue::before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--color-mute, #6b6659);
+    border-bottom: 2px solid var(--color-mute, #6b6659);
+    transform: translateX(-1px) rotate(-45deg);
+    transition:
+      border-color 140ms ease,
+      transform 140ms ease;
+  }
+
+  .overview-panel[open] .overview-cue::before {
+    transform: translateY(-2px) rotate(45deg);
+  }
+
+  .overview-panel > summary:hover .overview-cue {
+    border-color: color-mix(
+      in srgb,
+      var(--color-seal, #8a5a1a) 42%,
+      var(--color-rule, #d9d2c1)
+    );
+    background: color-mix(
+      in srgb,
+      var(--color-seal, #8a5a1a) 7%,
+      transparent
+    );
+  }
+
+  .overview-panel > summary:hover .overview-cue::before {
+    border-color: var(--color-seal, #8a5a1a);
   }
 
   .overview-panel > summary strong {
@@ -1062,10 +1032,6 @@
       padding: 12px;
     }
 
-    .hero-metrics {
-      grid-template-columns: 1fr;
-    }
-
     .entry-grid {
       grid-template-columns: 1fr;
     }
@@ -1104,8 +1070,6 @@
   @media (forced-colors: active) {
     .home-hero,
     .hero-facts,
-    .hero-metrics,
-    .hero-metrics div,
     .entry-card,
     .sampler-band,
     .overview-panel {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import PanelHeader from '$lib/components/PanelHeader.svelte';
+  import TopicIcon from '$lib/components/TopicIcon.svelte';
   import TopicRibbon from '$lib/components/TopicRibbon.svelte';
   import TopicBars from '$lib/components/TopicBars.svelte';
   import { compact } from '$lib/format';
@@ -13,12 +14,30 @@
   <div class="grid grid-3">
     {#each data.topics.data as topic}
       <a class="chip" href="/topic/{topic.topic}">
-        <strong>{topic.topicLabel}</strong>
+        <strong class="topic-chip-title">
+          <TopicIcon label={topic.topicLabel} size={19} />
+          <span>{topic.topicLabel}</span>
+        </strong>
         <span class="mono">{compact(topic.postCount)} posts</span>
       </a>
     {/each}
   </div>
 </section>
+
+<style>
+  .topic-chip-title {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .topic-chip-title > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>
 
 <section class="container split band">
   <TopicRibbon rows={data.ribbon.data} />

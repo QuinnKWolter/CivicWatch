@@ -8,6 +8,7 @@
     Trash2,
     X
   } from 'lucide-svelte';
+  import { titleCasePersonName } from '$lib/format';
 
   interface Props {
     apiBase?: string;
@@ -171,11 +172,18 @@
       cleanText(value.handle) ??
       cleanText(value.username);
 
-    const name =
+    const rawName =
       cleanText(value.name) ??
       cleanText(value.displayName) ??
       cleanText(value.display_name) ??
-      (handle ? `@${handle}` : 'Unnamed legislator');
+      null;
+
+    const name =
+      rawName
+        ? titleCasePersonName(rawName)
+        : handle
+          ? `@${handle}`
+          : 'Unnamed legislator';
 
     return {
       key: `${lid}-${index}`,

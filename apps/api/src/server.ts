@@ -16,7 +16,8 @@ import {
   queryHashOf,
   s,
   stableAnchor,
-  stateName
+  stateName,
+  titleCasePersonName
 } from './utils.js';
 
 type Query = Record<string, string | undefined>;
@@ -99,7 +100,7 @@ function postRow(row: Record<string, unknown>) {
     quoteCount: n(row.quote_count),
     engagement: n(row.like_count) + n(row.retweet_count),
     legislator: {
-      name: s(row.name),
+      name: titleCasePersonName(s(row.name)),
       handle: s(row.handle),
       state: s(row.state),
       chamber: s(row.chamber),
@@ -111,6 +112,86 @@ function postRow(row: Record<string, unknown>) {
 async function maxPostId() {
   const [row] = await sql`SELECT COALESCE(max(id), 1)::bigint AS max_id FROM posts`;
   return n(row?.max_id);
+}
+
+async function topPostsForLegislator(lid: string, limit = 3) {
+  const rows = await sql`
+    SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
+    FROM posts p
+    JOIN topics t ON t.topic = p.topic
+    JOIN legislators l ON l.lid = p.lid
+    WHERE p.lid = ${lid}
+    ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
+    LIMIT ${limit}
+  `;
+  return rows.map(postRow);
+}
+
+async function topPostsForTopic(topicId: string, limit = 3) {
+  const rows = await sql`
+    SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
+    FROM posts p
+    JOIN topics t ON t.topic = p.topic
+    JOIN legislators l ON l.lid = p.lid
+    WHERE p.topic = ${topicId}
+    ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
+    LIMIT ${limit}
+  `;
+  return rows.map(postRow);
+}
+
+async function topPostsForState(
+  state: string,
+  limit = 3,
+  filters: { topic?: string | null; party?: string | null } = {}
+) {
+  const topic = filters.topic ?? null;
+  const party = filters.party ?? null;
+  if (!topic && !party) {
+    try {
+      const rows = await sql`
+        SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
+        FROM app_state_top_posts stp
+        JOIN posts p ON p.id = stp.id
+        JOIN topics t ON t.topic = p.topic
+        JOIN legislators l ON l.lid = p.lid
+        WHERE stp.state = ${state}
+        ORDER BY stp.state_rank
+        LIMIT ${limit}
+      `;
+      return rows.map(postRow);
+    } catch (error) {
+      if ((error as { code?: string }).code !== '42P01') throw error;
+    }
+  }
+
+  const rows = await sql`
+    WITH state_lids AS (
+      SELECT lid
+      FROM app_legislator_summary
+      WHERE state = ${state}
+        AND (${party}::text IS NULL OR party = ${party})
+    ),
+    candidate_posts AS (
+      SELECT p.*
+      FROM state_lids sl
+      JOIN LATERAL (
+        SELECT *
+        FROM posts p
+        WHERE p.lid = sl.lid
+          AND (${topic}::text IS NULL OR p.topic = ${topic})
+        ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
+        LIMIT ${limit}
+      ) p ON true
+    )
+    SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
+    FROM candidate_posts p
+    JOIN topics t ON t.topic = p.topic
+    JOIN legislators l ON l.lid = p.lid
+    ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
+    LIMIT ${limit}
+  `;
+  return rows.map(postRow);
 }
 
 app.get('/api/v1/health', async () => {
@@ -173,7 +254,7 @@ app.get('/api/v1/chamber', async (request) => {
   return envelope(
     rows.map((row) => ({
       lid: s(row.lid),
-      name: s(row.name),
+      name: titleCasePersonName(s(row.name)),
       handle: s(row.handle),
       state: s(row.state),
       chamber: s(row.chamber),
@@ -221,7 +302,7 @@ app.get('/api/v1/search', async (request) => {
     {
       legislators: legislators.map((row) => ({
         lid: s(row.lid),
-        name: s(row.name),
+        name: titleCasePersonName(s(row.name)),
         handle: s(row.handle),
         state: s(row.state),
         chamber: s(row.chamber),
@@ -266,7 +347,7 @@ app.get('/api/v1/legislators', async (request) => {
   return envelope(
     rows.map((row) => ({
       lid: s(row.lid),
-      name: s(row.name),
+      name: titleCasePersonName(s(row.name)),
       handle: s(row.handle),
       state: s(row.state),
       chamber: s(row.chamber),
@@ -296,7 +377,7 @@ app.get('/api/v1/legislators/:lid', async (request, reply) => {
   return envelope(
     {
       lid: s(row.lid),
-      name: s(row.name),
+      name: titleCasePersonName(s(row.name)),
       handle: s(row.handle),
       state: s(row.state),
       chamber: s(row.chamber),
@@ -375,20 +456,39 @@ app.get('/api/v1/legislators/:lid/posts', async (request) => {
   const limit = clampLimit(q.limit, 25, 100);
   const cursor = q.cursor ? Number(q.cursor) : null;
   const topic = normalizedTopic(q.topic);
-  const rows = await sql`
-    SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-    FROM posts p
-    JOIN topics t ON t.topic = p.topic
-    JOIN legislators l ON l.lid = p.lid
-    WHERE p.lid = ${lid}
-      AND (${cursor}::bigint IS NULL OR p.id < ${cursor})
-      AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
-      AND (${q.from ?? null}::date IS NULL OR p.created_at >= ${q.from ?? null}::date)
-      AND (${q.to ?? null}::date IS NULL OR p.created_at <= ${q.to ?? null}::date)
-    ORDER BY p.created_at DESC, p.id DESC
-    LIMIT ${limit}
-  `;
-  return envelope(rows.map(postRow), 'posts', { ...q, lid, limit }, { nextCursor: rows.at(-1)?.id ?? null });
+  const sort = q.sort === 'engagement' ? 'engagement' : 'recent';
+  const rows = sort === 'engagement'
+    ? await sql`
+      SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
+      FROM posts p
+      JOIN topics t ON t.topic = p.topic
+      JOIN legislators l ON l.lid = p.lid
+      WHERE p.lid = ${lid}
+        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${q.from ?? null}::date IS NULL OR p.created_at >= ${q.from ?? null}::date)
+        AND (${q.to ?? null}::date IS NULL OR p.created_at <= ${q.to ?? null}::date)
+      ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
+      LIMIT ${limit}
+    `
+    : await sql`
+      SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
+      FROM posts p
+      JOIN topics t ON t.topic = p.topic
+      JOIN legislators l ON l.lid = p.lid
+      WHERE p.lid = ${lid}
+        AND (${cursor}::bigint IS NULL OR p.id < ${cursor})
+        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${q.from ?? null}::date IS NULL OR p.created_at >= ${q.from ?? null}::date)
+        AND (${q.to ?? null}::date IS NULL OR p.created_at <= ${q.to ?? null}::date)
+      ORDER BY p.created_at DESC, p.id DESC
+      LIMIT ${limit}
+    `;
+  return envelope(
+    rows.map(postRow),
+    'posts',
+    { ...q, lid, limit, sort },
+    { nextCursor: sort === 'recent' && rows.length === limit ? rows.at(-1)?.id ?? null : null }
+  );
 });
 
 app.get('/api/v1/legislators/:lid/activity', async (request) => {
@@ -437,7 +537,18 @@ app.get('/api/v1/legislators/:lid/similar', async (request) => {
     ORDER BY abs(other.mrp_ideology - base.mrp_ideology)
     LIMIT 8
   `;
-  return envelope(rows, 'legislators', { lid });
+  return envelope(
+    rows.map((row) => ({
+      lid: s(row.lid),
+      name: titleCasePersonName(s(row.name)),
+      handle: s(row.handle),
+      state: s(row.state),
+      party: s(row.party),
+      distance: row.distance === null ? null : Number(row.distance)
+    })),
+    'legislators',
+    { lid }
+  );
 });
 
 app.get('/api/v1/topics', async () => {
@@ -537,7 +648,7 @@ app.get('/api/v1/topics/:topicId/beeswarm', async (request) => {
   `;
   return envelope(rows.map((row) => ({
     lid: s(row.lid),
-    name: s(row.name),
+    name: titleCasePersonName(s(row.name)),
     handle: s(row.handle),
     state: s(row.state),
     party: s(row.party),
@@ -649,18 +760,11 @@ app.get('/api/v1/states/:state/top-posts', async (request) => {
   const q = request.query as Query;
   const topic = normalizedTopic(q.topic);
   const limit = clampLimit(q.limit, 10, 25);
-  const rows = await sql`
-    SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-    FROM posts p
-    JOIN topics t ON t.topic = p.topic
-    JOIN legislators l ON l.lid = p.lid
-    WHERE l.state = ${state}
-      AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
-      AND (${q.party ?? null}::text IS NULL OR l.party = ${q.party ?? null})
-    ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
-    LIMIT ${limit}
-  `;
-  return envelope(rows.map(postRow), 'posts + legislators', { ...q, state, limit });
+  return envelope(
+    await topPostsForState(state, limit, { topic, party: q.party ?? null }),
+    'posts + legislators',
+    { ...q, state, limit }
+  );
 });
 
 app.get('/api/v1/events', async () => envelope(events, 'events.ts'));
@@ -699,21 +803,111 @@ app.get('/api/v1/moments/window/top-posts', async (request) => {
   return envelope(rows.map(postRow), 'posts', { date, width, limit });
 });
 
+app.get('/api/v1/posts/explore', async (request) => {
+  const q = request.query as Query;
+  const limit = clampLimit(q.limit, 8, 24);
+  const cursor = Number(q.cursor);
+  const safeCursor = Number.isFinite(cursor) && cursor > 0 ? Math.trunc(cursor) : null;
+  const state = q.state?.toUpperCase() ?? null;
+  const topic = normalizedTopic(q.topic);
+  const party = q.party ?? null;
+  const chamber = q.chamber ?? null;
+  const lid = q.lid ?? null;
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const minEngagement = Number(q.minEngagement);
+  const safeMinEngagement =
+    Number.isFinite(minEngagement) && minEngagement > 0
+      ? Math.trunc(minEngagement)
+      : null;
+  const sort = q.sort === 'engagement' ? 'engagement' : 'recent';
+  const rows = from || to
+    ? await sql`
+      SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
+      FROM posts p
+      JOIN topics t ON t.topic = p.topic
+      JOIN legislators l ON l.lid = p.lid
+      WHERE (${safeCursor}::bigint IS NULL OR p.id < ${safeCursor})
+        AND (${lid}::text IS NULL OR p.lid = ${lid})
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${party}::text IS NULL OR l.party = ${party})
+        AND (${chamber}::text IS NULL OR l.chamber = ${chamber})
+        AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < (${to}::date + INTERVAL '1 day'))
+        AND (${safeMinEngagement}::int IS NULL OR (p.like_count + p.retweet_count) >= ${safeMinEngagement})
+      ORDER BY p.created_at DESC, p.id DESC
+      LIMIT ${limit}
+    `
+    : sort === 'engagement'
+      ? await sql`
+        SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
+        FROM posts p
+        JOIN topics t ON t.topic = p.topic
+        JOIN legislators l ON l.lid = p.lid
+        WHERE (${lid}::text IS NULL OR p.lid = ${lid})
+          AND (${state}::text IS NULL OR l.state = ${state})
+          AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+          AND (${party}::text IS NULL OR l.party = ${party})
+          AND (${chamber}::text IS NULL OR l.chamber = ${chamber})
+          AND (${safeMinEngagement}::int IS NULL OR (p.like_count + p.retweet_count) >= ${safeMinEngagement})
+        ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
+        LIMIT ${limit}
+      `
+    : await sql`
+      SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
+      FROM posts p
+      JOIN topics t ON t.topic = p.topic
+      JOIN legislators l ON l.lid = p.lid
+      WHERE (${safeCursor}::bigint IS NULL OR p.id < ${safeCursor})
+        AND (${lid}::text IS NULL OR p.lid = ${lid})
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${party}::text IS NULL OR l.party = ${party})
+        AND (${chamber}::text IS NULL OR l.chamber = ${chamber})
+        AND (${safeMinEngagement}::int IS NULL OR (p.like_count + p.retweet_count) >= ${safeMinEngagement})
+      ORDER BY p.id DESC
+      LIMIT ${limit}
+    `;
+  return envelope(
+    rows.map(postRow),
+    'posts + legislators',
+    { ...q, limit, sort },
+    { nextCursor: sort === 'recent' && rows.length === limit ? rows.at(-1)?.id ?? null : null }
+  );
+});
+
 app.get('/api/v1/sampler', async (request) => {
   const q = request.query as Query;
   const seed = q.seed ?? String(Date.now());
   const limit = clampLimit(q.n, 6, 12);
   const anchor = stableAnchor(seed, await maxPostId());
   const topic = normalizedTopic(q.topic);
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party ?? null;
+  const chamber = q.chamber ?? null;
+  const lid = q.lid ?? null;
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const minEngagement = Number(q.minEngagement);
+  const safeMinEngagement =
+    Number.isFinite(minEngagement) && minEngagement > 0
+      ? Math.trunc(minEngagement)
+      : null;
   const rows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
     FROM posts p
     JOIN topics t ON t.topic = p.topic
     JOIN legislators l ON l.lid = p.lid
     WHERE p.id >= ${anchor}
-      AND (${q.state?.toUpperCase() ?? null}::text IS NULL OR l.state = ${q.state?.toUpperCase() ?? null})
-      AND (${q.party ?? null}::text IS NULL OR l.party = ${q.party ?? null})
+      AND (${lid}::text IS NULL OR p.lid = ${lid})
+      AND (${state}::text IS NULL OR l.state = ${state})
+      AND (${party}::text IS NULL OR l.party = ${party})
+      AND (${chamber}::text IS NULL OR l.chamber = ${chamber})
       AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+      AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+      AND (${to}::date IS NULL OR p.created_at < (${to}::date + INTERVAL '1 day'))
+      AND (${safeMinEngagement}::int IS NULL OR (p.like_count + p.retweet_count) >= ${safeMinEngagement})
     ORDER BY p.id
     LIMIT ${limit}
   `;
@@ -738,19 +932,10 @@ app.get('/api/v1/compare', async (request) => {
         ORDER BY post_count DESC
         LIMIT 22
       `;
-      const topPosts = await sql`
-        SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-        FROM posts p
-        JOIN topics t ON t.topic = p.topic
-        JOIN legislators l ON l.lid = p.lid
-        WHERE p.lid = ${id}
-        ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
-        LIMIT 3
-      `;
       results.push({
         kind,
         id,
-        label: summary?.name ?? id,
+        label: titleCasePersonName(s(summary?.name)) ?? id,
         href: `/who/${id}`,
         metrics: {
           posts: n(summary?.total_posts),
@@ -759,7 +944,7 @@ app.get('/api/v1/compare', async (request) => {
           state: s(summary?.state)
         },
         topicMix: topicMix.map((row) => ({ topic: s(row.topic), topicLabel: s(row.topic_label), postCount: n(row.post_count) })),
-        topPosts: topPosts.map(postRow)
+        topPosts: await topPostsForLegislator(id, 3)
       });
     } else if (kind === 'state' && id) {
       const state = id.toUpperCase();
@@ -778,15 +963,6 @@ app.get('/api/v1/compare', async (request) => {
         ORDER BY post_count DESC
         LIMIT 22
       `;
-      const topPosts = await sql`
-        SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-        FROM posts p
-        JOIN topics t ON t.topic = p.topic
-        JOIN legislators l ON l.lid = p.lid
-        WHERE l.state = ${state}
-        ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
-        LIMIT 3
-      `;
       results.push({
         kind,
         id: state,
@@ -798,7 +974,7 @@ app.get('/api/v1/compare', async (request) => {
           state
         },
         topicMix: topicMix.map((row) => ({ topic: s(row.topic), topicLabel: s(row.topic_label), postCount: n(row.post_count) })),
-        topPosts: topPosts.map(postRow)
+        topPosts: await topPostsForState(state, 3)
       });
     } else if (kind === 'topic' && id) {
       const topicId = normalizedTopic(id) ?? '999';
@@ -817,15 +993,6 @@ app.get('/api/v1/compare', async (request) => {
         WHERE topic = ${topicId}
         ORDER BY post_count DESC
       `;
-      const topPosts = await sql`
-        SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-        FROM posts p
-        JOIN topics t ON t.topic = p.topic
-        JOIN legislators l ON l.lid = p.lid
-        WHERE p.topic = ${topicId}
-        ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
-        LIMIT 3
-      `;
       results.push({
         kind,
         id: topicId,
@@ -836,7 +1003,7 @@ app.get('/api/v1/compare', async (request) => {
           engagement: n(summary?.total_likes) + n(summary?.total_retweets)
         },
         topicMix: topicMix.map((row) => ({ topic: s(row.topic), topicLabel: s(row.topic_label), postCount: n(row.post_count) })),
-        topPosts: topPosts.map(postRow)
+        topPosts: await topPostsForTopic(topicId, 3)
       });
     }
   }

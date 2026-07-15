@@ -469,7 +469,7 @@
         class="wordmark-mark"
         aria-hidden="true"
       >
-        CW
+        <img src="/favicon.svg" alt="" />
       </span>
 
       <span class="wordmark-copy">
@@ -760,25 +760,17 @@
     height: 32px;
     flex: 0 0 auto;
     place-items: center;
-    color: var(
-      --color-on-accent,
-      #fff
-    );
-    font-family: var(
-      --type-mono,
-      'JetBrains Mono',
-      ui-monospace,
-      monospace
-    );
-    font-size: 0.66rem;
-    font-weight: 750;
-    line-height: 1;
-    letter-spacing: 0.035em;
-    background: var(
-      --color-seal,
-      #8a5a1a
-    );
-    border-radius: 6px;
+    overflow: hidden;
+    background: var(--color-ink, #101712);
+    border: 1px solid color-mix(in srgb, var(--color-rule) 72%, transparent);
+    border-radius: 7px;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%);
+  }
+
+  .wordmark-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .wordmark-copy {
@@ -1390,6 +1382,10 @@
     .skip-link {
       color: HighlightText;
       background: Highlight;
+    }
+
+    .wordmark-mark img {
+      filter: contrast(1.2);
     }
 
     .navigation-links a.active,

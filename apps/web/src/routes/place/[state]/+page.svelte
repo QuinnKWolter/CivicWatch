@@ -2,7 +2,7 @@
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import ChamberView from '$lib/components/ChamberView.svelte';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
-  import PostCard from '$lib/components/PostCard.svelte';
+  import PostExplorer from '$lib/components/PostExplorer.svelte';
   import TimeBars from '$lib/components/TimeBars.svelte';
   import TopicBars from '$lib/components/TopicBars.svelte';
   import { compact } from '$lib/format';
@@ -24,7 +24,7 @@
     <div class="card"><span class="caption">Democratic</span><strong class="number">{compact(summary.democratic)}</strong></div>
     <div class="card"><span class="caption">Republican</span><strong class="number">{compact(summary.republican)}</strong></div>
   </div>
-  <p><a class="button" href="/compare?slots=state:{data.state}">Compare with…</a></p>
+  <p class="compare-action"><a class="button" href="/compare?slots=state:{data.state}">Compare with…</a></p>
 </section>
 
 <section class="container split band">
@@ -37,16 +37,24 @@
 
 <section class="container split band">
   <ChamberView legislators={data.chamber.data} />
-  <div>
-    <PanelHeader title="Top posts" caption="Highest-engagement posts from this state." source="posts + legislators" count={data.topPosts.data.length} />
-    <div class="grid">
-      {#each data.topPosts.data as post}
-        <PostCard {post} />
-      {/each}
-    </div>
+  <div class="state-posts">
+    <PostExplorer
+      title="Post explorer"
+      caption="Switch between high-engagement posts, recent posts, and representative samples from this state."
+      source="posts + legislators"
+      initialTopPosts={data.topPosts.data}
+      filters={{ state: data.state }}
+      pageSize={6}
+      sampleSize={4}
+    />
   </div>
 </section>
 
 <style>
   .number { display: block; font-size: 1.6rem; margin-top: 6px; }
+  .state-posts {
+    display: grid;
+    gap: 12px;
+    min-width: min(100%, 340px);
+  }
 </style>

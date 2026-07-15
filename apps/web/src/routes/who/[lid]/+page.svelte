@@ -1,7 +1,7 @@
 <script lang="ts">
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
-  import PostCard from '$lib/components/PostCard.svelte';
+  import PostExplorer from '$lib/components/PostExplorer.svelte';
   import VoiceFingerprint from '$lib/components/VoiceFingerprint.svelte';
   import { compact, dateLabel, partyInitial } from '$lib/format';
   export let data: any;
@@ -28,7 +28,7 @@
     <div class="card"><span class="caption">Coverage</span><strong>{dateLabel(profile.firstPostDate)} to {dateLabel(profile.lastPostDate)}</strong></div>
   </div>
   <div class="notice">Voting-record position is available for 3,335 of 5,927 legislators. Missing values are shown, not hidden.</div>
-  <p><a class="button" href="/compare?slots=legislator:{profile.lid}">Compare with…</a></p>
+  <p class="compare-action"><a class="button" href="/compare?slots=legislator:{profile.lid}">Compare with…</a></p>
 </section>
 
 <section class="container split band">
@@ -46,12 +46,17 @@
 </section>
 
 <section class="container band">
-  <PanelHeader title="Posts" caption="Newest public posts for this legislator. The complete feed is cursor-backed by the API." source="posts" count={data.posts.data.length} />
-  <div class="grid grid-2">
-    {#each data.posts.data as post}
-      <PostCard {post} />
-    {/each}
-  </div>
+  <PostExplorer
+    title="Post explorer"
+    caption="Switch between this legislator's most-engaged posts, newest posts, and representative samples."
+    source="posts"
+    initialTopPosts={data.topPosts.data}
+    initialRecentPosts={data.posts.data}
+    initialRecentCursor={data.posts.meta?.nextCursor ?? null}
+    filters={{ lid: profile.lid }}
+    pageSize={10}
+    sampleSize={6}
+  />
 </section>
 
 <style>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import TopicIcon from './TopicIcon.svelte';
 
   type SortDirection = 'none' | 'asc' | 'desc';
 
@@ -36,6 +37,7 @@
     emptyMessage?: string;
     showRank?: boolean;
     showSummary?: boolean;
+    showTopicIcons?: boolean | null;
 
     /**
      * Optional custom value formatter.
@@ -66,6 +68,7 @@
     emptyMessage = 'No data is available for this view.',
     showRank = false,
     showSummary = false,
+    showTopicIcons = null,
     formatValue = null
   }: Props = $props();
 
@@ -76,6 +79,11 @@
 
   const safeHrefPrefix = $derived(
     normalizeHrefPrefix(hrefPrefix)
+  );
+
+  const displaysTopicIcons = $derived(
+    showTopicIcons ??
+      Boolean(safeHrefPrefix?.includes('/topic'))
   );
 
   const normalizedRows = $derived.by(() =>
@@ -347,11 +355,19 @@
                 href={row.href}
                 title={row.label}
               >
-                {row.label}
+                {#if displaysTopicIcons}
+                  <TopicIcon label={row.label} size={12} />
+                {/if}
+
+                <span>{row.label}</span>
               </a>
             {:else}
               <span title={row.label}>
-                {row.label}
+                {#if displaysTopicIcons}
+                  <TopicIcon label={row.label} size={12} />
+                {/if}
+
+                <span>{row.label}</span>
               </span>
             {/if}
           </div>
@@ -464,9 +480,11 @@
     min-width: 0;
   }
 
-  .label-cell a,
-  .label-cell span {
-    display: block;
+  .label-cell > a,
+  .label-cell > span {
+    display: flex;
+    gap: 7px;
+    align-items: center;
     min-width: 0;
     overflow: hidden;
     color: var(--color-ink, #1a1917);
@@ -475,7 +493,14 @@
     white-space: nowrap;
   }
 
-  .label-cell a {
+  .label-cell > a > span:last-child,
+  .label-cell > span > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .label-cell > a {
     text-decoration-line: underline;
     text-decoration-color: transparent;
     text-decoration-thickness: 1px;
@@ -486,12 +511,12 @@
       text-decoration-color 120ms ease;
   }
 
-  .label-cell a:hover {
+  .label-cell > a:hover {
     color: var(--color-seal, #8a5a1a);
     text-decoration-color: currentColor;
   }
 
-  .label-cell a:focus-visible {
+  .label-cell > a:focus-visible {
     color: var(--color-seal, #8a5a1a);
     outline: 2px solid
       var(--color-seal, #8a5a1a);
@@ -592,10 +617,15 @@
         'bar bar';
     }
 
-    .label-cell a,
-    .label-cell span {
+    .label-cell > a,
+    .label-cell > span {
       white-space: normal;
       overflow-wrap: anywhere;
+    }
+
+    .label-cell > a > span:last-child,
+    .label-cell > span > span:last-child {
+      white-space: normal;
     }
 
     .bar-track {
@@ -635,8 +665,8 @@
       background: Highlight;
     }
 
-    .label-cell a,
-    .label-cell span,
+    .label-cell > a,
+    .label-cell > span,
     .value,
     .rank {
       color: CanvasText;

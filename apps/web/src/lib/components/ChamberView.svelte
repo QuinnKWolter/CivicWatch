@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { partyInitial } from '$lib/format';
+  import { partyInitial, titleCasePersonName } from '$lib/format';
 
   type Party =
     | 'Democratic'
@@ -438,12 +438,17 @@
       cleanText(legislator.handle) ??
       cleanText(legislator.username);
 
-    const name =
+    const rawName =
       cleanText(legislator.name) ??
       cleanText(legislator.displayName) ??
       cleanText(legislator.display_name) ??
-      (handle ? `@${handle}` : null) ??
-      'Unnamed legislator';
+      null;
+
+    const name =
+      rawName
+        ? titleCasePersonName(rawName)
+        : (handle ? `@${handle}` : null) ??
+          'Unnamed legislator';
 
     const ideology =
       finiteNumber(legislator.mrpIdeology) ??

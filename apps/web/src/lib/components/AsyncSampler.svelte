@@ -731,10 +731,15 @@
 
   .sampler-item {
     min-width: 0;
+    list-style: none;
     animation: sample-enter 200ms ease-out both;
     animation-delay: calc(
       var(--sample-index) * 28ms
     );
+  }
+
+  .sampler-item::marker {
+    content: '';
   }
 
   .skeleton-grid {

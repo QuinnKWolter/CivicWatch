@@ -41,28 +41,46 @@
 
   export let rows: LegislatorRow[] = [];
 
-  const WIDTH = 720;
-  const HEIGHT = 260;
+  const WIDTH = 960;
+  const HEIGHT = 330;
 
-  const PLOT_LEFT = 44;
-  const PLOT_RIGHT = WIDTH - 44;
-  const SWARM_TOP = 16;
-  const SWARM_BOTTOM = 184;
-  const AXIS_Y = 202;
+  const PLOT_LEFT = 58;
+  const PLOT_RIGHT = WIDTH - 58;
+  const SWARM_TOP = 26;
+  const SWARM_BOTTOM = 238;
+  const AXIS_Y = 266;
 
   const DOMAIN_MIN = -2;
   const DOMAIN_MAX = 2;
-  const MAX_POINTS = 900;
+  const MAX_POINTS = 5000;
 
-  const MIN_RADIUS = 3;
-  const MAX_RADIUS = 10;
-  const COLLISION_GAP = 1;
+  const MIN_RADIUS = 2.2;
+  const MAX_RADIUS = 6.2;
+  const COLLISION_GAP = 0.8;
 
   $: normalizedRows = normalizeRows(rows);
-  $: layout = buildLayout(normalizedRows);
+  $: partyOptions = createPartyOptions(normalizedRows);
+  let selectedParty = 'All';
+  let zoom = 1.15;
+  let chartScroller: HTMLDivElement | null = null;
+  let isPanning = false;
+  let activePointerId: number | null = null;
+  let dragStartX = 0;
+  let dragStartScrollLeft = 0;
+  let pinchStartDistance = 0;
+  let pinchStartZoom = 1;
+  let pinchAnchorX = 0;
+  const activePointers = new Map<number, { x: number; y: number }>();
+  $: filteredRows =
+    selectedParty === 'All'
+      ? normalizedRows
+      : normalizedRows.filter((row) => (row.party ?? 'Unknown') === selectedParty);
+  $: layout = buildLayout(filteredRows);
   $: tableRows = [...layout.points].sort(
     (a, b) => a.ideology - b.ideology || a.name.localeCompare(b.name)
   );
+  $: summary = summarize(layout.points);
+  $: chartWidth = Math.round(WIDTH * Number(zoom || 1));
 
   function normalizeRows(input: LegislatorRow[]): NormalizedRow[] {
     if (!Array.isArray(input)) return [];
@@ -246,6 +264,173 @@
     };
   }
 
+  function createPartyOptions(source: NormalizedRow[]): string[] {
+    return [
+      'All',
+      ...Array.from(new Set(source.map((row) => row.party ?? 'Unknown'))).sort()
+    ];
+  }
+
+  function summarize(points: PositionedRow[]) {
+    const sorted = [...points].sort((a, b) => a.ideology - b.ideology);
+    const midpoint = Math.floor(sorted.length / 2);
+    const median =
+      sorted.length === 0
+        ? null
+        : sorted.length % 2
+          ? sorted[midpoint].ideology
+          : (sorted[midpoint - 1].ideology + sorted[midpoint].ideology) / 2;
+    const totalPosts = points.reduce((sum, point) => sum + point.posts, 0);
+    const topVoice = [...points].sort((a, b) => b.posts - a.posts)[0] ?? null;
+
+    return {
+      median,
+      totalPosts,
+      topVoice
+    };
+  }
+
+  function resetView() {
+    selectedParty = 'All';
+    zoom = 1.15;
+    activePointers.clear();
+    isPanning = false;
+    activePointerId = null;
+    if (chartScroller) {
+      chartScroller.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+  }
+
+  function clampZoom(value: number): number {
+    return Math.min(4, Math.max(1, Number.isFinite(value) ? value : 1));
+  }
+
+  function zoomAround(nextZoom: number, clientX: number | null = null) {
+    const scroller = chartScroller;
+    const previousWidth = Math.max(chartWidth, WIDTH);
+    const safeZoom = clampZoom(nextZoom);
+
+    if (!scroller) {
+      zoom = safeZoom;
+      return;
+    }
+
+    const rect = scroller.getBoundingClientRect();
+    const anchorX =
+      clientX === null
+        ? rect.width / 2
+        : Math.min(rect.width, Math.max(0, clientX - rect.left));
+    const anchorRatio = (scroller.scrollLeft + anchorX) / previousWidth;
+
+    zoom = safeZoom;
+
+    requestAnimationFrame(() => {
+      if (!chartScroller) return;
+      chartScroller.scrollLeft = Math.max(
+        0,
+        anchorRatio * Math.max(chartWidth, WIDTH) - anchorX
+      );
+    });
+  }
+
+  function handleWheel(event: WheelEvent) {
+    if (!chartScroller) return;
+
+    event.preventDefault();
+
+    const delta = event.deltaY || event.deltaX;
+    const speed = event.shiftKey ? 0.0028 : 0.0015;
+    const factor = Math.exp(-delta * speed);
+
+    zoomAround(Number(zoom) * factor, event.clientX);
+  }
+
+  function pointerValues() {
+    return [...activePointers.values()];
+  }
+
+  function pointerDistance(points = pointerValues()): number {
+    if (points.length < 2) return 0;
+
+    return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+  }
+
+  function pointerCenterX(points = pointerValues()): number | null {
+    if (points.length === 0) return null;
+
+    return points.reduce((sum, point) => sum + point.x, 0) / points.length;
+  }
+
+  function handlePointerDown(event: PointerEvent) {
+    const target = event.target instanceof Element ? event.target : null;
+    activePointers.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY
+    });
+
+    if (activePointers.size === 2) {
+      const points = pointerValues();
+      pinchStartDistance = pointerDistance(points);
+      pinchStartZoom = Number(zoom);
+      pinchAnchorX = pointerCenterX(points) ?? event.clientX;
+      isPanning = false;
+      activePointerId = null;
+      chartScroller?.setPointerCapture?.(event.pointerId);
+      event.preventDefault();
+      return;
+    }
+
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (target?.closest('a')) return;
+
+    isPanning = true;
+    activePointerId = event.pointerId;
+    dragStartX = event.clientX;
+    dragStartScrollLeft = chartScroller?.scrollLeft ?? 0;
+    chartScroller?.setPointerCapture?.(event.pointerId);
+  }
+
+  function handlePointerMove(event: PointerEvent) {
+    if (!activePointers.has(event.pointerId)) return;
+
+    activePointers.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY
+    });
+
+    if (activePointers.size >= 2 && pinchStartDistance > 0) {
+      const nextDistance = pointerDistance();
+
+      if (nextDistance > 0) {
+        event.preventDefault();
+        zoomAround(
+          pinchStartZoom * (nextDistance / pinchStartDistance),
+          pointerCenterX() ?? pinchAnchorX
+        );
+      }
+
+      return;
+    }
+
+    if (isPanning && event.pointerId === activePointerId && chartScroller) {
+      event.preventDefault();
+      chartScroller.scrollLeft = dragStartScrollLeft - (event.clientX - dragStartX);
+    }
+  }
+
+  function handlePointerUp(event: PointerEvent) {
+    activePointers.delete(event.pointerId);
+
+    if (event.pointerId === activePointerId) {
+      isPanning = false;
+      activePointerId = null;
+    }
+
+    if (activePointers.size < 2) {
+      pinchStartDistance = 0;
+    }
+  }
+
   function createTicks(min: number, max: number): Tick[] {
     const range = Math.max(max - min, 0.1);
     const roughStep = range / 5;
@@ -366,9 +551,59 @@
   </figcaption>
 
   {#if layout.points.length > 0}
-    <div class="chart-container">
+    <div class="summary-strip" aria-label="Ideology distribution summary">
+      <div>
+        <span>Visible</span>
+        <strong>{formatCount(layout.points.length)}</strong>
+      </div>
+      <div>
+        <span>Median ideology</span>
+        <strong>{summary.median === null ? '—' : summary.median.toFixed(3)}</strong>
+      </div>
+      <div>
+        <span>Topic posts</span>
+        <strong>{formatCount(summary.totalPosts)}</strong>
+      </div>
+      <div>
+        <span>Most active</span>
+        <strong>{summary.topVoice ? summary.topVoice.name : '—'}</strong>
+      </div>
+    </div>
+
+    <div class="chart-tools" aria-label="Ideology chart controls">
+      <label>
+        <span>Party</span>
+        <select bind:value={selectedParty}>
+          {#each partyOptions as party}
+            <option value={party}>{party}</option>
+          {/each}
+        </select>
+      </label>
+
+      <label class="zoom-control">
+        <span>Zoom</span>
+        <input type="range" min="1" max="2.6" step="0.1" bind:value={zoom} />
+        <output>{Number(zoom).toFixed(1)}x</output>
+      </label>
+
+      <button type="button" onclick={resetView}>Reset</button>
+    </div>
+
+    <div
+      class="chart-container"
+      class:panning={isPanning}
+      bind:this={chartScroller}
+      role="region"
+      aria-label="Pan and zoom ideology chart. Use the mouse wheel or pinch to zoom, then drag empty chart space to pan."
+      onwheel={handleWheel}
+      onpointerdown={handlePointerDown}
+      onpointermove={handlePointerMove}
+      onpointerup={handlePointerUp}
+      onpointercancel={handlePointerUp}
+    >
       <svg
         class="chart"
+        style={`width:${chartWidth}px;min-width:100%`}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         role="img"
         aria-label={`Ideology distribution for ${layout.points.length} legislators`}
@@ -431,7 +666,7 @@
               cy={point.y}
               r={point.radius}
               fill={point.fill}
-              opacity="0.78"
+              opacity="0.62"
               vector-effect="non-scaling-stroke"
             >
               <title>{point.tooltip}</title>
@@ -523,7 +758,17 @@
   .chart-container {
     margin-top: 14px;
     padding-top: 8px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: thin;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
     border-top: 1px solid var(--color-rule, #d7dce2);
+  }
+
+  .chart-container.panning {
+    cursor: grabbing;
   }
 
   .chart {
@@ -531,6 +776,83 @@
     width: 100%;
     height: auto;
     overflow: visible;
+  }
+
+  .summary-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .summary-strip > div {
+    min-width: 0;
+    padding: 10px;
+    background: var(--color-elevated, var(--color-card, #fff));
+    border: 1px solid var(--color-rule, #d7dce2);
+    border-radius: 6px;
+  }
+
+  .summary-strip span {
+    display: block;
+    color: var(--color-mute, #64748b);
+    font-size: 0.72rem;
+    line-height: 1rem;
+  }
+
+  .summary-strip strong {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-ink, var(--color-text, #0f172a));
+    font-size: 0.9rem;
+    line-height: 1.2rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chart-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: end;
+    margin-top: 12px;
+  }
+
+  .chart-tools label {
+    display: grid;
+    gap: 4px;
+    min-width: min(100%, 150px);
+    margin: 0;
+  }
+
+  .chart-tools label > span {
+    color: var(--color-mute, #64748b);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.055em;
+    line-height: 1rem;
+    text-transform: uppercase;
+  }
+
+  .chart-tools select,
+  .chart-tools input {
+    min-height: 36px;
+  }
+
+  .zoom-control {
+    grid-template-columns: minmax(150px, 1fr) auto;
+    align-items: end;
+  }
+
+  .zoom-control > span {
+    grid-column: 1 / -1;
+  }
+
+  .zoom-control output {
+    color: var(--color-mute, #64748b);
+    font-family: var(--type-mono, ui-monospace, monospace);
+    font-size: 0.75rem;
   }
 
   .gridline {
@@ -564,6 +886,8 @@
   circle {
     transform-box: fill-box;
     transform-origin: center;
+    stroke: color-mix(in srgb, var(--color-card, #fff) 75%, transparent);
+    stroke-width: 0.75;
     transition:
       opacity 120ms ease,
       stroke-width 120ms ease,
@@ -578,8 +902,8 @@
   .chart a:focus-visible circle {
     opacity: 1;
     stroke: var(--color-text, #0f172a);
-    stroke-width: 1.5;
-    transform: scale(1.15);
+    stroke-width: 1.25;
+    transform: scale(1.35);
   }
 
   .chart a:focus-visible {
@@ -673,6 +997,10 @@
   @media (max-width: 560px) {
     .beeswarm {
       padding: 12px;
+    }
+
+    .summary-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .tick-label,

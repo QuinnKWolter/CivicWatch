@@ -50,6 +50,45 @@ export function partyShort(party: string | null | undefined): string {
   return '?';
 }
 
+const LOWERCASE_NAME_PARTS = new Set([
+  'da',
+  'de',
+  'del',
+  'der',
+  'di',
+  'du',
+  'la',
+  'le',
+  'van',
+  'von'
+]);
+
+const UPPERCASE_NAME_PARTS = new Set(['ii', 'iii', 'iv', 'vi']);
+
+function titleCaseNamePart(part: string, index: number): string {
+  const lower = part.toLocaleLowerCase('en-US');
+
+  if (UPPERCASE_NAME_PARTS.has(lower)) return lower.toLocaleUpperCase('en-US');
+  if (index > 0 && LOWERCASE_NAME_PARTS.has(lower)) return lower;
+
+  const cased = lower.replace(/(^|[-'’])(\p{L})/gu, (_match, prefix: string, letter: string) =>
+    `${prefix}${letter.toLocaleUpperCase('en-US')}`
+  );
+
+  return cased.replace(/\bMc(\p{L})/gu, (_match, letter: string) => `Mc${letter.toLocaleUpperCase('en-US')}`);
+}
+
+export function titleCasePersonName(value: string | null | undefined): string | null {
+  const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+
+  if (!text) return null;
+
+  return text
+    .split(' ')
+    .map((part, index) => titleCaseNamePart(part, index))
+    .join(' ');
+}
+
 export function stateName(code: string): string {
   return US_STATES.find((state) => state.code === code)?.name ?? code;
 }

@@ -2,7 +2,6 @@
   import { compact } from '$lib/format';
 
   type SortMode =
-    | 'input'
     | 'state'
     | 'count';
 
@@ -19,10 +18,6 @@
 
     hrefPrefix?: string | null;
 
-    /**
-     * "input" preserves the order of the first
-     * occurrence of each state.
-     */
     sort?: SortMode;
 
     /**
@@ -41,6 +36,7 @@
     showSummary?: boolean;
     showStateName?: boolean;
     includeUnknownState?: boolean;
+    maxBlockSize?: string | null;
 
     valueLabel?: string;
     valueLabelSingular?: string;
@@ -81,13 +77,14 @@
     caption = '',
     ariaLabel = 'Post activity by state',
     hrefPrefix = '/place/',
-    sort = 'input',
+    sort = 'count',
     scale = 'linear',
     maxValue = null,
     showLegend = true,
     showSummary = false,
     showStateName = true,
     includeUnknownState = true,
+    maxBlockSize = null,
     valueLabel = 'posts',
     valueLabelSingular = 'post',
     emptyMessage = 'No state activity data is available.',
@@ -172,18 +169,17 @@
     normalizeHrefPrefix(hrefPrefix)
   );
 
-  const effectiveSort = $derived(
-    sort === 'state' ||
-      sort === 'count'
-      ? sort
-      : 'input'
-  );
-
   const effectiveScale = $derived(
     scale === 'sqrt'
       ? 'sqrt'
       : 'linear'
   );
+
+  let selectedSort = $state<SortMode>('count');
+
+  $effect(() => {
+    selectedSort = sort === 'state' ? 'state' : 'count';
+  });
 
   const normalizedInput = $derived.by(() =>
     states
@@ -467,7 +463,7 @@
     left: StateSummary,
     right: StateSummary
   ): number {
-    if (effectiveSort === 'count') {
+    if (selectedSort === 'count') {
       return (
         right.count -
           left.count ||
@@ -478,16 +474,13 @@
       );
     }
 
-    if (effectiveSort === 'state') {
-      return compareStateCodes(
+    return (
+      compareStateCodes(
         left.code,
         right.code
-      );
-    }
-
-    return (
+      ) ||
       left.sourceIndex -
-      right.sourceIndex
+        right.sourceIndex
     );
   }
 
@@ -610,6 +603,10 @@
       state.count
     )} of the displayed scale maximum.`;
   }
+
+  const stateGridStyle = $derived(
+    maxBlockSize ? `--state-grid-max-block:${maxBlockSize}` : ''
+  );
 </script>
 
 <section
@@ -652,6 +649,33 @@
     </header>
   {/if}
 
+  {#if aggregatedStates.length}
+    <div
+      class="sort-toggle"
+      aria-label="Sort states"
+    >
+      <span>Sort</span>
+
+      <button
+        type="button"
+        class:active={selectedSort === 'count'}
+        aria-pressed={selectedSort === 'count'}
+        onclick={() => (selectedSort = 'count')}
+      >
+        Frequency
+      </button>
+
+      <button
+        type="button"
+        class:active={selectedSort === 'state'}
+        aria-pressed={selectedSort === 'state'}
+        onclick={() => (selectedSort = 'state')}
+      >
+        A-Z
+      </button>
+    </div>
+  {/if}
+
   {#if
     showLegend &&
     aggregatedStates.length
@@ -682,114 +706,120 @@
   {/if}
 
   {#if aggregatedStates.length}
-    <ul
-      class="states-grid"
-      aria-label={ariaLabel}
+    <div
+      class:scrollable={Boolean(maxBlockSize)}
+      class="states-grid-frame"
+      style={stateGridStyle}
     >
-      {#each aggregatedStates as state (state.code)}
-        {@const ratio =
-          scaleRatio(state.count)}
+      <ul
+        class="states-grid"
+        aria-label={ariaLabel}
+      >
+        {#each aggregatedStates as state (state.code)}
+          {@const ratio =
+            scaleRatio(state.count)}
 
-        {@const cardStyle =
-          `--state-tint:${tintPercentage(
-            state.count
-          )}%;--state-scale:${ratio}`}
+          {@const cardStyle =
+            `--state-tint:${tintPercentage(
+              state.count
+            )}%;--state-scale:${ratio}`}
 
-        <li>
-          {#if state.href}
-            <a
-              class:zero={
-                state.count === 0
-              }
-              class="state-card"
-              href={state.href}
-              style={cardStyle}
-              aria-label={stateAccessibleLabel(
-                state
-              )}
-              title={`${state.name}: ${exactValue(
-                state.count
-              )} ${unitLabel(
-                state.count
-              )}`}
-            >
-              <div class="state-heading">
-                <strong>{state.code}</strong>
-
-                <data
-                  value={String(
-                    state.count
-                  )}
-                >
-                  {displayValue(state)}
-                </data>
-              </div>
-
-              {#if showStateName}
-                <span
-                  class="state-name"
-                  title={state.name}
-                >
-                  {state.name}
-                </span>
-              {/if}
-
-              <span
-                class="meter"
-                aria-hidden="true"
+          <li>
+            {#if state.href}
+              <a
+                class:zero={
+                  state.count === 0
+                }
+                class="state-card"
+                href={state.href}
+                style={cardStyle}
+                aria-label={stateAccessibleLabel(
+                  state
+                )}
+                title={`${state.name}: ${exactValue(
+                  state.count
+                )} ${unitLabel(
+                  state.count
+                )}`}
               >
-                <span></span>
-              </span>
-            </a>
-          {:else}
-            <div
-              class:zero={
-                state.count === 0
-              }
-              class="state-card static"
-              style={cardStyle}
-              role="group"
-              aria-label={stateAccessibleLabel(
-                state
-              )}
-              title={`${state.name}: ${exactValue(
-                state.count
-              )} ${unitLabel(
-                state.count
-              )}`}
-            >
-              <div class="state-heading">
-                <strong>{state.code}</strong>
+                <div class="state-heading">
+                  <strong>{state.code}</strong>
 
-                <data
-                  value={String(
-                    state.count
-                  )}
-                >
-                  {displayValue(state)}
-                </data>
-              </div>
+                  <data
+                    value={String(
+                      state.count
+                    )}
+                  >
+                    {displayValue(state)}
+                  </data>
+                </div>
 
-              {#if showStateName}
+                {#if showStateName}
+                  <span
+                    class="state-name"
+                    title={state.name}
+                  >
+                    {state.name}
+                  </span>
+                {/if}
+
                 <span
-                  class="state-name"
-                  title={state.name}
+                  class="meter"
+                  aria-hidden="true"
                 >
-                  {state.name}
+                  <span></span>
                 </span>
-              {/if}
-
-              <span
-                class="meter"
-                aria-hidden="true"
+              </a>
+            {:else}
+              <div
+                class:zero={
+                  state.count === 0
+                }
+                class="state-card static"
+                style={cardStyle}
+                role="group"
+                aria-label={stateAccessibleLabel(
+                  state
+                )}
+                title={`${state.name}: ${exactValue(
+                  state.count
+                )} ${unitLabel(
+                  state.count
+                )}`}
               >
-                <span></span>
-              </span>
-            </div>
-          {/if}
-        </li>
-      {/each}
-    </ul>
+                <div class="state-heading">
+                  <strong>{state.code}</strong>
+
+                  <data
+                    value={String(
+                      state.count
+                    )}
+                  >
+                    {displayValue(state)}
+                  </data>
+                </div>
+
+                {#if showStateName}
+                  <span
+                    class="state-name"
+                    title={state.name}
+                  >
+                    {state.name}
+                  </span>
+                {/if}
+
+                <span
+                  class="meter"
+                  aria-hidden="true"
+                >
+                  <span></span>
+                </span>
+              </div>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    </div>
   {:else}
     <p
       class="empty-state"
@@ -862,6 +892,60 @@
     white-space: nowrap;
   }
 
+  .sort-toggle {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
+    padding: 3px;
+    margin-bottom: 11px;
+    color: var(--color-mute, #6b6659);
+    background: color-mix(
+      in srgb,
+      var(--color-elevated, var(--color-card, #fff)) 86%,
+      transparent
+    );
+    border: 1px solid var(--color-rule, #d9d2c1);
+    border-radius: 999px;
+  }
+
+  .sort-toggle span {
+    padding-inline: 8px 5px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .sort-toggle button {
+    min-height: 28px;
+    padding: 4px 9px;
+    color: var(--color-mute, #6b6659);
+    font-size: 0.74rem;
+    font-weight: 650;
+    line-height: 1rem;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    box-shadow: none;
+  }
+
+  .sort-toggle button:hover {
+    color: var(--color-seal, #8a5a1a);
+    background: var(--color-hover, rgb(0 0 0 / 5%));
+    box-shadow: none;
+    transform: none;
+  }
+
+  .sort-toggle button.active {
+    color: var(--color-ink, #1a1917);
+    background: var(--color-card, #fff);
+    box-shadow: var(--shadow-sm, 0 1px 2px rgb(0 0 0 / 8%));
+  }
+
   .scale-legend {
     display: flex;
     gap: 9px;
@@ -931,13 +1015,23 @@
     );
   }
 
+  .states-grid-frame {
+    min-width: 0;
+    max-block-size: var(--state-grid-max-block, none);
+  }
+
+  .states-grid-frame.scrollable {
+    overflow: auto;
+    padding: 2px 4px 2px 2px;
+    scrollbar-width: thin;
+    overscroll-behavior: contain;
+  }
+
   .states-grid {
     display: grid;
     grid-template-columns:
-      repeat(
-        auto-fit,
-        minmax(min(100%, 124px), 1fr)
-      );
+      repeat(auto-fill, minmax(min(100%, 118px), 132px));
+    justify-content: start;
     gap: 8px;
     padding: 0;
     margin: 0;
@@ -1117,10 +1211,7 @@
 
     .states-grid {
       grid-template-columns:
-        repeat(
-          auto-fit,
-          minmax(min(100%, 112px), 1fr)
-        );
+        repeat(auto-fill, minmax(min(100%, 112px), 1fr));
       gap: 7px;
     }
 

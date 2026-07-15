@@ -6,7 +6,7 @@ export const load: PageServerLoad = async ({ fetch, params }) => {
 
   const profile = await api(fetch, `/legislators/${lid}`);
 
-  const [fingerprint, posts] = await Promise.all([
+  const [fingerprint, posts, topPosts] = await Promise.all([
     api(fetch, `/legislators/${lid}/voice-fingerprint`).catch(() => ({
       data: [],
       meta: {
@@ -20,8 +20,15 @@ export const load: PageServerLoad = async ({ fetch, params }) => {
         sourceTable: 'posts',
         filters: { lid: params.lid, limit: 20 }
       }
+    })),
+    api(fetch, `/legislators/${lid}/posts`, { limit: 10, sort: 'engagement' }).catch(() => ({
+      data: [],
+      meta: {
+        sourceTable: 'posts',
+        filters: { lid: params.lid, limit: 10, sort: 'engagement' }
+      }
     }))
   ]);
 
-  return { profile, fingerprint, posts };
+  return { profile, fingerprint, posts, topPosts };
 };

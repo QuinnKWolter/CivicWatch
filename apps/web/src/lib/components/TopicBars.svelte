@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import TopicIcon from './TopicIcon.svelte';
 
   type SortMode = 'input' | 'count' | 'label';
 
@@ -355,7 +356,10 @@
               {/if}
 
               <span class="topic-copy">
-                <strong>{topic.label}</strong>
+                <strong class="topic-title">
+                  <TopicIcon label={topic.label} size={13} />
+                  <span>{topic.label}</span>
+                </strong>
 
                 {#if showShare}
                   <span class="share">
@@ -391,7 +395,10 @@
               {/if}
 
               <span class="topic-copy">
-                <strong>{topic.label}</strong>
+                <strong class="topic-title">
+                  <TopicIcon label={topic.label} size={13} />
+                  <span>{topic.label}</span>
+                </strong>
 
                 {#if showShare}
                   <span class="share">
@@ -549,7 +556,10 @@
     min-width: 0;
   }
 
-  .topic-copy strong {
+  .topic-title {
+    display: flex;
+    gap: 7px;
+    align-items: center;
     min-width: 0;
     overflow: hidden;
     color: currentColor;
@@ -558,6 +568,12 @@
     line-height: 1.15rem;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .topic-title > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .share {
@@ -690,9 +706,13 @@
         'bar bar';
     }
 
-    .topic-copy strong {
+    .topic-title {
       white-space: normal;
       overflow-wrap: anywhere;
+    }
+
+    .topic-title > span:last-child {
+      white-space: normal;
     }
   }
 

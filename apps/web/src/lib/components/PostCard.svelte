@@ -9,8 +9,10 @@
   import {
     dateLabel,
     integer,
-    partyInitial
+    partyInitial,
+    titleCasePersonName
   } from '$lib/format';
+  import TopicIcon from './TopicIcon.svelte';
 
   interface Props {
     post?: any;
@@ -409,16 +411,20 @@
           source.handle
       );
 
-    const legislatorName =
+    const rawLegislatorName =
       cleanInlineText(
         legislator.name ??
           legislator.displayName ??
           legislator.display_name ??
           source.legislatorName ??
           source.legislator_name
-      ) ??
-      (handle ? `@${handle}` : null) ??
-      'Unknown legislator';
+      );
+
+    const legislatorName =
+      rawLegislatorName
+        ? titleCasePersonName(rawLegislatorName)
+        : (handle ? `@${handle}` : null) ??
+          'Unknown legislator';
 
     const topicId =
       cleanInlineText(
@@ -704,10 +710,7 @@
           class="topic-chip"
           href={topicHref}
         >
-          <span
-            class="topic-marker"
-            aria-hidden="true"
-          ></span>
+          <TopicIcon label={normalized.topicLabel} size={13} />
 
           <span>{normalized.topicLabel}</span>
         </a>
@@ -715,10 +718,7 @@
         <span
           class="topic-chip static"
         >
-          <span
-            class="topic-marker"
-            aria-hidden="true"
-          ></span>
+          <TopicIcon label={normalized.topicLabel} size={13} />
 
           <span>{normalized.topicLabel}</span>
         </span>
@@ -866,8 +866,10 @@
 
 <style>
   .post-card {
+    container-type: inline-size;
     display: grid;
     gap: 14px;
+    width: 100%;
     min-width: 0;
     padding: 16px;
     color: var(--color-ink, #1a1917);
@@ -1027,6 +1029,7 @@
   }
 
   .author-link {
+    overflow-wrap: anywhere;
     color: inherit;
     text-decoration-line: underline;
     text-decoration-color: transparent;
@@ -1170,15 +1173,6 @@
     cursor: default;
   }
 
-  .topic-marker {
-    width: 6px;
-    height: 6px;
-    background: var(--color-seal, #8a5a1a);
-    border-radius: 1px;
-    transform: rotate(45deg);
-    flex: 0 0 auto;
-  }
-
   .post-footer {
     display: flex;
     flex-wrap: wrap;
@@ -1263,6 +1257,66 @@
     text-decoration-color: currentColor;
   }
 
+  @container (max-width: 360px) {
+    .post-header {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .identity-line {
+      display: grid;
+      gap: 1px;
+      align-items: start;
+    }
+
+    .handle {
+      max-width: 100%;
+    }
+
+    .post-date {
+      width: fit-content;
+      padding-top: 0;
+      padding-left: 40px;
+    }
+
+    .post-footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .engagement {
+      width: 100%;
+      gap: 8px 12px;
+    }
+
+    .topic-chip {
+      width: 100%;
+      justify-content: flex-start;
+      border-radius: 6px;
+    }
+  }
+
+  @container (max-width: 260px) {
+    .author-region {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .post-date {
+      padding-left: 0;
+    }
+
+    .engagement {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .engagement li {
+      white-space: normal;
+    }
+  }
+
   @media (max-width: 600px) {
     .post-card {
       gap: 13px;
@@ -1344,8 +1398,7 @@
     .party-mark.democratic,
     .party-mark.republican,
     .party-mark.independent,
-    .party-mark.other,
-    .topic-marker {
+    .party-mark.other {
       color: Canvas;
       background: CanvasText;
     }

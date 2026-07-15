@@ -4,9 +4,10 @@
   import MiniBars from '$lib/components/MiniBars.svelte';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
   import PartyChamberMatrix from '$lib/components/PartyChamberMatrix.svelte';
-  import PostCard from '$lib/components/PostCard.svelte';
+  import PostExplorer from '$lib/components/PostExplorer.svelte';
   import StateGrid from '$lib/components/StateGrid.svelte';
   import TimeBars from '$lib/components/TimeBars.svelte';
+  import TopicIcon from '$lib/components/TopicIcon.svelte';
   import { compact, pct } from '$lib/format';
   export let data: any;
   $: topic = data.topic.data ?? {};
@@ -19,20 +20,23 @@
 
 <section class="container band">
   <Breadcrumbs items={[{ label: 'Topics', href: '/topic' }, { label: topic.topicLabel }]} />
-  <h1>{topic.topicLabel}</h1>
+  <h1 class="topic-heading">
+    <TopicIcon label={topic.topicLabel} size={32} />
+    <span>{topic.topicLabel}</span>
+  </h1>
   <div class="grid grid-3">
     <div class="card"><span class="caption">Posts in party-labeled aggregate</span><strong class="number">{compact(topic.postCount)}</strong></div>
     <div class="card"><span class="caption">Engagement</span><strong class="number">{compact(topic.totalEngagement)}</strong></div>
     <div class="card"><span class="caption">Ideology dots</span><strong class="number">{compact(data.beeswarm.data.length)}</strong></div>
   </div>
-  <p><a class="button" href="/compare?slots=topic:{topic.topic}">Compare with…</a></p>
+  <p class="compare-action"><a class="button" href="/compare?slots=topic:{topic.topic}">Compare with…</a></p>
 </section>
 
 <section class="container split band">
   <TimeBars rows={data.ribbon.data} dateKey="date" valueKey="post_count" label="Topic volume over time" />
   <div class="card">
-    <PanelHeader title="State salience" caption="State-level post counts for this topic." source="topic_state_breakdown" count={states.length} />
-    <StateGrid {states} />
+    <PanelHeader title="State salience" caption="Where this topic appears most often across states, measured by post counts." />
+    <StateGrid {states} maxBlockSize="360px" />
   </div>
 </section>
 
@@ -68,14 +72,20 @@
 </section>
 
 <section class="container band">
-  <PanelHeader title="Top posts" caption="Highest-engagement posts assigned to this topic." source="posts" count={data.topPosts.data.length} />
-  <div class="grid grid-2">
-    {#each data.topPosts.data as post}
-      <PostCard {post} />
-    {/each}
-  </div>
+  <PostExplorer
+    title="Post explorer"
+    caption="Browse high-engagement posts, recent posts, and representative samples assigned to this topic."
+    source="posts"
+    initialTopPosts={data.topPosts.data}
+    filters={{ topic: topic.topic }}
+  />
 </section>
 
 <style>
   .number { display: block; font-size: 1.6rem; margin-top: 6px; }
+  .topic-heading {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
 </style>

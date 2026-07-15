@@ -14,8 +14,8 @@
 <section class="container band">
   <h1>Explore a state</h1>
   <p class="muted">Every state's chamber, topic mix, and top voices. The grid is shaded by post volume.</p>
-  <PanelHeader title="State volume" caption="A choropleth-like state grid using the current state aggregate." source="topic_state_breakdown" count={data.states.data.length} />
-  <StateGrid states={data.states.data} />
+  <PanelHeader title="State volume" caption="A choropleth-like state grid using the current state aggregate." />
+  <StateGrid states={data.states.data} maxBlockSize="430px" />
 </section>
 
 <section class="container band">
