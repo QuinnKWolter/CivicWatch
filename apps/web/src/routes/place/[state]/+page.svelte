@@ -6,6 +6,7 @@
   import TimeBars from '$lib/components/TimeBars.svelte';
   import TopicBars from '$lib/components/TopicBars.svelte';
   import { compact } from '$lib/format';
+  import { appPath } from '$lib/paths';
   export let data: any;
   $: summary = data.summary.data ?? {};
   $: topics = data.topics.data.map((row: any) => ({
@@ -24,7 +25,7 @@
     <div class="card"><span class="caption">Democratic</span><strong class="number">{compact(summary.democratic)}</strong></div>
     <div class="card"><span class="caption">Republican</span><strong class="number">{compact(summary.republican)}</strong></div>
   </div>
-  <p class="compare-action"><a class="button" href="/compare?slots=state:{data.state}">Compare with…</a></p>
+  <p class="compare-action"><a class="button" href={appPath(`/compare?slots=state:${data.state}`)}>Compare with…</a></p>
 </section>
 
 <section class="container split band">

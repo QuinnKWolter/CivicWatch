@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { partyInitial, titleCasePersonName } from '$lib/format';
+  import { withBase } from '$lib/paths';
 
   type Party =
     | 'Democratic'
@@ -526,9 +527,9 @@
       ? profileBase.replace(/\/+$/, '')
       : '/who';
 
-    return `${safeBase}/${encodeURIComponent(
+    return withBase(`${safeBase}/${encodeURIComponent(
       legislator.profileId
-    )}`;
+    )}`);
   }
 
   function formatNumber(value: number): string {

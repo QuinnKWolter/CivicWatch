@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { withBase } from '$lib/paths';
+
   interface BreadcrumbItem {
     label: string;
     href?: string;
@@ -49,7 +51,7 @@
       return undefined;
     }
 
-    return value;
+    return withBase(value) ?? undefined;
   }
 </script>
 

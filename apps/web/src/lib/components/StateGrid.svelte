@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { withBase } from '$lib/paths';
 
   type SortMode =
     | 'state'
@@ -427,7 +428,7 @@
       return null;
     }
 
-    return href;
+    return withBase(href);
   }
 
   function stateHref(
@@ -440,9 +441,9 @@
       return null;
     }
 
-    return `${safeHrefPrefix}${encodeURIComponent(
+    return withBase(`${safeHrefPrefix}${encodeURIComponent(
       state
-    )}`;
+    )}`);
   }
 
   function resolveStateName(

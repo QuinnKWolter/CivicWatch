@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { withBase } from '$lib/paths';
+
   type LegislatorRow = {
     lid?: unknown;
     name?: unknown;
@@ -108,7 +110,7 @@
         key: `${lid || name}-${sourceIndex}`,
         sourceIndex,
         lid,
-        href: lid ? `/who/${encodeURIComponent(lid)}` : null,
+        href: lid ? withBase(`/who/${encodeURIComponent(lid)}`) : null,
         name,
         party,
         ideology,

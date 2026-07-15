@@ -1,5 +1,6 @@
 <script lang="ts">
   import { pct } from '$lib/format';
+  import { withBase } from '$lib/paths';
 
   type SortMode =
     | 'absolute'
@@ -380,7 +381,7 @@
       return null;
     }
 
-    return href;
+    return withBase(href);
   }
 
   function buildHref(
@@ -390,9 +391,9 @@
       return null;
     }
 
-    return `${safeHrefPrefix}${encodeURIComponent(
+    return withBase(`${safeHrefPrefix}${encodeURIComponent(
       topic
-    )}`;
+    )}`);
   }
 
   function normalizeRow(

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { withBase } from '$lib/paths';
   import TopicIcon from './TopicIcon.svelte';
 
   type SortMode = 'input' | 'count' | 'label';
@@ -183,7 +184,7 @@
       return null;
     }
 
-    return href;
+    return withBase(href);
   }
 
   function buildHref(topic: string | null): string | null {
@@ -191,7 +192,7 @@
       return null;
     }
 
-    return `${safeHrefPrefix}${encodeURIComponent(topic)}`;
+    return withBase(`${safeHrefPrefix}${encodeURIComponent(topic)}`);
   }
 
   function aggregateTopics(input: unknown[]): TopicRow[] {

@@ -8,6 +8,7 @@
     X
   } from 'lucide-svelte';
   import { compact, partyInitial, titleCasePersonName } from '$lib/format';
+  import { withBase } from '$lib/paths';
 
   type SortKey =
     | 'name'
@@ -608,9 +609,9 @@
       ? profileBase.replace(/\/+$/, '')
       : '/who';
 
-    return `${base}/${encodeURIComponent(
+    return withBase(`${base}/${encodeURIComponent(
       row.lid
-    )}`;
+    )}`);
   }
 
   function partyClass(

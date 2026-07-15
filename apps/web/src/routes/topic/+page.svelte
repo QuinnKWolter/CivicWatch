@@ -4,6 +4,7 @@
   import TopicRibbon from '$lib/components/TopicRibbon.svelte';
   import TopicBars from '$lib/components/TopicBars.svelte';
   import { compact } from '$lib/format';
+  import { appPath } from '$lib/paths';
   export let data: any;
 </script>
 
@@ -13,7 +14,7 @@
   <PanelHeader title="Topic tiles" caption="Sortable-by-volume tiles for all topic categories in the snapshot." source="topic_party_breakdown" count={data.topics.data.length} />
   <div class="grid grid-3">
     {#each data.topics.data as topic}
-      <a class="chip" href="/topic/{topic.topic}">
+      <a class="chip" href={appPath(`/topic/${topic.topic}`)}>
         <strong class="topic-chip-title">
           <TopicIcon label={topic.topicLabel} size={19} />
           <span>{topic.topicLabel}</span>

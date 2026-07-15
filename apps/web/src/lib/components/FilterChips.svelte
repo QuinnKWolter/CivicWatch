@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { withBase } from '$lib/paths';
+
   interface FilterItem {
     label: string;
     value: string;
@@ -91,7 +93,7 @@
       return undefined;
     }
 
-    return value;
+    return withBase(value) ?? undefined;
   }
 </script>
 

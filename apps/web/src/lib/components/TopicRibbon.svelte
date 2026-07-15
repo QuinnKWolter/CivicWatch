@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { withBase } from '$lib/paths';
 
   interface Props {
     rows?: unknown[];
@@ -274,7 +275,7 @@
       return null;
     }
 
-    return href;
+    return withBase(href);
   }
 
   function buildHref(
@@ -284,9 +285,9 @@
       return null;
     }
 
-    return `${safeHrefPrefix}${encodeURIComponent(
+    return withBase(`${safeHrefPrefix}${encodeURIComponent(
       topic
-    )}`;
+    )}`);
   }
 
   function isUncategorized(

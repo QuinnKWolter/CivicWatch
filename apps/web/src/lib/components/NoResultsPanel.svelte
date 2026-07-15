@@ -1,5 +1,6 @@
 <script lang="ts">
   import { SearchX } from 'lucide-svelte';
+  import { withBase } from '$lib/paths';
 
   interface Props {
     title?: string;
@@ -80,7 +81,7 @@
       return null;
     }
 
-    return href;
+    return withBase(href);
   }
 
   async function handleAction(): Promise<void> {

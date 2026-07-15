@@ -12,6 +12,7 @@
     partyInitial,
     titleCasePersonName
   } from '$lib/format';
+  import { withBase } from '$lib/paths';
   import TopicIcon from './TopicIcon.svelte';
 
   interface Props {
@@ -572,9 +573,9 @@
         ? candidate.replace(/\/+$/, '')
         : fallbackBase;
 
-    return `${safeBase}/${encodeURIComponent(
+    return withBase(`${safeBase}/${encodeURIComponent(
       segment
-    )}`;
+    )}`);
   }
 
   function isExternalHref(

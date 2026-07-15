@@ -5,6 +5,7 @@
   import PanelHeader from '$lib/components/PanelHeader.svelte';
   import PostCard from '$lib/components/PostCard.svelte';
   import { compact } from '$lib/format';
+  import { appPath } from '$lib/paths';
   export let data: any;
   const examples = ['topic:20,state:TX', 'topic:20,topic:3,state:CA,state:TX', 'state:NY,state:TX,state:MN'];
 </script>
@@ -17,7 +18,7 @@
       <span>Comparison slots</span>
       <span class="input-shell">
         <input class="field" name="slots" value={data.slots} size="52" placeholder="topic:20,state:TX" />
-        <a class="clear-action" href="/compare?slots=" aria-label="Clear comparison slots">
+        <a class="clear-action" href={appPath('/compare?slots=')} aria-label="Clear comparison slots">
           <X size={16} aria-hidden="true" />
           <span>Clear</span>
         </a>
@@ -37,18 +38,18 @@
     </p>
     <div class="examples">
     {#each examples as example}
-      <a href="/compare?slots={example}">{example}</a>
+      <a href={appPath(`/compare?slots=${example}`)}>{example}</a>
     {/each}
     </div>
   </div>
   {#if data.compare.data.length === 0}
-    <NoResultsPanel title="No comparison slots loaded" message="Use kind:id values such as topic:20, state:TX, or legislator:2190582458." href="/compare?slots=topic:20,state:TX" action="Load an example" />
+    <NoResultsPanel title="No comparison slots loaded" message="Use kind:id values such as topic:20, state:TX, or legislator:2190582458." href={appPath('/compare?slots=topic:20,state:TX')} action="Load an example" />
   {/if}
   <div class="grid grid-4 compare-slots">
     {#each data.compare.data as slot}
       <article class="card">
         <p class="caption">{slot.kind}</p>
-        <h2><a href={slot.href}>{slot.label}</a></h2>
+        <h2><a href={appPath(slot.href)}>{slot.label}</a></h2>
         <dl>
           <dt>Posts</dt><dd class="mono">{compact(slot.metrics.posts)}</dd>
           <dt>Engagement</dt><dd class="mono">{compact(slot.metrics.engagement)}</dd>

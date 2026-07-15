@@ -8,6 +8,7 @@
   import StatStrip from '$lib/components/StatStrip.svelte';
   import TopicBars from '$lib/components/TopicBars.svelte';
   import { compact } from '$lib/format';
+  import { appPath } from '$lib/paths';
 
   interface Props {
     data?: unknown;
@@ -26,7 +27,7 @@
 
   const entryCards: EntryCard[] = [
     {
-      href: '/who',
+      href: appPath('/who'),
       eyebrow: 'People',
       title: 'Look up a legislator',
       body: 'Find profiles, posting patterns, topic fingerprints, and public communication history.',
@@ -34,7 +35,7 @@
       visualLabel: 'Roll-call dots'
     },
     {
-      href: '/place',
+      href: appPath('/place'),
       eyebrow: 'Places',
       title: 'Explore a state',
       body: 'Compare chambers, state-level volume, topic mix, and top legislative voices.',
@@ -42,7 +43,7 @@
       visualLabel: 'State volume grid'
     },
     {
-      href: '/topic',
+      href: appPath('/topic'),
       eyebrow: 'Issues',
       title: 'Follow a topic',
       body: 'Trace policy areas, political themes, and uncategorized communication across the archive.',
@@ -50,7 +51,7 @@
       visualLabel: 'Topic stack'
     },
     {
-      href: '/moment',
+      href: appPath('/moment'),
       eyebrow: 'Time',
       title: 'Revisit a moment',
       body: 'Move through the timeline and inspect what legislators were saying around key dates.',

@@ -16,6 +16,7 @@
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
   import HelpOverlay from '$lib/components/HelpOverlay.svelte';
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+  import { appPath, withoutBase } from '$lib/paths';
 
   interface Props {
     data?: unknown;
@@ -47,37 +48,37 @@
 
   const navigationItems: NavigationItem[] = [
     {
-      href: '/who',
+      href: appPath('/who'),
       label: 'Legislators',
       description:
         'Find individual state legislators'
     },
     {
-      href: '/place',
+      href: appPath('/place'),
       label: 'States',
       description:
         'Explore activity by state and chamber'
     },
     {
-      href: '/topic',
+      href: appPath('/topic'),
       label: 'Topics',
       description:
         'Browse policy and political topics'
     },
     {
-      href: '/moment',
+      href: appPath('/moment'),
       label: 'Moments',
       description:
         'Examine activity across time'
     },
     {
-      href: '/compare',
+      href: appPath('/compare'),
       label: 'Compare',
       description:
         'Compare legislators and groups'
     },
     {
-      href: '/methods',
+      href: appPath('/methods'),
       label: 'Methods',
       description:
         'Review sources, definitions, and methods'
@@ -417,11 +418,12 @@
   function routeIsActive(
     href: string
   ): boolean {
-    const pathname = page.url.pathname;
+    const pathname = withoutBase(page.url.pathname);
+    const routeHref = withoutBase(href);
 
     return (
-      pathname === href ||
-      pathname.startsWith(`${href}/`)
+      pathname === routeHref ||
+      pathname.startsWith(`${routeHref}/`)
     );
   }
 
@@ -462,14 +464,14 @@
   <div class="container header-inner">
     <a
       class="wordmark"
-      href="/"
+      href={appPath('/')}
       aria-label="CivicWatch home"
     >
       <span
         class="wordmark-mark"
         aria-hidden="true"
       >
-        <img src="/favicon.svg" alt="" />
+        <img src={appPath('/favicon.svg')} alt="" />
       </span>
 
       <span class="wordmark-copy">
@@ -626,7 +628,7 @@
     <div class="footer-introduction">
       <a
         class="footer-wordmark"
-        href="/"
+        href={appPath('/')}
       >
         CivicWatch
       </a>
@@ -644,11 +646,11 @@
       class="footer-navigation"
       aria-label="Footer navigation"
     >
-      <a href="/methods">Methods</a>
-      <a href="/about">About</a>
-      <a href="/who">Legislators</a>
-      <a href="/place">States</a>
-      <a href="/topic">Topics</a>
+      <a href={appPath('/methods')}>Methods</a>
+      <a href={appPath('/about')}>About</a>
+      <a href={appPath('/who')}>Legislators</a>
+      <a href={appPath('/place')}>States</a>
+      <a href={appPath('/topic')}>Topics</a>
     </nav>
 
     <div class="footer-metadata">

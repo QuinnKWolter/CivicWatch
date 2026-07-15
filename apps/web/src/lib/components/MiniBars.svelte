@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { withBase } from '$lib/paths';
   import TopicIcon from './TopicIcon.svelte';
 
   type SortDirection = 'none' | 'asc' | 'desc';
@@ -223,7 +224,7 @@
       return null;
     }
 
-    return value;
+    return withBase(value);
   }
 
   function buildHref(
@@ -237,9 +238,9 @@
 
     if (!segment) return null;
 
-    return `${safeHrefPrefix}${encodeURIComponent(
+    return withBase(`${safeHrefPrefix}${encodeURIComponent(
       segment
-    )}`;
+    )}`);
   }
 
   function normalizeRow(
