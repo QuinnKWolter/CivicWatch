@@ -615,10 +615,34 @@ app.get('/api/v1/topics/:topicId/ribbon', async (request) => {
 app.get('/api/v1/topics/:topicId/state-salience', async (request) => {
   const topicId = normalizedTopic((request.params as { topicId: string }).topicId) ?? '999';
   const rows = await sql`
-    SELECT state, topic, topic_label, post_count, total_likes, total_retweets
-    FROM topic_state_breakdown
-    WHERE topic = ${topicId}
-    ORDER BY state
+    WITH represented_legislators AS (
+      SELECT state, count(DISTINCT lid)::int AS legislator_count,
+             count(DISTINCT lid) FILTER (WHERE party = 'Democratic')::int AS democratic_legislator_count,
+             count(DISTINCT lid) FILTER (WHERE party = 'Republican')::int AS republican_legislator_count
+      FROM app_legislator_summary
+      WHERE state IS NOT NULL
+      GROUP BY state
+    ), party_activity AS (
+      SELECT legislators.state,
+             sum(app_legislator_topic.post_count) FILTER (WHERE legislators.party = 'Democratic')::bigint AS democratic_post_count,
+             sum(app_legislator_topic.post_count) FILTER (WHERE legislators.party = 'Republican')::bigint AS republican_post_count
+      FROM app_legislator_topic
+      JOIN legislators USING (lid)
+      WHERE app_legislator_topic.topic = ${topicId}
+      GROUP BY legislators.state
+    )
+    SELECT breakdown.state, breakdown.topic, breakdown.topic_label,
+           breakdown.post_count, breakdown.total_likes, breakdown.total_retweets,
+           represented_legislators.legislator_count,
+           represented_legislators.democratic_legislator_count,
+           represented_legislators.republican_legislator_count,
+           party_activity.democratic_post_count,
+           party_activity.republican_post_count
+    FROM topic_state_breakdown AS breakdown
+    LEFT JOIN represented_legislators USING (state)
+    LEFT JOIN party_activity USING (state)
+    WHERE breakdown.topic = ${topicId}
+    ORDER BY breakdown.state
   `;
   return envelope(rows, 'topic_state_breakdown', { topicId });
 });
@@ -690,20 +714,54 @@ app.get('/api/v1/topics/:topicId/top-posts', async (request) => {
   return envelope(rows.map(postRow), 'posts', { ...q, topicId, limit });
 });
 
-app.get('/api/v1/states', async () => {
+app.get('/api/v1/states', async (request) => {
+  const q = request.query as Query;
+  const topic = q.topic ? normalizedTopic(String(q.topic)) : null;
   const rows = await sql`
-    SELECT state, sum(post_count)::bigint AS post_count, sum(total_likes)::bigint AS total_likes,
-           sum(total_retweets)::bigint AS total_retweets
-    FROM topic_state_breakdown
-    GROUP BY state
+    WITH activity AS (
+      SELECT state, sum(post_count)::bigint AS post_count,
+             sum(total_likes)::bigint AS total_likes,
+             sum(total_retweets)::bigint AS total_retweets
+      FROM topic_state_breakdown
+      WHERE (${topic}::text IS NULL OR topic = ${topic})
+      GROUP BY state
+    ), represented_legislators AS (
+      SELECT state, count(DISTINCT lid)::int AS legislator_count,
+             count(DISTINCT lid) FILTER (WHERE party = 'Democratic')::int AS democratic_legislator_count,
+             count(DISTINCT lid) FILTER (WHERE party = 'Republican')::int AS republican_legislator_count
+      FROM app_legislator_summary
+      WHERE state IS NOT NULL
+      GROUP BY state
+    ), party_activity AS (
+      SELECT legislators.state,
+             sum(app_legislator_topic.post_count) FILTER (WHERE legislators.party = 'Democratic')::bigint AS democratic_post_count,
+             sum(app_legislator_topic.post_count) FILTER (WHERE legislators.party = 'Republican')::bigint AS republican_post_count
+      FROM app_legislator_topic
+      JOIN legislators USING (lid)
+      WHERE (${topic}::text IS NULL OR app_legislator_topic.topic = ${topic})
+      GROUP BY legislators.state
+    )
+    SELECT activity.*, represented_legislators.legislator_count,
+           represented_legislators.democratic_legislator_count,
+           represented_legislators.republican_legislator_count,
+           party_activity.democratic_post_count,
+           party_activity.republican_post_count
+    FROM activity
+    LEFT JOIN represented_legislators USING (state)
+    LEFT JOIN party_activity USING (state)
     ORDER BY state
   `;
   return envelope(rows.map((row) => ({
     state: s(row.state),
     stateName: stateName(String(row.state)),
     postCount: n(row.post_count),
+    legislatorCount: n(row.legislator_count),
+    democraticLegislatorCount: n(row.democratic_legislator_count),
+    republicanLegislatorCount: n(row.republican_legislator_count),
+    democraticPostCount: n(row.democratic_post_count),
+    republicanPostCount: n(row.republican_post_count),
     totalEngagement: n(row.total_likes) + n(row.total_retweets)
-  })), 'topic_state_breakdown');
+  })), 'topic_state_breakdown', { topic });
 });
 
 app.get('/api/v1/states/small-multiples', async () => {

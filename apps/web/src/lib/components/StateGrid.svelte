@@ -10,6 +10,9 @@
     | 'linear'
     | 'sqrt';
 
+  type PartyMode = 'both' | 'democratic' | 'republican';
+  type ColorMode = 'volume' | 'contribution';
+
   interface Props {
     states?: any[];
 
@@ -38,6 +41,10 @@
     showStateName?: boolean;
     includeUnknownState?: boolean;
     maxBlockSize?: string | null;
+    normalizeByPopulation?: boolean;
+    normalizeByLegislators?: boolean;
+    party?: PartyMode;
+    colorMode?: ColorMode;
 
     valueLabel?: string;
     valueLabelSingular?: string;
@@ -59,6 +66,11 @@
     code: string;
     explicitName: string | null;
     count: number;
+    legislatorCount: number;
+    democraticPostCount: number;
+    republicanPostCount: number;
+    democraticLegislatorCount: number;
+    republicanLegislatorCount: number;
     sourceIndex: number;
     raw: any;
   }
@@ -67,6 +79,11 @@
     code: string;
     name: string;
     count: number;
+    legislatorCount: number;
+    democraticPostCount: number;
+    republicanPostCount: number;
+    democraticLegislatorCount: number;
+    republicanLegislatorCount: number;
     sourceIndex: number;
     href: string | null;
     raw: any[];
@@ -86,6 +103,10 @@
     showStateName = true,
     includeUnknownState = true,
     maxBlockSize = null,
+    normalizeByPopulation = false,
+    normalizeByLegislators = false,
+    party = 'both',
+    colorMode = 'volume',
     valueLabel = 'posts',
     valueLabelSingular = 'post',
     emptyMessage = 'No state activity data is available.',
@@ -208,6 +229,11 @@
           code: string;
           explicitName: string | null;
           count: number;
+          legislatorCount: number;
+          democraticPostCount: number;
+          republicanPostCount: number;
+          democraticLegislatorCount: number;
+          republicanLegislatorCount: number;
           sourceIndex: number;
           raw: any[];
         }
@@ -220,6 +246,11 @@
 
         if (existing) {
           existing.count += state.count;
+          existing.legislatorCount = Math.max(existing.legislatorCount, state.legislatorCount);
+          existing.democraticPostCount += state.democraticPostCount;
+          existing.republicanPostCount += state.republicanPostCount;
+          existing.democraticLegislatorCount = Math.max(existing.democraticLegislatorCount, state.democraticLegislatorCount);
+          existing.republicanLegislatorCount = Math.max(existing.republicanLegislatorCount, state.republicanLegislatorCount);
           existing.raw.push(state.raw);
 
           if (
@@ -238,6 +269,11 @@
           explicitName:
             state.explicitName,
           count: state.count,
+          legislatorCount: state.legislatorCount,
+          democraticPostCount: state.democraticPostCount,
+          republicanPostCount: state.republicanPostCount,
+          democraticLegislatorCount: state.democraticLegislatorCount,
+          republicanLegislatorCount: state.republicanLegislatorCount,
           sourceIndex:
             state.sourceIndex,
           raw: [state.raw]
@@ -254,6 +290,11 @@
             code: state.code,
             name,
             count: state.count,
+            legislatorCount: state.legislatorCount,
+            democraticPostCount: state.democraticPostCount,
+            republicanPostCount: state.republicanPostCount,
+            democraticLegislatorCount: state.democraticLegislatorCount,
+            republicanLegislatorCount: state.republicanLegislatorCount,
             sourceIndex:
               state.sourceIndex,
             href: stateHref(state.code),
@@ -271,27 +312,57 @@
       (maximum, state) =>
         Math.max(
           maximum,
-          state.count
+          visualValue(state)
         ),
       0
     )
+  );
+
+  const democraticMaximum = $derived(
+    Math.max(0, ...aggregatedStates.map((state) => partyMeasure(state, 'democratic')))
+  );
+  const democraticMinimum = $derived(
+    Math.min(...aggregatedStates.map((state) => partyMeasure(state, 'democratic')))
+  );
+  const republicanMaximum = $derived(
+    Math.max(0, ...aggregatedStates.map((state) => partyMeasure(state, 'republican')))
+  );
+  const republicanMinimum = $derived(
+    Math.min(...aggregatedStates.map((state) => partyMeasure(state, 'republican')))
   );
 
   const scaleMaximum = $derived(
     Math.max(
       1,
       observedMaximum,
-      finiteNonNegative(maxValue)
+      normalizeByPopulation
+        ? 0
+        : finiteNonNegative(maxValue)
     )
   );
 
   const grandTotal = $derived(
     aggregatedStates.reduce(
       (sum, state) =>
-        sum + state.count,
+        sum + filteredCount(state),
       0
     )
   );
+
+  // U.S. Census Bureau Vintage 2025 resident population estimates, July 1, 2025.
+  const STATE_POPULATION_2025: Record<string, number> = {
+    AL: 5193088, AK: 737270, AZ: 7623818, AR: 3114791, CA: 39355309,
+    CO: 6012561, CT: 3688496, DE: 1059952, DC: 693645, FL: 23462518,
+    GA: 11302748, HI: 1432820, ID: 2029733, IL: 12719141, IN: 6973333,
+    IA: 3238387, KS: 2977220, KY: 4606864, LA: 4618189, ME: 1414874,
+    MD: 6265347, MA: 7154084, MI: 10127884, MN: 5830405, MS: 2954160,
+    MO: 6270541, MT: 1144694, NE: 2018006, NV: 3282188, NH: 1415342,
+    NJ: 9548215, NM: 2125498, NY: 20002427, NC: 11197968, ND: 799358,
+    OH: 11900510, OK: 4123288, OR: 4273586, PA: 13059432, RI: 1114521,
+    SC: 5570274, SD: 935094, TN: 7315076, TX: 31709821, UT: 3538904,
+    VT: 644663, VA: 8880107, WA: 8001020, WV: 1766147, WI: 5972787,
+    WY: 588753
+  };
 
   function cleanText(
     value: unknown
@@ -399,6 +470,25 @@
           value.value
       ),
 
+      legislatorCount: finiteNonNegative(
+        value.legislatorCount ??
+          value.legislator_count ??
+          value.legislators
+      ),
+
+      democraticPostCount: finiteNonNegative(
+        value.democraticPostCount ?? value.democratic_post_count
+      ),
+      republicanPostCount: finiteNonNegative(
+        value.republicanPostCount ?? value.republican_post_count
+      ),
+      democraticLegislatorCount: finiteNonNegative(
+        value.democraticLegislatorCount ?? value.democratic_legislator_count
+      ),
+      republicanLegislatorCount: finiteNonNegative(
+        value.republicanLegislatorCount ?? value.republican_legislator_count
+      ),
+
       sourceIndex,
       raw: value
     };
@@ -466,8 +556,8 @@
   ): number {
     if (selectedSort === 'count') {
       return (
-        right.count -
-          left.count ||
+        visualValue(right) -
+          visualValue(left) ||
         compareStateCodes(
           left.code,
           right.code
@@ -483,6 +573,80 @@
       left.sourceIndex -
         right.sourceIndex
     );
+  }
+
+  function normalizedValue(state: StateSummary): number | null {
+    const count = filteredCount(state);
+    if (normalizeByLegislators) {
+      const legislators = filteredLegislatorCount(state);
+      return legislators > 0
+        ? count / legislators
+        : null;
+    }
+    const population = STATE_POPULATION_2025[state.code];
+    return population ? (count / population) * 100_000 : null;
+  }
+
+  function visualValue(state: StateSummary): number {
+    return normalizeByPopulation || normalizeByLegislators
+      ? (normalizedValue(state) ?? 0)
+      : filteredCount(state);
+  }
+
+  function filteredCount(state: StateSummary): number {
+    if (party === 'democratic') return state.democraticPostCount;
+    if (party === 'republican') return state.republicanPostCount;
+    return state.count;
+  }
+
+  function filteredLegislatorCount(state: StateSummary): number {
+    if (party === 'democratic') return state.democraticLegislatorCount;
+    if (party === 'republican') return state.republicanLegislatorCount;
+    return state.legislatorCount;
+  }
+
+  function contributionScores(state: StateSummary): { democratic: number; republican: number } {
+    return {
+      democratic: minMaxScore(partyMeasure(state, 'democratic'), democraticMinimum, democraticMaximum),
+      republican: minMaxScore(partyMeasure(state, 'republican'), republicanMinimum, republicanMaximum)
+    };
+  }
+
+  function partyMeasure(state: StateSummary, selectedParty: 'democratic' | 'republican'): number {
+    const count = selectedParty === 'democratic' ? state.democraticPostCount : state.republicanPostCount;
+    if (normalizeByPopulation) {
+      const population = STATE_POPULATION_2025[state.code];
+      return population ? (count / population) * 100_000 : 0;
+    }
+    if (normalizeByLegislators) {
+      const legislators = selectedParty === 'democratic'
+        ? state.democraticLegislatorCount
+        : state.republicanLegislatorCount;
+      return legislators > 0 ? count / legislators : 0;
+    }
+    return count;
+  }
+
+  function minMaxScore(value: number, minimum: number, maximum: number): number {
+    return maximum > minimum ? (value - minimum) / (maximum - minimum) : value > 0 ? 1 : 0;
+  }
+
+  function contributionColor(state: StateSummary): string {
+    const scores = contributionScores(state);
+    const d = party === 'republican' ? 0 : scores.democratic;
+    const r = party === 'democratic' ? 0 : scores.republican;
+    const total = d + r;
+    if (total <= 0) {
+      return party === 'democratic' ? '#356fa3' : party === 'republican' ? '#b54842' : '#70558b';
+    }
+    const democraticShare = d / total;
+    const red = [181, 72, 66];
+    const purple = [112, 85, 139];
+    const blue = [53, 111, 163];
+    const from = democraticShare <= 0.5 ? red : purple;
+    const to = democraticShare <= 0.5 ? purple : blue;
+    const t = democraticShare <= 0.5 ? democraticShare * 2 : (democraticShare - 0.5) * 2;
+    return `rgb(${from.map((channel, index) => Math.round(channel + (to[index] - channel) * t)).join(' ')})`;
   }
 
   function compareStateCodes(
@@ -505,9 +669,8 @@
     );
   }
 
-  function scaleRatio(
-    value: number
-  ): number {
+  function scaleRatio(state: StateSummary): number {
+    const value = visualValue(state);
     if (
       value <= 0 ||
       scaleMaximum <= 0
@@ -526,11 +689,11 @@
   }
 
   function tintPercentage(
-    value: number
+    state: StateSummary
   ): number {
     return Number(
       (
-        scaleRatio(value) * 38
+        scaleRatio(state) * 38
       ).toFixed(2)
     );
   }
@@ -538,11 +701,20 @@
   function displayValue(
     state: StateSummary
   ): string {
+    if (normalizeByPopulation || normalizeByLegislators) {
+      const normalized = normalizedValue(state);
+      return normalized === null
+        ? '—'
+        : `${normalized.toLocaleString('en-US', {
+            maximumFractionDigits: 1
+          })}${normalizeByLegislators ? ' / legislator' : ' / 100k'}`;
+    }
+
     if (formatValue) {
       try {
         const formatted =
           formatValue(
-            state.count,
+            filteredCount(state),
             {
               code: state.code,
               name: state.name,
@@ -562,7 +734,7 @@
       }
     }
 
-    return compact(state.count);
+    return compact(filteredCount(state));
   }
 
   function exactValue(
@@ -582,7 +754,7 @@
   }
 
   function percentageLabel(
-    value: number
+    state: StateSummary
   ): string {
     return new Intl.NumberFormat(
       'en-US',
@@ -590,19 +762,70 @@
         style: 'percent',
         maximumFractionDigits: 0
       }
-    ).format(scaleRatio(value));
+    ).format(scaleRatio(state));
   }
 
   function stateAccessibleLabel(
     state: StateSummary
   ): string {
+    const normalized = normalizedValue(state);
+    const normalizedLabel = (normalizeByPopulation || normalizeByLegislators) && normalized !== null
+      ? ` ${normalized.toLocaleString('en-US', { maximumFractionDigits: 1 })} ${normalizationUnit()}.`
+      : '';
     return `${state.name}: ${exactValue(
-      state.count
-    )} ${unitLabel(
-      state.count
-    )}. ${percentageLabel(
-      state.count
+      filteredCount(state)
+    )} ${partyCountLabel(filteredCount(state))}.${normalizedLabel} ${percentageLabel(
+      state
     )} of the displayed scale maximum.`;
+  }
+
+  function stateTitle(state: StateSummary): string {
+    const count = filteredCount(state);
+    const raw = `${state.name}: ${exactValue(count)} ${partyCountLabel(count)}`;
+    const normalized = normalizedValue(state);
+    const partyDetail = colorMode === 'contribution'
+      ? ` · Democratic ${exactValue(state.democraticPostCount)} · Republican ${exactValue(state.republicanPostCount)}`
+      : '';
+    if ((!normalizeByPopulation && !normalizeByLegislators) || normalized === null) return `${raw}${partyDetail}`;
+    const denominator = normalizeByLegislators
+      ? `${filteredLegislatorCount(state).toLocaleString('en-US')} represented legislators`
+      : `${STATE_POPULATION_2025[state.code]?.toLocaleString('en-US')} residents`;
+    return `${raw} · ${normalized.toLocaleString('en-US', { maximumFractionDigits: 1 })} ${normalizationUnit()} · ${denominator}${partyDetail}`;
+  }
+
+  function scaleMaximumLabel(): string {
+    return normalizeByPopulation || normalizeByLegislators
+      ? scaleMaximum.toLocaleString('en-US', { maximumFractionDigits: 1 })
+      : compact(scaleMaximum);
+  }
+
+  function normalizationUnit(): string {
+    return normalizeByLegislators
+      ? 'posts per represented legislator'
+      : 'posts per 100,000 residents';
+  }
+
+  function partyCountLabel(value: number): string {
+    if (party === 'democratic') return value === 1 ? 'Democratic post' : 'Democratic posts';
+    if (party === 'republican') return value === 1 ? 'Republican post' : 'Republican posts';
+    return unitLabel(value);
+  }
+
+  function stateColor(state: StateSummary): string {
+    return colorMode === 'contribution'
+      ? contributionColor(state)
+      : 'var(--color-seal, #8a5a1a)';
+  }
+
+  function stateTint(state: StateSummary): number {
+    if (colorMode !== 'contribution') return tintPercentage(state);
+    const scores = contributionScores(state);
+    const strength = party === 'democratic'
+      ? scores.democratic
+      : party === 'republican'
+        ? scores.republican
+        : Math.max(scores.democratic, scores.republican);
+    return Number((12 + strength * 54).toFixed(2));
   }
 
   const stateGridStyle = $derived(
@@ -651,29 +874,32 @@
   {/if}
 
   {#if aggregatedStates.length}
-    <div
-      class="sort-toggle"
-      aria-label="Sort states"
-    >
-      <span>Sort</span>
-
-      <button
-        type="button"
-        class:active={selectedSort === 'count'}
-        aria-pressed={selectedSort === 'count'}
-        onclick={() => (selectedSort = 'count')}
+    <div class="state-controls">
+      <div
+        class="sort-toggle"
+        aria-label="Sort states"
       >
-        Frequency
-      </button>
+        <span>Sort</span>
 
-      <button
-        type="button"
-        class:active={selectedSort === 'state'}
-        aria-pressed={selectedSort === 'state'}
-        onclick={() => (selectedSort = 'state')}
-      >
-        A-Z
-      </button>
+        <button
+          type="button"
+          class:active={selectedSort === 'count'}
+          aria-pressed={selectedSort === 'count'}
+          onclick={() => (selectedSort = 'count')}
+        >
+          Frequency
+        </button>
+
+        <button
+          type="button"
+          class:active={selectedSort === 'state'}
+          aria-pressed={selectedSort === 'state'}
+          onclick={() => (selectedSort = 'state')}
+        >
+          A-Z
+        </button>
+      </div>
+
     </div>
   {/if}
 
@@ -683,9 +909,12 @@
   }
     <div
       class="scale-legend"
-      aria-label={`State intensity uses a ${effectiveScale} scale from zero to ${exactValue(
-        scaleMaximum
-      )} ${unitLabel(scaleMaximum)}.`}
+      class:contribution={colorMode === 'contribution'}
+      aria-label={colorMode === 'contribution'
+        ? 'State hue compares Democratic and Republican contributions after scaling each party independently. Bar length shows the selected volume measure.'
+        : `State intensity uses a ${effectiveScale} scale from zero to ${scaleMaximumLabel()} ${
+            normalizeByPopulation || normalizeByLegislators ? normalizationUnit() : unitLabel(scaleMaximum)
+          }.`}
     >
       <div
         class="legend-steps"
@@ -697,11 +926,15 @@
       </div>
 
       <p>
-        Darker tint and a longer bar indicate
-        more {valueLabel}. Scale maximum:
-        <strong>
-          {compact(scaleMaximum)}
-        </strong>.
+        {#if colorMode === 'contribution'}
+          Hue compares each party's independently scaled state contribution
+          (blue Democratic, red Republican, purple equal). Bar length shows
+          {normalizeByPopulation || normalizeByLegislators ? normalizationUnit() : valueLabel}.
+        {:else}
+          Darker tint and a longer bar indicate
+          {normalizeByPopulation || normalizeByLegislators ? normalizationUnit() : `more ${valueLabel}`}. Scale maximum:
+          <strong>{scaleMaximumLabel()}</strong>.
+        {/if}
       </p>
     </div>
   {/if}
@@ -718,18 +951,16 @@
       >
         {#each aggregatedStates as state (state.code)}
           {@const ratio =
-            scaleRatio(state.count)}
+            scaleRatio(state)}
 
           {@const cardStyle =
-            `--state-tint:${tintPercentage(
-              state.count
-            )}%;--state-scale:${ratio}`}
+            `--state-color:${stateColor(state)};--state-tint:${stateTint(state)}%;--state-scale:${ratio}`}
 
           <li>
             {#if state.href}
               <a
                 class:zero={
-                  state.count === 0
+                  filteredCount(state) === 0
                 }
                 class="state-card"
                 href={state.href}
@@ -737,18 +968,14 @@
                 aria-label={stateAccessibleLabel(
                   state
                 )}
-                title={`${state.name}: ${exactValue(
-                  state.count
-                )} ${unitLabel(
-                  state.count
-                )}`}
+                title={stateTitle(state)}
               >
                 <div class="state-heading">
                   <strong>{state.code}</strong>
 
                   <data
                     value={String(
-                      state.count
+                      filteredCount(state)
                     )}
                   >
                     {displayValue(state)}
@@ -774,7 +1001,7 @@
             {:else}
               <div
                 class:zero={
-                  state.count === 0
+                  filteredCount(state) === 0
                 }
                 class="state-card static"
                 style={cardStyle}
@@ -782,18 +1009,14 @@
                 aria-label={stateAccessibleLabel(
                   state
                 )}
-                title={`${state.name}: ${exactValue(
-                  state.count
-                )} ${unitLabel(
-                  state.count
-                )}`}
+                title={stateTitle(state)}
               >
                 <div class="state-heading">
                   <strong>{state.code}</strong>
 
                   <data
                     value={String(
-                      state.count
+                      filteredCount(state)
                     )}
                   >
                     {displayValue(state)}
@@ -911,6 +1134,18 @@
     border-radius: 999px;
   }
 
+  .state-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 11px;
+  }
+
+  .state-controls .sort-toggle {
+    margin-bottom: 0;
+  }
+
   .sort-toggle span {
     padding-inline: 8px 5px;
     font-size: 0.68rem;
@@ -922,12 +1157,15 @@
   }
 
   .sort-toggle button {
+    display: grid;
+    place-items: center;
+    height: 28px;
     min-height: 28px;
-    padding: 4px 9px;
+    padding: 0 9px;
     color: var(--color-mute, #6b6659);
     font-size: 0.74rem;
     font-weight: 650;
-    line-height: 1rem;
+    line-height: 1;
     background: transparent;
     border: 0;
     border-radius: 999px;
@@ -1016,6 +1254,10 @@
     );
   }
 
+  .scale-legend.contribution .legend-swatch.low { background: #b54842; }
+  .scale-legend.contribution .legend-swatch.medium { background: #70558b; }
+  .scale-legend.contribution .legend-swatch.high { background: #356fa3; }
+
   .states-grid-frame {
     min-width: 0;
     max-block-size: var(--state-grid-max-block, none);
@@ -1061,7 +1303,7 @@
     background: var(--color-card, #fff);
     background: color-mix(
       in srgb,
-      var(--color-seal, #8a5a1a)
+      var(--state-color, var(--color-seal, #8a5a1a))
         var(--state-tint),
       var(--color-card, #fff)
     );
@@ -1174,7 +1416,7 @@
   .meter > span {
     position: absolute;
     inset: 0;
-    background: var(--color-seal, #8a5a1a);
+    background: var(--state-color, var(--color-seal, #8a5a1a));
     transform: scaleX(
       var(--state-scale)
     );
