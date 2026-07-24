@@ -5,6 +5,7 @@
   import AsyncSampler from './AsyncSampler.svelte';
   import PanelHeader from './PanelHeader.svelte';
   import PostCard from './PostCard.svelte';
+  import type { DrilldownContext } from '$lib/drilldown';
 
   type FilterValue =
     | string
@@ -46,6 +47,10 @@
 
   const componentId = $props.id();
   const statusId = `${componentId}-status`;
+  const drilldownContext = $derived.by(() => ({
+    topic: typeof filters.topic === 'string' ? filters.topic : undefined,
+    party: filters.party === 'Democratic' || filters.party === 'Republican' ? filters.party : undefined
+  } satisfies DrilldownContext));
 
   let mode = $state<'top' | 'recent' | 'sample'>('top');
   let recentPosts = $state<any[]>(
@@ -265,7 +270,7 @@
   {#if mode === 'top'}
     <div class="post-grid">
       {#each initialTopPosts as post}
-        <PostCard {post} />
+        <PostCard {post} {drilldownContext} />
       {:else}
         <p class="empty-state">No high-engagement posts are available for this view.</p>
       {/each}
@@ -274,7 +279,7 @@
     {#if recentPosts.length}
       <div class="post-grid" class:loading>
         {#each recentPosts as post}
-          <PostCard {post} />
+          <PostCard {post} {drilldownContext} />
         {/each}
       </div>
     {:else if loading}

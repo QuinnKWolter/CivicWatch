@@ -1,6 +1,7 @@
 <script lang="ts">
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import ChamberView from '$lib/components/ChamberView.svelte';
+  import FilterChips from '$lib/components/FilterChips.svelte';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
   import PostExplorer from '$lib/components/PostExplorer.svelte';
   import TimeBars from '$lib/components/TimeBars.svelte';
@@ -19,6 +20,7 @@
 <section class="container band">
   <Breadcrumbs items={[{ label: 'Places', href: '/place' }, { label: data.state }]} />
   <h1>{summary.stateName ?? data.state}</h1>
+  <FilterChips filters={data.inheritedFilters} clearHref={appPath(data.clearContextHref)} ariaLabel="Inherited drilldown filters" />
   <div class="grid grid-4">
     <div class="card"><span class="caption">Legislators</span><strong class="number">{compact(summary.legislators)}</strong></div>
     <div class="card"><span class="caption">Posts</span><strong class="number">{compact(summary.posts)}</strong></div>
@@ -33,18 +35,18 @@
     <PanelHeader title="Topic mix" caption="State speech by topic, sorted by volume." source="topic_state_breakdown" count={topics.length} />
     <TopicBars {topics} />
   </div>
-  <TimeBars rows={data.trend.data} dateKey="month" valueKey="post_count" label="State trend" />
+  <TimeBars rows={data.trend.data} dateKey="month" valueKey="post_count" label="State trend" drilldownContext={{ state: data.state, topic: data.context.topic, party: data.context.party }} />
 </section>
 
 <section class="container split band">
-  <ChamberView legislators={data.chamber.data} />
+  <ChamberView legislators={data.chamber.data} drilldownContext={data.context} />
   <div class="state-posts">
     <PostExplorer
       title="Post explorer"
       caption="Switch between high-engagement posts, recent posts, and representative samples from this state."
       source="posts + legislators"
       initialTopPosts={data.topPosts.data}
-      filters={{ state: data.state }}
+      filters={{ state: data.state, topic: data.context.topic, party: data.context.party }}
       pageSize={6}
       sampleSize={4}
     />

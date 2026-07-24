@@ -1,5 +1,6 @@
 <script lang="ts">
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  import FilterChips from '$lib/components/FilterChips.svelte';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
   import PostExplorer from '$lib/components/PostExplorer.svelte';
   import VoiceFingerprint from '$lib/components/VoiceFingerprint.svelte';
@@ -22,6 +23,7 @@
     </div>
     <span class="party-dot party-{profile.party ?? 'unknown'}">{partyInitial(profile.party)}</span>
   </div>
+  <FilterChips filters={data.inheritedFilters} clearHref={appPath(data.clearContextHref)} ariaLabel="Inherited drilldown filters" />
   <div class="grid grid-4">
     <div class="card"><span class="caption">Posts</span><strong class="number">{compact(profile.totalPosts)}</strong></div>
     <div class="card"><span class="caption">Engagement</span><strong class="number">{compact(profile.totalEngagement)}</strong></div>
@@ -54,7 +56,7 @@
     initialTopPosts={data.topPosts.data}
     initialRecentPosts={data.posts.data}
     initialRecentCursor={data.posts.meta?.nextCursor ?? null}
-    filters={{ lid: profile.lid }}
+    filters={{ lid: profile.lid, topic: data.context.topic }}
     pageSize={10}
     sampleSize={6}
   />

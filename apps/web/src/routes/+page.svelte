@@ -905,6 +905,11 @@
     font-size: 0;
   }
 
+  .overview-panel > summary::after {
+    display: none !important;
+    content: none !important;
+  }
+
   .overview-summary-copy {
     min-width: 0;
     flex: 1 1 auto;

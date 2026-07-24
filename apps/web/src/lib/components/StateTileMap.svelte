@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import { withBase } from '$lib/paths';
 
   interface Props {
@@ -11,6 +12,7 @@
     normalizeByLegislators?: boolean;
     party?: 'both' | 'democratic' | 'republican';
     colorMode?: 'volume' | 'contribution';
+    drilldownContext?: DrilldownContext;
   }
 
   interface StateTile {
@@ -36,7 +38,8 @@
     normalizeByPopulation = false,
     normalizeByLegislators = false,
     party = 'both',
-    colorMode = 'volume'
+    colorMode = 'volume',
+    drilldownContext = {}
   }: Props = $props();
 
   const STATE_LAYOUT = [
@@ -153,7 +156,9 @@
         democraticLegislatorCount: metrics?.democraticLegislatorCount ?? 0,
         republicanLegislatorCount: metrics?.republicanLegislatorCount ?? 0,
         available,
-        href: available ? withBase(`${hrefPrefix}${encodeURIComponent(code)}`) : null
+        href: available
+          ? withBase(appendDrilldownContext(`${hrefPrefix}${encodeURIComponent(code)}`, drilldownContext))
+          : null
       };
     })
   );

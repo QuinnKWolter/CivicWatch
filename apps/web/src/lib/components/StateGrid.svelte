@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import { withBase } from '$lib/paths';
 
   type SortMode =
@@ -45,6 +46,7 @@
     normalizeByLegislators?: boolean;
     party?: PartyMode;
     colorMode?: ColorMode;
+    drilldownContext?: DrilldownContext;
 
     valueLabel?: string;
     valueLabelSingular?: string;
@@ -107,6 +109,7 @@
     normalizeByLegislators = false,
     party = 'both',
     colorMode = 'volume',
+    drilldownContext = {},
     valueLabel = 'posts',
     valueLabelSingular = 'post',
     emptyMessage = 'No state activity data is available.',
@@ -531,9 +534,9 @@
       return null;
     }
 
-    return withBase(`${safeHrefPrefix}${encodeURIComponent(
+    return withBase(appendDrilldownContext(`${safeHrefPrefix}${encodeURIComponent(
       state
-    )}`);
+    )}`, drilldownContext));
   }
 
   function resolveStateName(
@@ -875,11 +878,13 @@
 
   {#if aggregatedStates.length}
     <div class="state-controls">
-      <div
+      <fieldset
         class="sort-toggle"
         aria-label="Sort states"
       >
-        <span>Sort</span>
+        <legend>Sort</legend>
+
+        <div class="sort-options">
 
         <button
           type="button"
@@ -898,7 +903,8 @@
         >
           A-Z
         </button>
-      </div>
+        </div>
+      </fieldset>
 
     </div>
   {/if}
@@ -1117,8 +1123,9 @@
   }
 
   .sort-toggle {
-    display: inline-flex;
-    gap: 3px;
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 4px;
     align-items: center;
     width: fit-content;
     max-width: 100%;
@@ -1146,8 +1153,13 @@
     margin-bottom: 0;
   }
 
-  .sort-toggle span {
-    padding-inline: 8px 5px;
+  .sort-toggle legend {
+    float: left;
+    display: grid;
+    height: 28px;
+    padding: 0 6px 0 7px;
+    margin: 0;
+    place-items: center;
     font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -1156,9 +1168,17 @@
     white-space: nowrap;
   }
 
-  .sort-toggle button {
+  .sort-options {
     display: grid;
-    place-items: center;
+    grid-template-columns: auto auto;
+    gap: 3px;
+    align-items: stretch;
+  }
+
+  .sort-toggle button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 28px;
     min-height: 28px;
     padding: 0 9px;

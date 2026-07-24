@@ -2,6 +2,7 @@
   import { env } from '$env/dynamic/public';
   import { onDestroy } from 'svelte';
   import Beeswarm from '$lib/components/Beeswarm.svelte';
+  import DataTable from '$lib/components/DataTable.svelte';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import MiniBars from '$lib/components/MiniBars.svelte';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
@@ -15,6 +16,7 @@
   import TopicIcon from '$lib/components/TopicIcon.svelte';
   import { compact, pct } from '$lib/format';
   import { appPath } from '$lib/paths';
+  import { appendDrilldownContext } from '$lib/drilldown';
   export let data: any;
   let stateNormalizationMode: 'none' | 'population' | 'legislators' = 'none';
   let statePartyMode: 'both' | 'democratic' | 'republican' = 'both';
@@ -37,7 +39,7 @@
     democraticLegislatorCount: row.democraticLegislatorCount ?? row.democratic_legislator_count,
     republicanLegislatorCount: row.republicanLegislatorCount ?? row.republican_legislator_count
   }));
-  $: topLegislators = [...data.beeswarm.data].sort((a: any, b: any) => b.share - a.share).slice(0, 16);
+  $: concentratedLegislators = [...data.beeswarm.data].sort((a: any, b: any) => b.share - a.share);
   $: salienceTopicLabel = salienceTopic === 'all'
     ? 'all topics'
     : data.topics.data.find((item: any) => String(item.topic) === salienceTopic)?.topicLabel ?? 'the selected topic';
@@ -92,7 +94,7 @@
 </section>
 
 <section class="container split band">
-  <TimeBars rows={data.ribbon.data} dateKey="date" valueKey="post_count" label="Topic volume over time" />
+  <TimeBars rows={data.ribbon.data} dateKey="date" valueKey="post_count" label="Topic volume over time" drilldownContext={{ topic: String(topic.topic) }} />
   <div class="card">
     <PanelHeader title="State salience" caption={`Where ${salienceTopicLabel} appears most often across states, measured by post counts.`} />
     <div class="salience-normalization">
@@ -112,6 +114,12 @@
       normalizeByLegislators={stateNormalizationMode === 'legislators'}
       party={statePartyMode}
       colorMode={stateColorMode}
+      drilldownContext={{
+        topic: salienceTopic === 'all' ? undefined : salienceTopic,
+        party: statePartyMode === 'democratic' ? 'Democratic' : statePartyMode === 'republican' ? 'Republican' : undefined,
+        normalize: stateNormalizationMode === 'none' ? undefined : stateNormalizationMode,
+        color: stateColorMode === 'contribution' ? 'contribution' : undefined
+      }}
     />
     {#if salienceError}<p class="salience-error" role="alert">{salienceError}</p>{/if}
   </div>
@@ -126,25 +134,18 @@
 </section>
 
 <section class="container band">
-  <Beeswarm rows={data.beeswarm.data} />
+  <Beeswarm rows={data.beeswarm.data} drilldownContext={{ topic: String(topic.topic) }} />
 </section>
 
 <section class="container band">
   <div class="card">
-    <PanelHeader title="Most concentrated voices" caption="Legislators with the largest share of their posts on this topic." source="app_legislator_topic" count={topLegislators.length} />
-    <table>
-      <thead><tr><th>Legislator</th><th>Party</th><th>Ideology</th><th>Share</th></tr></thead>
-      <tbody>
-        {#each topLegislators as row}
-          <tr>
-            <td><a href={appPath(`/who/${row.lid}`)}>{row.name}</a></td>
-            <td>{row.party ?? '—'}</td>
-            <td class="mono">{row.mrpIdeology.toFixed(3)}</td>
-            <td class="mono">{pct(row.share, 1)}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+    <PanelHeader title="Most concentrated voices" caption="Legislators with the largest share of their posts on this topic." source="app_legislator_topic" count={concentratedLegislators.length} />
+    <DataTable rows={concentratedLegislators} columns={[
+      { key: 'name', label: 'Legislator', href: (row: any) => appPath(appendDrilldownContext(`/who/${row.lid}`, { topic: String(topic.topic) })) },
+      { key: 'party', label: 'Party' },
+      { key: 'mrpIdeology', label: 'Ideology', numeric: true, format: (value: any) => Number(value).toFixed(3) },
+      { key: 'share', label: 'Share', numeric: true, format: (value: any) => pct(value, 1) }
+    ]} caption={`Legislators concentrated on ${topic.topicLabel}`} initialSort="share" initialDirection="desc" />
   </div>
 </section>
 
@@ -165,6 +166,20 @@
     gap: 14px;
     align-items: center;
   }
-  .salience-normalization { display: grid; gap: 7px; margin: -2px 0 10px; }
+  .salience-normalization {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+    margin: -2px 0 10px;
+    overflow: hidden;
+  }
+  .salience-normalization :global(.topic-control),
+  .salience-normalization :global(.normalization-control),
+  .salience-normalization :global(.party-controls) { min-width: 0; max-width: 100%; }
+  .salience-normalization :global(label) { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+  .salience-normalization :global(select) { min-width: 0; max-width: 100%; }
+  .salience-normalization :global(small) { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
   .salience-error { margin: 8px 0 0; color: var(--color-danger, #9d332f); font-size: 0.72rem; }
 </style>

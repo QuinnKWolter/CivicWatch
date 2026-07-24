@@ -38,7 +38,7 @@
     initialParty = '',
     initialTotal = null,
     apiBase = DEFAULT_API_BASE,
-    resultLimit = 80,
+    resultLimit = 6000,
     debounceMs = 250
   }: Props = $props();
 
@@ -171,8 +171,8 @@
   }
 
   function getSafeLimit(): number {
-    if (!Number.isFinite(resultLimit)) return 80;
-    return Math.min(100, Math.max(1, Math.trunc(resultLimit)));
+    if (!Number.isFinite(resultLimit)) return 6000;
+    return Math.min(6000, Math.max(1, Math.trunc(resultLimit)));
   }
 
   function clearScheduledSearch(): void {

@@ -60,6 +60,8 @@
     letter-spacing: 0.035em;
     line-height: 1;
     white-space: nowrap;
+    min-width: 0;
+    max-width: 100%;
   }
   select {
     width: auto;
@@ -79,7 +81,7 @@
   }
   select:hover { border-color: var(--color-seal, #8a5a1a); }
   select:focus-visible { outline: 2px solid var(--color-seal, #8a5a1a); outline-offset: 2px; }
-  small { max-width: 54ch; color: var(--color-mute, #6b6659); font-size: 0.66rem; line-height: 1rem; }
+  small { flex: 1 1 100%; min-width: 0; max-width: 54ch; color: var(--color-mute, #6b6659); font-size: 0.66rem; line-height: 1rem; overflow-wrap: anywhere; }
   .compact select { height: 28px; min-height: 28px; }
   @media (max-width: 480px) {
     label { white-space: normal; }

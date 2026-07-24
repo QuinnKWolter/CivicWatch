@@ -7,9 +7,11 @@
     Tag
   } from 'lucide-svelte';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
+  import FilterChips from '$lib/components/FilterChips.svelte';
+  import MomentTimeline from '$lib/components/MomentTimeline.svelte';
   import PostExplorer from '$lib/components/PostExplorer.svelte';
-  import TimeBars from '$lib/components/TimeBars.svelte';
-  import TopicBars from '$lib/components/TopicBars.svelte';
+  import TopicIcon from '$lib/components/TopicIcon.svelte';
+  import { appPath } from '$lib/paths';
   export let data: any;
   $: topics = data.window.data.map((row: any) => ({
     topic: row.topic,
@@ -45,9 +47,12 @@
 
   function anchorHref(event: any) {
     const params = new URLSearchParams({
-      date: event.startDate,
-      width: String(anchorWindow(event))
+      from: event.startDate,
+      to: event.endDate ?? shiftDate(event.startDate, Math.max(0, anchorWindow(event) - 1))
     });
+    if (data.context.topic) params.set('topic', data.context.topic);
+    if (data.context.state) params.set('state', data.context.state);
+    if (data.context.party) params.set('party', data.context.party);
     return `/moment?${params.toString()}`;
   }
 
@@ -65,24 +70,34 @@
 
   $: windowWidth = Math.min(Math.max(Number(data.width ?? 7), 1), 45);
   $: windowFilters = {
-    from: shiftDate(data.date, -windowWidth),
-    to: shiftDate(data.date, windowWidth)
+    from: data.from ?? shiftDate(data.date, -windowWidth),
+    to: data.to ?? shiftDate(data.date, windowWidth),
+    topic: data.context.topic,
+    state: data.context.state,
+    party: data.context.party
   };
+  $: maxTopicPosts = Math.max(1, ...topics.map((topic: any) => Number(topic.postCount) || 0));
+  $: timelineEvents = data.events.data.map((event: any) => ({ ...event, href: anchorHref(event) }));
 </script>
 
 <section class="container band">
   <h1>Revisit a moment</h1>
-  <p class="muted">Choose a date window directly, or apply a curated anchor to reload the surrounding posts and topic mix.</p>
+  <p class="muted">Shape a window, trace its daily pulse, and move from a surge to the people and posts that made it.</p>
+  <FilterChips filters={data.inheritedFilters} clearHref={appPath(data.clearContextHref)} />
   <form class="moment-controls" method="get" aria-label="Moment window controls">
     <label class="moment-field">
-      <span><CalendarDays size={15} aria-hidden="true" /> Date</span>
-      <input class="field" type="date" name="date" value={data.date} min="2020-01-01" max="2024-12-31" />
+      <span><CalendarDays size={15} aria-hidden="true" /> From</span>
+      <input class="field" type="date" name="from" value={windowFilters.from} min="2020-01-01" max="2025-12-31" />
     </label>
 
     <label class="moment-field">
-      <span><Clock3 size={15} aria-hidden="true" /> Window</span>
-      <input class="field" type="number" name="width" value={data.width} min="1" max="45" />
+      <span><Clock3 size={15} aria-hidden="true" /> To</span>
+      <input class="field" type="date" name="to" value={windowFilters.to} min="2020-01-01" max="2025-12-31" />
     </label>
+
+    <label class="moment-field"><span>Topic</span><select class="field" name="topic"><option value="">All topics</option>{#each data.topics.data as option}<option value={option.topic} selected={String(option.topic) === data.context.topic}>{option.topicLabel}</option>{/each}</select></label>
+    <label class="moment-field compact"><span>State</span><input class="field" name="state" value={data.context.state ?? ''} maxlength="2" placeholder="All" /></label>
+    <label class="moment-field"><span>Party</span><select class="field" name="party"><option value="">All parties</option><option value="Democratic" selected={data.context.party === 'Democratic'}>Democratic</option><option value="Republican" selected={data.context.party === 'Republican'}>Republican</option></select></label>
 
     <button type="submit">
       <RotateCcw size={16} aria-hidden="true" />
@@ -91,10 +106,22 @@
   </form>
 </section>
 
+<section class="container band">
+  <MomentTimeline rows={data.daily.data} featuredPosts={data.topPosts.data} events={timelineEvents} showEvents={data.overview} bucket={data.bucket} context={data.context} />
+</section>
+
 <section class="container moment-layout band">
   <div class="card topic-mix-card">
     <PanelHeader title="Window topic mix" caption="Topic counts inside the selected date window." source="posts" count={data.window.data.length} />
-    <TopicBars {topics} />
+    <div class="topic-array">
+      {#each topics as item}
+        <a href={appPath(`/topic/${item.topic}`)} class="topic-row">
+          <TopicIcon label={item.topicLabel} size={20} />
+          <span class="topic-copy"><strong>{item.topicLabel}</strong><i><b style={`width:${Math.max(2, Number(item.postCount) / maxTopicPosts * 100)}%`}></b></i></span>
+          <span class="topic-count">{Number(item.postCount).toLocaleString()}</span>
+        </a>
+      {/each}
+    </div>
   </div>
 
   <div class="card anchors-card">
@@ -142,10 +169,6 @@
 </section>
 
 <section class="container band">
-  <TimeBars rows={data.window.data} dateKey="topic" valueKey="post_count" label="Window volume by topic" />
-</section>
-
-<section class="container band">
   <PostExplorer
     title="Post explorer"
     caption="Browse high-engagement posts, recent posts, and representative samples inside this date window."
@@ -163,6 +186,16 @@
     align-items: end;
     margin-top: 18px;
   }
+  .moment-field.compact { max-width: 90px; }
+
+  .topic-array { display:grid; gap:5px; }
+  .topic-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:9px; align-items:center; padding:7px 8px; color:inherit; text-decoration:none; border-radius:5px; }
+  .topic-row:hover { background:var(--color-hover); }
+  .topic-copy { display:grid; gap:5px; min-width:0; }
+  .topic-copy strong { overflow:hidden; font-size:.78rem; text-overflow:ellipsis; white-space:nowrap; }
+  .topic-copy i { display:block; height:4px; overflow:hidden; background:var(--color-track); border-radius:999px; }
+  .topic-copy b { display:block; height:100%; background:var(--color-seal); border-radius:inherit; }
+  .topic-count { color:var(--color-mute); font-family:var(--font-mono); font-size:.7rem; font-variant-numeric:tabular-nums; }
 
   .moment-field {
     display: grid;

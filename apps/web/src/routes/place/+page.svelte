@@ -1,7 +1,9 @@
 <script lang="ts">
   import { env } from '$env/dynamic/public';
   import { onDestroy } from 'svelte';
+  import type { DrilldownContext } from '$lib/drilldown';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
+  import DataTable from '$lib/components/DataTable.svelte';
   import SmallMultiplesGrid from '$lib/components/SmallMultiplesGrid.svelte';
   import StateGrid from '$lib/components/StateGrid.svelte';
   import StateNormalizationControl from '$lib/components/StateNormalizationControl.svelte';
@@ -30,6 +32,12 @@
   $: selectedTopicLabel = selectedTopic === 'all'
     ? 'all topics'
     : data.topics.data.find((topic: any) => String(topic.topic) === selectedTopic)?.topicLabel ?? 'the selected topic';
+  $: drilldownContext = {
+    topic: selectedTopic === 'all' ? undefined : selectedTopic,
+    party: partyMode === 'democratic' ? 'Democratic' : partyMode === 'republican' ? 'Republican' : undefined,
+    normalize: normalizationMode === 'none' ? undefined : normalizationMode,
+    color: colorMode === 'contribution' ? 'contribution' : undefined
+  } satisfies DrilldownContext;
 
   async function selectTopic(topic: string) {
     const requestId = ++topicRequestId;
@@ -99,6 +107,7 @@
       normalizeByLegislators={normalizationMode === 'legislators'}
       party={partyMode}
       {colorMode}
+      {drilldownContext}
     />
   {:else}
     <StateGrid
@@ -108,6 +117,7 @@
       normalizeByLegislators={normalizationMode === 'legislators'}
       party={partyMode}
       {colorMode}
+      {drilldownContext}
     />
   {/if}
   {#if topicError}<p class="topic-error" role="alert">{topicError}</p>{/if}
@@ -175,14 +185,11 @@
 <section class="container split band">
   <div class="card">
     <PanelHeader title="State-by-topic table" caption="The numerical data behind the small multiples." source="topic_state_breakdown" count={data.matrix.data.length} />
-    <table>
-      <thead><tr><th>State</th><th>Topic</th><th>Posts</th></tr></thead>
-      <tbody>
-        {#each data.matrix.data.slice(0, 180) as row}
-          <tr><td>{row.state}</td><td>{row.topic_label}</td><td class="mono">{row.post_count}</td></tr>
-        {/each}
-      </tbody>
-    </table>
+    <DataTable rows={data.matrix.data} columns={[
+      { key: 'state', label: 'State' },
+      { key: 'topic_label', label: 'Topic' },
+      { key: 'post_count', label: 'Posts', numeric: true }
+    ]} caption="State-by-topic aggregates" initialSort="state" />
   </div>
   <div class="card">
     <PanelHeader title="First state sample" caption="A quick read on the first aggregate slice." />

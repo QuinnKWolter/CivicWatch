@@ -13,6 +13,7 @@
     titleCasePersonName
   } from '$lib/format';
   import { withBase } from '$lib/paths';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import TopicIcon from './TopicIcon.svelte';
 
   interface Props {
@@ -25,6 +26,7 @@
     sourceLabel?: string;
     compact?: boolean;
     ariaLabel?: string | null;
+    drilldownContext?: DrilldownContext;
   }
 
   interface NormalizedPost {
@@ -63,20 +65,22 @@
     showSourceLink = true,
     sourceLabel = 'View original',
     compact = false,
-    ariaLabel = null
+    ariaLabel = null,
+    drilldownContext = {}
   }: Props = $props();
 
   const normalized = $derived(
     normalizePost(post)
   );
 
-  const profileHref = $derived(
-    buildInternalHref(
+  const profileHref = $derived.by(() => {
+    const href = buildInternalHref(
       profileBase,
       normalized.legislatorId,
       '/who'
-    )
-  );
+    );
+    return href ? appendDrilldownContext(href, drilldownContext) : null;
+  });
 
   const topicHref = $derived(
     buildInternalHref(

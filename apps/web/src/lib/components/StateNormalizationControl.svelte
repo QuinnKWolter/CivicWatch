@@ -56,6 +56,8 @@
     letter-spacing: 0.035em;
     line-height: 1;
     white-space: nowrap;
+    min-width: 0;
+    max-width: 100%;
   }
 
   select {
@@ -82,9 +84,12 @@
   }
 
   small {
+    min-width: 0;
+    max-width: 100%;
     color: var(--color-mute, #6b6659);
     font-size: 0.66rem;
     line-height: 1rem;
+    overflow-wrap: anywhere;
   }
 
   small a { color: var(--color-seal, #8a5a1a); font-weight: 650; }

@@ -20,6 +20,8 @@
     initialQ={data.q ?? ''}
     initialState={data.state ?? ''}
     initialParty={data.party ?? ''}
+    initialTotal={data.legislators.meta?.total ?? null}
+    resultLimit={6000}
   />
   {#if data.legislators.data.length === 0}
     <NoResultsPanel

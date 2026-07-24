@@ -35,7 +35,7 @@
     display: inline-flex;
     gap: 7px;
     align-items: center;
-    width: fit-content;
+    width: 100%;
     max-width: 100%;
     margin: 0;
     color: var(--color-mute, #6b6659);
@@ -45,6 +45,7 @@
     line-height: 1;
   }
   select {
+    flex: 1 1 180px;
     width: auto;
     min-width: min(230px, 66vw);
     max-width: 100%;

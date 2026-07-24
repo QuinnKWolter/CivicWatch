@@ -1,5 +1,6 @@
 <script lang="ts">
   import PanelHeader from '$lib/components/PanelHeader.svelte';
+  import DataTable from '$lib/components/DataTable.svelte';
   import TopicIcon from '$lib/components/TopicIcon.svelte';
   import TopicRibbon from '$lib/components/TopicRibbon.svelte';
   import TopicBars from '$lib/components/TopicBars.svelte';
@@ -48,13 +49,10 @@
   </div>
   <div class="card">
     <PanelHeader title="Daily aggregate sample" caption="First rows from the materialized fast path for the ribbon." source="topic_engagement_daily" count={data.ribbon.data.length} />
-    <table>
-      <thead><tr><th>Date</th><th>Topic</th><th>Posts</th></tr></thead>
-      <tbody>
-        {#each data.ribbon.data.slice(0, 80) as row}
-          <tr><td>{row.date}</td><td>{row.topic_label}</td><td class="mono">{row.post_count}</td></tr>
-        {/each}
-      </tbody>
-    </table>
+    <DataTable rows={data.ribbon.data} columns={[
+      { key: 'date', label: 'Date' },
+      { key: 'topic_label', label: 'Topic' },
+      { key: 'post_count', label: 'Posts', numeric: true }
+    ]} caption="Daily topic aggregates" initialSort="date" initialDirection="desc" />
   </div>
 </section>

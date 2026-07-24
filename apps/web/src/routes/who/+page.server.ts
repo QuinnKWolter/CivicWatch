@@ -5,6 +5,6 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   const q = url.searchParams.get('q') ?? undefined;
   const state = url.searchParams.get('state') ?? undefined;
   const party = url.searchParams.get('party') ?? undefined;
-  const legislators = await api(fetch, '/legislators', { q, state, party, limit: 80 });
+  const legislators = await api(fetch, '/legislators', { q, state, party, limit: 6000 });
   return { legislators, q, state, party };
 };

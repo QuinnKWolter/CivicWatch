@@ -240,6 +240,7 @@ app.get('/api/v1/chamber', async (request) => {
   const state = q.state?.toUpperCase();
   const party = q.party;
   const chamber = q.chamber?.toUpperCase();
+  const topic = normalizedTopic(q.topic);
   const rows = await sql`
     SELECT l.lid, l.name, l.handle, l.state, l.chamber, l.party, l.mrp_ideology,
            l.shor_ideo, ls.total_posts, ls.total_likes, ls.total_retweets
@@ -248,6 +249,10 @@ app.get('/api/v1/chamber', async (request) => {
     WHERE (${state ?? null}::text IS NULL OR l.state = ${state ?? null})
       AND (${party ?? null}::text IS NULL OR l.party = ${party ?? null})
       AND (${chamber ?? null}::text IS NULL OR l.chamber = ${chamber ?? null})
+      AND (${topic ?? null}::text IS NULL OR EXISTS (
+        SELECT 1 FROM app_legislator_topic alt
+        WHERE alt.lid = l.lid AND alt.topic = ${topic ?? null}
+      ))
     ORDER BY l.mrp_ideology NULLS LAST, l.party, l.name
   `;
 
@@ -322,14 +327,17 @@ app.get('/api/v1/search', async (request) => {
 
 app.get('/api/v1/legislators', async (request) => {
   const q = request.query as Query;
-  const limit = clampLimit(q.limit, 50, 100);
+  const requestedLimit = Number(q.limit ?? 100);
+  const limit = Number.isFinite(requestedLimit)
+    ? Math.min(6000, Math.max(1, Math.trunc(requestedLimit)))
+    : 100;
   const search = q.q?.trim();
   const state = q.state?.toUpperCase();
   const party = q.party;
   const chamber = q.chamber?.toUpperCase();
   const sort = q.sort === 'name' ? 'name' : 'posts';
 
-  const rows = await sql`
+  const [rows, [countRow]] = await Promise.all([sql`
     SELECT l.lid, l.name, l.handle, l.state, l.chamber, l.party, l.mrp_ideology,
            ls.total_posts, ls.total_likes, ls.total_retweets, ls.first_post_date, ls.last_post_date
     FROM legislators l
@@ -342,7 +350,14 @@ app.get('/api/v1/legislators', async (request) => {
       CASE WHEN ${sort} = 'posts' THEN COALESCE(ls.total_posts, 0) END DESC,
       l.name ASC
     LIMIT ${limit}
-  `;
+  `, sql`
+    SELECT count(*) AS total
+    FROM legislators l
+    WHERE (${search ?? null}::text IS NULL OR l.name ILIKE ${search ? `%${search}%` : null} OR l.handle ILIKE ${search ? `%${search}%` : null})
+      AND (${state ?? null}::text IS NULL OR l.state = ${state ?? null})
+      AND (${party ?? null}::text IS NULL OR l.party = ${party ?? null})
+      AND (${chamber ?? null}::text IS NULL OR l.chamber = ${chamber ?? null})
+  `]);
 
   return envelope(
     rows.map((row) => ({
@@ -359,12 +374,15 @@ app.get('/api/v1/legislators', async (request) => {
       lastPostDate: s(row.last_post_date)
     })),
     'app_legislator_summary',
-    { ...q, limit }
+    { ...q, limit },
+    { total: n(countRow?.total) }
   );
 });
 
 app.get('/api/v1/legislators/:lid', async (request, reply) => {
   const { lid } = request.params as { lid: string };
+  const q = request.query as Query;
+  const topic = normalizedTopic(q.topic);
   const [row] = await sql`
     SELECT l.*, ls.total_posts, ls.total_likes, ls.total_retweets, ls.total_replies, ls.total_quotes,
            ls.first_post_date, ls.last_post_date
@@ -373,6 +391,17 @@ app.get('/api/v1/legislators/:lid', async (request, reply) => {
     WHERE l.lid = ${lid}
   `;
   if (!row) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Legislator not found.', requestId: request.id }, meta: { snapshotId: SNAPSHOT_ID, generatedAt: new Date().toISOString() } });
+
+  const [contextual] = topic ? await sql`
+    SELECT count(*) AS total_posts,
+           COALESCE(sum(like_count), 0) AS total_likes,
+           COALESCE(sum(retweet_count), 0) AS total_retweets,
+           min(created_at) AS first_post_date,
+           max(created_at) AS last_post_date
+    FROM posts
+    WHERE lid = ${lid} AND topic = ${topic}
+  ` : [];
+  const totals = contextual ?? row;
 
   return envelope(
     {
@@ -394,18 +423,20 @@ app.get('/api/v1/legislators/:lid', async (request, reply) => {
       mrpIdeology: row.mrp_ideology === null ? null : Number(row.mrp_ideology),
       shorIdeology: row.shor_ideo === null ? null : Number(row.shor_ideo),
       demsharePres: row.demshare_pres === null ? null : Number(row.demshare_pres),
-      totalPosts: n(row.total_posts),
-      totalEngagement: n(row.total_likes) + n(row.total_retweets),
-      firstPostDate: s(row.first_post_date),
-      lastPostDate: s(row.last_post_date)
+      totalPosts: n(totals.total_posts),
+      totalEngagement: n(totals.total_likes) + n(totals.total_retweets),
+      firstPostDate: s(totals.first_post_date),
+      lastPostDate: s(totals.last_post_date)
     },
     'legislators + app_legislator_summary',
-    { lid }
+    { lid, topic }
   );
 });
 
 app.get('/api/v1/legislators/:lid/voice-fingerprint', async (request) => {
   const { lid } = request.params as { lid: string };
+  const q = request.query as Query;
+  const topic = normalizedTopic(q.topic);
   const [legislator] = await sql`SELECT lid, name, party FROM legislators WHERE lid = ${lid}`;
   const rows = await sql`
     WITH self AS (
@@ -432,6 +463,7 @@ app.get('/api/v1/legislators/:lid/voice-fingerprint', async (request) => {
     FROM topics t
     LEFT JOIN self ON self.topic = t.topic
     LEFT JOIN party_medians ON party_medians.topic = t.topic
+    WHERE (${topic ?? null}::text IS NULL OR t.topic = ${topic ?? null})
     ORDER BY CASE WHEN t.topic = '999' THEN 999 ELSE t.topic::int END
   `;
 
@@ -445,7 +477,7 @@ app.get('/api/v1/legislators/:lid/voice-fingerprint', async (request) => {
       postsInTopic: n(row.posts_in_topic)
     })),
     'app_legislator_topic',
-    { lid },
+    { lid, topic },
     { legislator: legislator ?? null }
   );
 });
@@ -775,42 +807,60 @@ app.get('/api/v1/states/small-multiples', async () => {
 
 app.get('/api/v1/states/:state', async (request) => {
   const state = (request.params as { state: string }).state.toUpperCase();
+  const q = request.query as Query;
+  const topic = normalizedTopic(q.topic);
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
   const [summary] = await sql`
-    SELECT state, count(*)::int AS legislators,
-           count(*) FILTER (WHERE party = 'Democratic')::int AS democratic,
-           count(*) FILTER (WHERE party = 'Republican')::int AS republican,
-           count(*) FILTER (WHERE party = 'Independent')::int AS independent,
-           sum(total_posts)::bigint AS posts,
-           sum(total_likes + total_retweets)::bigint AS engagement
-    FROM app_legislator_summary
-    WHERE state = ${state}
-    GROUP BY state
+    SELECT l.state, count(DISTINCT l.lid)::int AS legislators,
+           count(DISTINCT l.lid) FILTER (WHERE l.party = 'Democratic')::int AS democratic,
+           count(DISTINCT l.lid) FILTER (WHERE l.party = 'Republican')::int AS republican,
+           count(DISTINCT l.lid) FILTER (WHERE l.party = 'Independent')::int AS independent,
+           sum(alt.post_count)::bigint AS posts, 0::bigint AS engagement
+    FROM app_legislator_topic alt
+    JOIN legislators l USING (lid)
+    WHERE l.state = ${state}
+      AND (${topic ?? null}::text IS NULL OR alt.topic = ${topic ?? null})
+      AND (${party}::text IS NULL OR l.party = ${party})
+    GROUP BY l.state
   `;
-  return envelope({ ...summary, stateName: stateName(state) }, 'app_legislator_summary', { state });
+  return envelope({ ...summary, stateName: stateName(state) }, 'app_legislator_topic + legislators', { state, topic, party });
 });
 
 app.get('/api/v1/states/:state/topics', async (request) => {
   const state = (request.params as { state: string }).state.toUpperCase();
+  const q = request.query as Query;
+  const topic = normalizedTopic(q.topic);
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
   const rows = await sql`
-    SELECT topic, topic_label, post_count, total_likes, total_retweets
-    FROM topic_state_breakdown
-    WHERE state = ${state}
-    ORDER BY post_count DESC
+    SELECT alt.topic, alt.topic_label, sum(alt.post_count)::bigint AS post_count,
+           0::bigint AS total_likes, 0::bigint AS total_retweets
+    FROM app_legislator_topic alt
+    JOIN legislators l USING (lid)
+    WHERE l.state = ${state}
+      AND (${topic ?? null}::text IS NULL OR alt.topic = ${topic ?? null})
+      AND (${party}::text IS NULL OR l.party = ${party})
+    GROUP BY alt.topic, alt.topic_label
+    ORDER BY sum(alt.post_count) DESC
   `;
-  return envelope(rows, 'topic_state_breakdown', { state });
+  return envelope(rows, 'app_legislator_topic + legislators', { state, topic, party });
 });
 
 app.get('/api/v1/states/:state/trend', async (request) => {
   const state = (request.params as { state: string }).state.toUpperCase();
+  const q = request.query as Query;
+  const topic = normalizedTopic(q.topic);
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
   const rows = await sql`
     SELECT date_trunc('month', p.created_at)::date AS month, l.party, count(*)::bigint AS post_count
     FROM posts p
     JOIN legislators l ON l.lid = p.lid
     WHERE l.state = ${state}
+      AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+      AND (${party}::text IS NULL OR l.party = ${party})
     GROUP BY 1, l.party
     ORDER BY 1, l.party
   `;
-  return envelope(rows, 'posts + legislators', { state });
+  return envelope(rows, 'posts + legislators', { state, topic, party });
 });
 
 app.get('/api/v1/states/:state/top-posts', async (request) => {
@@ -827,21 +877,114 @@ app.get('/api/v1/states/:state/top-posts', async (request) => {
 
 app.get('/api/v1/events', async () => envelope(events, 'events.ts'));
 
+app.get('/api/v1/moments/overview', async () => {
+  const rows = await sql`
+    SELECT date::text, topic, topic_label, post_count, total_likes, total_retweets
+    FROM topic_engagement_daily
+    WHERE date BETWEEN '2020-01-01'::date AND '2025-01-04'::date
+    ORDER BY date
+  `;
+  const weeks = new Map<string, { date: string; post_count: number; engagement: number }>();
+  const topicTotals = new Map<string, { topic: string; topic_label: string; post_count: number }>();
+  const eventTotals = new Map<string, Map<string, { topic: string; topicLabel: string; postCount: number }>>();
+
+  for (const event of events) eventTotals.set(event.eventId, new Map());
+  for (const row of rows) {
+    const date = s(row.date);
+    const parsed = new Date(`${date}T00:00:00Z`);
+    const day = parsed.getUTCDay();
+    parsed.setUTCDate(parsed.getUTCDate() - (day === 0 ? 6 : day - 1));
+    const week = parsed.toISOString().slice(0, 10);
+    const weekly = weeks.get(week) ?? { date: week, post_count: 0, engagement: 0 };
+    weekly.post_count += n(row.post_count);
+    weekly.engagement += n(row.total_likes) + n(row.total_retweets);
+    weeks.set(week, weekly);
+
+    const topic = s(row.topic);
+    const total = topicTotals.get(topic) ?? { topic, topic_label: s(row.topic_label), post_count: 0 };
+    total.post_count += n(row.post_count);
+    topicTotals.set(topic, total);
+
+    for (const event of events) {
+      const end = event.endDate ?? event.startDate;
+      if (date < event.startDate || date > end) continue;
+      const byTopic = eventTotals.get(event.eventId)!;
+      const topicLabel = s(row.topic_label) === 'Unknown Topic (999)' ? 'Uncategorized' : s(row.topic_label);
+      const current = byTopic.get(topic) ?? { topic, topicLabel, postCount: 0 };
+      current.postCount += n(row.post_count);
+      byTopic.set(topic, current);
+    }
+  }
+
+  const eventTopics = Object.fromEntries(events.map((event) => [
+    event.eventId,
+    [...(eventTotals.get(event.eventId)?.values() ?? [])].filter((topic) => topic.topic !== '999').sort((a, b) => b.postCount - a.postCount).slice(0, 3)
+  ]));
+
+  return envelope({
+    daily: [...weeks.values()],
+    topics: [...topicTotals.values()].sort((a, b) => b.post_count - a.post_count),
+    eventTopics
+  }, 'topic_engagement_daily + events.ts', { bucket: 'week' });
+});
+
 app.get('/api/v1/moments/window', async (request) => {
   const q = request.query as Query;
   const date = q.date ?? '2022-06-24';
   const width = Math.min(Math.max(Number(q.width ?? 7), 1), 45);
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const topic = normalizedTopic(q.topic);
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party ?? null;
   const rows = await sql`
     SELECT p.topic, t.topic_label, count(*)::bigint AS post_count,
            sum(p.like_count)::bigint AS total_likes,
            sum(p.retweet_count)::bigint AS total_retweets
     FROM posts p
     JOIN topics t ON t.topic = p.topic
-    WHERE p.created_at BETWEEN (${date}::date - ${width}::int) AND (${date}::date + ${width}::int)
+    JOIN legislators l ON l.lid = p.lid
+    WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+      AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+      AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+      AND (${state}::text IS NULL OR l.state = ${state})
+      AND (${party}::text IS NULL OR l.party = ${party})
     GROUP BY p.topic, t.topic_label
     ORDER BY count(*) DESC
   `;
-  return envelope(rows, 'posts', { date, width }, { coveragePeriod: [date, date] });
+  return envelope(rows, 'posts + legislators', { date, width, from, to, topic, state, party });
+});
+
+app.get('/api/v1/moments/window/daily', async (request) => {
+  const q = request.query as Query;
+  const date = q.date ?? '2022-06-24';
+  const width = Math.min(Math.max(Number(q.width ?? 7), 1), 45);
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const topic = normalizedTopic(q.topic);
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party ?? null;
+  const bucket = q.bucket === 'month' ? 'month' : q.bucket === 'week' ? 'week' : 'day';
+  const rows = await sql`
+    WITH filtered AS (
+      SELECT CASE
+               WHEN ${bucket}::text = 'month' THEN date_trunc('month', p.created_at::timestamp)::date
+               WHEN ${bucket}::text = 'week' THEN date_trunc('week', p.created_at::timestamp)::date
+               ELSE p.created_at::date
+             END AS bucket_start,
+             p.like_count, p.retweet_count
+      FROM posts p JOIN legislators l ON l.lid = p.lid
+      WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+        AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+    )
+    SELECT bucket_start::text AS date, count(*)::bigint AS post_count,
+           COALESCE(sum(like_count + retweet_count), 0)::bigint AS engagement
+    FROM filtered GROUP BY bucket_start ORDER BY bucket_start
+  `;
+  return envelope(rows, 'posts + legislators', { date, width, from, to, topic, state, party, bucket });
 });
 
 app.get('/api/v1/moments/window/top-posts', async (request) => {
@@ -849,16 +992,25 @@ app.get('/api/v1/moments/window/top-posts', async (request) => {
   const date = q.date ?? '2022-06-24';
   const width = Math.min(Math.max(Number(q.width ?? 7), 1), 45);
   const limit = clampLimit(q.limit, 10, 25);
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const topic = normalizedTopic(q.topic);
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party ?? null;
   const rows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
     FROM posts p
     JOIN topics t ON t.topic = p.topic
     JOIN legislators l ON l.lid = p.lid
-    WHERE p.created_at BETWEEN (${date}::date - ${width}::int) AND (${date}::date + ${width}::int)
+    WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+      AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+      AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+      AND (${state}::text IS NULL OR l.state = ${state})
+      AND (${party}::text IS NULL OR l.party = ${party})
     ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
     LIMIT ${limit}
   `;
-  return envelope(rows.map(postRow), 'posts', { date, width, limit });
+  return envelope(rows.map(postRow), 'posts + legislators', { date, width, from, to, topic, state, party, limit });
 });
 
 app.get('/api/v1/posts/explore', async (request) => {

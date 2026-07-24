@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { partyInitial, titleCasePersonName } from '$lib/format';
   import { withBase } from '$lib/paths';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
 
   type Party =
     | 'Democratic'
@@ -20,6 +21,7 @@
     profileBase?: string;
     tablePageSize?: number;
     onSelect?: (legislator: any | null) => void;
+    drilldownContext?: DrilldownContext;
   }
 
   interface NormalizedLegislator {
@@ -96,7 +98,8 @@
     title = 'Roll call view',
     profileBase = '/who',
     tablePageSize = 100,
-    onSelect
+    onSelect,
+    drilldownContext = {}
   }: Props = $props();
 
   const componentId = $props.id();
@@ -527,9 +530,9 @@
       ? profileBase.replace(/\/+$/, '')
       : '/who';
 
-    return withBase(`${safeBase}/${encodeURIComponent(
+    return withBase(appendDrilldownContext(`${safeBase}/${encodeURIComponent(
       legislator.profileId
-    )}`);
+    )}`, drilldownContext));
   }
 
   function formatNumber(value: number): string {

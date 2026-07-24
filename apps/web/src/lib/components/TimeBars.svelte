@@ -1,5 +1,7 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
+  import { withBase } from '$lib/paths';
 
   type Row = Record<string, unknown>;
 
@@ -18,6 +20,8 @@
     showAxis?: boolean;
     showTable?: boolean;
     emptyMessage?: string;
+    drilldownContext?: DrilldownContext;
+    enableMomentDrilldown?: boolean;
   }
 
   interface DatePoint {
@@ -60,7 +64,9 @@
     showSummary = true,
     showAxis = true,
     showTable = true,
-    emptyMessage = 'No dated activity is available.'
+    emptyMessage = 'No dated activity is available.',
+    drilldownContext = {},
+    enableMomentDrilldown = true
   }: Props = $props();
 
   const monthFormatter = new Intl.DateTimeFormat('en-US', {
@@ -495,6 +501,16 @@
       interval.value
     )} ${unitLabel(interval.value)}.${aggregation}`;
   }
+
+  function momentHref(interval: PlotInterval): string | null {
+    if (!enableMomentDrilldown || interval.start.timestamp === null || interval.end.timestamp === null) return null;
+    const start = new Date(interval.start.timestamp);
+    const end = new Date(interval.end.timestamp);
+    if (interval.start.precision === 'month' || safeDateKey === 'month') start.setUTCDate(1);
+    if (interval.end.precision === 'month' || safeDateKey === 'month') end.setUTCMonth(end.getUTCMonth() + 1, 0);
+    const path = `/moment?from=${start.toISOString().slice(0, 10)}&to=${end.toISOString().slice(0, 10)}`;
+    return withBase(appendDrilldownContext(path, drilldownContext));
+  }
 </script>
 
 <figure class="timebars">
@@ -557,10 +573,9 @@
           <div
             class="bars"
             style={`--bar-count:${plotted.length}`}
-            aria-hidden="true"
           >
             {#each plotted as interval (interval.key)}
-              <span
+              <a
                 class="bar-slot"
                 class:zero={interval.value === 0}
                 class:peak={
@@ -568,12 +583,15 @@
                   observedMaximum > 0
                 }
                 title={intervalDescription(interval)}
+                data-tooltip={intervalDescription(interval)}
+                href={momentHref(interval) ?? undefined}
+                aria-label={`${intervalDescription(interval)} Open this window in Moments.`}
               >
                 <span
                   class="bar-fill"
                   style={`--bar-height:${barHeight(interval.value)}%`}
                 ></span>
-              </span>
+              </a>
             {/each}
           </div>
         </div>
@@ -826,6 +844,7 @@
   }
 
   .bar-slot {
+    position: relative;
     display: flex;
     align-items: flex-end;
     width: 100%;
@@ -837,7 +856,36 @@
       transparent
     );
     border-radius: 2px 2px 0 0;
+    color: inherit;
+    text-decoration: none;
   }
+
+  .bar-slot::after {
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    z-index: 8;
+    width: max-content;
+    max-width: min(260px, 72vw);
+    padding: 7px 9px;
+    color: var(--color-ink, #1a1917);
+    font-size: .68rem;
+    line-height: 1rem;
+    white-space: normal;
+    pointer-events: none;
+    content: attr(data-tooltip);
+    background: var(--color-card, #fff);
+    border: 1px solid var(--color-rule, #d9d2c1);
+    border-radius: 5px;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 14%);
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    transition: opacity 120ms ease, transform 120ms ease;
+  }
+
+  .bar-slot:hover::after,
+  .bar-slot:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+  .bar-slot:focus-visible { outline: 2px solid var(--color-seal, #8a5a1a); outline-offset: 2px; }
 
   .bar-slot:hover {
     background: color-mix(

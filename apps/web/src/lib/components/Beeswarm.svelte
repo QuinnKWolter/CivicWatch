@@ -1,5 +1,8 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { Minus, Plus } from 'lucide-svelte';
   import { withBase } from '$lib/paths';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
 
   type LegislatorRow = {
     lid?: unknown;
@@ -42,6 +45,7 @@
   };
 
   export let rows: LegislatorRow[] = [];
+  export let drilldownContext: DrilldownContext = {};
 
   const WIDTH = 960;
   const HEIGHT = 330;
@@ -64,11 +68,15 @@
   $: partyOptions = createPartyOptions(normalizedRows);
   let selectedParty = 'All';
   let zoom = 1.15;
+  let hoveredPoint: PositionedRow | null = null;
+  let tooltipX = 0;
+  let tooltipY = 0;
   let chartScroller: HTMLDivElement | null = null;
   let isPanning = false;
   let activePointerId: number | null = null;
   let dragStartX = 0;
-  let dragStartScrollLeft = 0;
+  let dragStartViewX = 0;
+  let viewX = 0;
   let pinchStartDistance = 0;
   let pinchStartZoom = 1;
   let pinchAnchorX = 0;
@@ -82,7 +90,9 @@
     (a, b) => a.ideology - b.ideology || a.name.localeCompare(b.name)
   );
   $: summary = summarize(layout.points);
-  $: chartWidth = Math.round(WIDTH * Number(zoom || 1));
+  $: viewWidth = WIDTH / Math.max(1, Number(zoom) || 1);
+  $: viewHeight = HEIGHT / Math.max(1, Number(zoom) || 1);
+  $: viewY = (HEIGHT - viewHeight) / 2;
 
   function normalizeRows(input: LegislatorRow[]): NormalizedRow[] {
     if (!Array.isArray(input)) return [];
@@ -110,7 +120,7 @@
         key: `${lid || name}-${sourceIndex}`,
         sourceIndex,
         lid,
-        href: lid ? withBase(`/who/${encodeURIComponent(lid)}`) : null,
+        href: lid ? withBase(appendDrilldownContext(`/who/${encodeURIComponent(lid)}`, drilldownContext)) : null,
         name,
         party,
         ideology,
@@ -295,12 +305,10 @@
   function resetView() {
     selectedParty = 'All';
     zoom = 1.15;
+    viewX = 0;
     activePointers.clear();
     isPanning = false;
     activePointerId = null;
-    if (chartScroller) {
-      chartScroller.scrollTo({ left: 0, behavior: 'smooth' });
-    }
   }
 
   function clampZoom(value: number): number {
@@ -309,30 +317,24 @@
 
   function zoomAround(nextZoom: number, clientX: number | null = null) {
     const scroller = chartScroller;
-    const previousWidth = Math.max(chartWidth, WIDTH);
     const safeZoom = clampZoom(nextZoom);
 
     if (!scroller) {
       zoom = safeZoom;
+      viewX = Math.min(viewX, WIDTH - WIDTH / safeZoom);
       return;
     }
 
     const rect = scroller.getBoundingClientRect();
-    const anchorX =
+    const anchorPixel =
       clientX === null
         ? rect.width / 2
         : Math.min(rect.width, Math.max(0, clientX - rect.left));
-    const anchorRatio = (scroller.scrollLeft + anchorX) / previousWidth;
-
+    const anchorRatio = rect.width > 0 ? anchorPixel / rect.width : .5;
+    const dataAnchor = viewX + anchorRatio * viewWidth;
+    const nextViewWidth = WIDTH / safeZoom;
     zoom = safeZoom;
-
-    requestAnimationFrame(() => {
-      if (!chartScroller) return;
-      chartScroller.scrollLeft = Math.max(
-        0,
-        anchorRatio * Math.max(chartWidth, WIDTH) - anchorX
-      );
-    });
+    viewX = Math.max(0, Math.min(WIDTH - nextViewWidth, dataAnchor - anchorRatio * nextViewWidth));
   }
 
   function handleWheel(event: WheelEvent) {
@@ -346,6 +348,28 @@
 
     zoomAround(Number(zoom) * factor, event.clientX);
   }
+
+  function showTooltip(point: PositionedRow, event: PointerEvent | FocusEvent) {
+    hoveredPoint = point;
+    if ('clientX' in event) positionTooltip(event.clientX, event.clientY);
+    else if (event.currentTarget instanceof Element) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      positionTooltip(rect.left + rect.width / 2, rect.top);
+    }
+  }
+
+  function positionTooltip(clientX: number, clientY: number) {
+    tooltipX = Math.min(window.innerWidth - 260, Math.max(12, clientX + 14));
+    tooltipY = Math.max(12, clientY - 88);
+  }
+
+  onMount(() => {
+    const scroller = chartScroller;
+    if (!scroller) return;
+    const listener = (event: WheelEvent) => handleWheel(event);
+    scroller.addEventListener('wheel', listener, { passive: false });
+    return () => scroller.removeEventListener('wheel', listener);
+  });
 
   function pointerValues() {
     return [...activePointers.values()];
@@ -388,7 +412,7 @@
     isPanning = true;
     activePointerId = event.pointerId;
     dragStartX = event.clientX;
-    dragStartScrollLeft = chartScroller?.scrollLeft ?? 0;
+    dragStartViewX = viewX;
     chartScroller?.setPointerCapture?.(event.pointerId);
   }
 
@@ -416,7 +440,9 @@
 
     if (isPanning && event.pointerId === activePointerId && chartScroller) {
       event.preventDefault();
-      chartScroller.scrollLeft = dragStartScrollLeft - (event.clientX - dragStartX);
+      const rect = chartScroller.getBoundingClientRect();
+      const delta = rect.width > 0 ? (event.clientX - dragStartX) / rect.width * viewWidth : 0;
+      viewX = Math.max(0, Math.min(WIDTH - viewWidth, dragStartViewX - delta));
     }
   }
 
@@ -489,6 +515,11 @@
       MIN_RADIUS +
       Math.sqrt(posts / maxPosts) * (MAX_RADIUS - MIN_RADIUS)
     );
+  }
+
+  function displayRadius(point: PositionedRow): number {
+    const cameraBoost = 1 + Math.log2(Math.max(1, Number(zoom) || 1)) * 0.34;
+    return Math.min(11, point.radius * cameraBoost);
   }
 
   function partyFill(party: string | null): string {
@@ -584,9 +615,14 @@
 
       <label class="zoom-control">
         <span>Zoom</span>
-        <input type="range" min="1" max="2.6" step="0.1" bind:value={zoom} />
+        <input type="range" min="1" max="4" step="0.1" value={zoom} oninput={(event) => zoomAround(Number((event.currentTarget as HTMLInputElement).value))} />
         <output>{Number(zoom).toFixed(1)}x</output>
       </label>
+
+      <div class="zoom-buttons" aria-label="Zoom controls">
+        <button type="button" aria-label="Zoom out" onclick={() => zoomAround(Number(zoom) - 0.25)}><Minus size={15} /></button>
+        <button type="button" aria-label="Zoom in" onclick={() => zoomAround(Number(zoom) + 0.25)}><Plus size={15} /></button>
+      </div>
 
       <button type="button" onclick={resetView}>Reset</button>
     </div>
@@ -597,7 +633,6 @@
       bind:this={chartScroller}
       role="region"
       aria-label="Pan and zoom ideology chart. Use the mouse wheel or pinch to zoom, then drag empty chart space to pan."
-      onwheel={handleWheel}
       onpointerdown={handlePointerDown}
       onpointermove={handlePointerMove}
       onpointerup={handlePointerUp}
@@ -605,8 +640,7 @@
     >
       <svg
         class="chart"
-        style={`width:${chartWidth}px;min-width:100%`}
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        viewBox={`${viewX} ${viewY} ${viewWidth} ${viewHeight}`}
         role="img"
         aria-label={`Ideology distribution for ${layout.points.length} legislators`}
         preserveAspectRatio="xMidYMid meet"
@@ -661,12 +695,17 @@
             href={point.href ?? undefined}
             aria-label={point.ariaLabel}
             aria-disabled={point.href ? undefined : 'true'}
+            onpointerenter={(event) => showTooltip(point, event)}
+            onpointermove={(event) => positionTooltip(event.clientX, event.clientY)}
+            onpointerleave={() => (hoveredPoint = null)}
+            onfocus={(event) => showTooltip(point, event)}
+            onblur={() => (hoveredPoint = null)}
           >
             <circle
               class:unlinked={!point.href}
               cx={point.x}
               cy={point.y}
-              r={point.radius}
+              r={displayRadius(point)}
               fill={point.fill}
               opacity="0.62"
               vector-effect="non-scaling-stroke"
@@ -677,6 +716,14 @@
         {/each}
       </svg>
     </div>
+
+    {#if hoveredPoint}
+      <div class="point-tooltip" role="tooltip" style={`left:${tooltipX}px;top:${tooltipY}px`}>
+        <strong>{hoveredPoint.name}</strong>
+        <span>{hoveredPoint.party ?? 'Party unknown'} · ideology {hoveredPoint.ideology.toFixed(3)}</span>
+        <span>{formatCount(hoveredPoint.posts)} topic {hoveredPoint.posts === 1 ? 'post' : 'posts'} · click to open profile</span>
+      </div>
+    {/if}
 
     <details>
       <summary>
@@ -820,6 +867,28 @@
     align-items: end;
     margin-top: 12px;
   }
+
+  .zoom-buttons { display: inline-flex; gap: 4px; }
+  .zoom-buttons button { display: grid; width: 36px; height: 36px; padding: 0; place-items: center; }
+
+  .point-tooltip {
+    position: fixed;
+    z-index: 100;
+    display: grid;
+    gap: 3px;
+    width: min(248px, calc(100vw - 24px));
+    padding: 10px 11px;
+    color: var(--color-ink, #1a1917);
+    font-size: .72rem;
+    line-height: 1.15rem;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--color-card, #fff) 96%, transparent);
+    border: 1px solid var(--color-rule, #d7dce2);
+    border-radius: 6px;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 16%);
+  }
+  .point-tooltip strong { font-size: .82rem; }
+  .point-tooltip span { color: var(--color-mute, #64748b); }
 
   .chart-tools label {
     display: grid;
