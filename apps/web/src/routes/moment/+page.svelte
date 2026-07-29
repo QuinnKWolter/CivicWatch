@@ -53,7 +53,7 @@
     if (data.context.topic) params.set('topic', data.context.topic);
     if (data.context.state) params.set('state', data.context.state);
     if (data.context.party) params.set('party', data.context.party);
-    return `/moment?${params.toString()}`;
+    return appPath(`/moment?${params.toString()}`);
   }
 
   function dateRange(event: any) {
