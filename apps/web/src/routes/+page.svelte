@@ -5,6 +5,7 @@
   import EntryMicrovisual from '$lib/components/EntryMicrovisual.svelte';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
   import StateGrid from '$lib/components/StateGrid.svelte';
+  import StateTileMap from '$lib/components/StateTileMap.svelte';
   import StatStrip from '$lib/components/StatStrip.svelte';
   import TopicBars from '$lib/components/TopicBars.svelte';
   import { compact } from '$lib/format';
@@ -515,10 +516,26 @@
             <em>{card.body}</em>
           </span>
 
-          <EntryMicrovisual
-            kind={card.visualKind}
-            label={card.visualLabel}
-          />
+          {#if card.visualKind === 'state'}
+            <span
+              class="entry-state-map"
+              aria-hidden="true"
+            >
+              <StateTileMap
+                states={stateRows}
+                compact
+                showLegend={false}
+                showValues={false}
+                interactive={false}
+                ariaLabel="Mini state volume tile map"
+              />
+            </span>
+          {:else}
+            <EntryMicrovisual
+              kind={card.visualKind}
+              label={card.visualLabel}
+            />
+          {/if}
         </a>
       {/each}
     </div>
@@ -838,6 +855,49 @@
     font-size: 0.78rem;
     font-style: normal;
     line-height: 1.2rem;
+  }
+
+  .entry-state-map {
+    display: grid;
+    width: min(176px, 42vw);
+    padding: 8px;
+    place-items: center;
+    pointer-events: none;
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(
+          in srgb,
+          var(--color-seal, #8a5a1a) 8%,
+          transparent
+        ),
+        transparent 62%
+      ),
+      color-mix(
+        in srgb,
+        var(--color-card, #fff) 84%,
+        var(--color-paper, #f5f1e7)
+      );
+    border: 1px solid
+      color-mix(
+        in srgb,
+        var(--color-seal, #8a5a1a) 16%,
+        var(--color-rule, #d9d2c1)
+      );
+    border-radius: 5px;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%);
+    transition:
+      border-color 120ms ease,
+      transform 120ms ease;
+  }
+
+  .entry-card:hover .entry-state-map {
+    border-color: color-mix(
+      in srgb,
+      var(--color-seal, #8a5a1a) 34%,
+      var(--color-rule, #d9d2c1)
+    );
+    transform: translateY(-2px);
   }
 
   .sampler-band {

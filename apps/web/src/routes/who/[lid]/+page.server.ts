@@ -7,24 +7,24 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const context = parseDrilldownContext(url.searchParams);
   const filters = { topic: context.topic };
 
-  const profile = await api(fetch, `/legislators/${lid}`, filters);
+  const profile = await api<any>(fetch, `/legislators/${lid}`, filters);
 
   const [fingerprint, posts, topPosts] = await Promise.all([
-    api(fetch, `/legislators/${lid}/voice-fingerprint`, filters).catch(() => ({
+    api<any>(fetch, `/legislators/${lid}/voice-fingerprint`, filters).catch(() => ({
       data: [],
       meta: {
         sourceTable: 'app_legislator_topic',
         filters: { lid: params.lid }
       }
     })),
-    api(fetch, `/legislators/${lid}/posts`, { limit: 20, ...filters }).catch(() => ({
+    api<any>(fetch, `/legislators/${lid}/posts`, { limit: 20, ...filters }).catch(() => ({
       data: [],
       meta: {
         sourceTable: 'posts',
         filters: { lid: params.lid, limit: 20 }
       }
     })),
-    api(fetch, `/legislators/${lid}/posts`, { limit: 10, sort: 'engagement', ...filters }).catch(() => ({
+    api<any>(fetch, `/legislators/${lid}/posts`, { limit: 10, sort: 'engagement', ...filters }).catch(() => ({
       data: [],
       meta: {
         sourceTable: 'posts',

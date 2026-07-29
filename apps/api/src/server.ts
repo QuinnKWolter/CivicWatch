@@ -65,7 +65,8 @@ app.setErrorHandler((error, request, reply) => {
   });
 });
 
-function normalizedTopic(topic: string | undefined) {
+function normalizedTopic(topic: string | undefined): string | null {
+  if (topic === undefined || topic === '') return null;
   return topic === 'uncategorized' ? '999' : topic;
 }
 
@@ -85,7 +86,28 @@ function cleanText(text: unknown) {
   return String(text ?? '').replace(/\s+/g, ' ').trim();
 }
 
+function canonicalPostText(text: unknown) {
+  return cleanText(text).toLocaleLowerCase();
+}
+
 function postRow(row: Record<string, unknown>) {
+  const shareCount = n(row.share_count);
+  const sharerCount = n(row.sharer_count);
+  const sharers = Array.isArray(row.sharers) ? row.sharers : [];
+  const shareGroup =
+    shareCount > 1 || sharerCount > 1
+      ? {
+          key: s(row.text_key),
+          postCount: shareCount,
+          legislatorCount: sharerCount,
+          totalLikes: n(row.share_total_likes),
+          totalRetweets: n(row.share_total_retweets),
+          aggregateEngagement: n(row.aggregate_engagement),
+          candidateCount: n(row.candidate_count),
+          sharers
+        }
+      : null;
+
   return {
     id: n(row.id),
     tweetId: s(row.tweet_id),
@@ -105,7 +127,8 @@ function postRow(row: Record<string, unknown>) {
       state: s(row.state),
       chamber: s(row.chamber),
       party: s(row.party)
-    }
+    },
+    shareGroup
   };
 }
 
@@ -732,14 +755,16 @@ app.get('/api/v1/topics/:topicId/top-posts', async (request) => {
   const topicId = normalizedTopic((request.params as { topicId: string }).topicId) ?? '999';
   const q = request.query as Query;
   const limit = clampLimit(q.limit, 10, 25);
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party ?? null;
   const rows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
     FROM posts p
     JOIN topics t ON t.topic = p.topic
     JOIN legislators l ON l.lid = p.lid
     WHERE p.topic = ${topicId}
-      AND (${q.state?.toUpperCase() ?? null}::text IS NULL OR l.state = ${q.state?.toUpperCase() ?? null})
-      AND (${q.party ?? null}::text IS NULL OR l.party = ${q.party ?? null})
+      AND (${state}::text IS NULL OR l.state = ${state})
+      AND (${party}::text IS NULL OR l.party = ${party})
     ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
     LIMIT ${limit}
   `;
@@ -748,7 +773,7 @@ app.get('/api/v1/topics/:topicId/top-posts', async (request) => {
 
 app.get('/api/v1/states', async (request) => {
   const q = request.query as Query;
-  const topic = q.topic ? normalizedTopic(String(q.topic)) : null;
+  const topic = q.topic ? (normalizedTopic(String(q.topic)) ?? null) : null;
   const rows = await sql`
     WITH activity AS (
       SELECT state, sum(post_count)::bigint AS post_count,
@@ -890,7 +915,7 @@ app.get('/api/v1/moments/overview', async () => {
 
   for (const event of events) eventTotals.set(event.eventId, new Map());
   for (const row of rows) {
-    const date = s(row.date);
+    const date = s(row.date) ?? '';
     const parsed = new Date(`${date}T00:00:00Z`);
     const day = parsed.getUTCDay();
     parsed.setUTCDate(parsed.getUTCDate() - (day === 0 ? 6 : day - 1));
@@ -900,8 +925,8 @@ app.get('/api/v1/moments/overview', async () => {
     weekly.engagement += n(row.total_likes) + n(row.total_retweets);
     weeks.set(week, weekly);
 
-    const topic = s(row.topic);
-    const total = topicTotals.get(topic) ?? { topic, topic_label: s(row.topic_label), post_count: 0 };
+    const topic = s(row.topic) ?? '';
+    const total = topicTotals.get(topic) ?? { topic, topic_label: s(row.topic_label) ?? '', post_count: 0 };
     total.post_count += n(row.post_count);
     topicTotals.set(topic, total);
 
@@ -909,7 +934,8 @@ app.get('/api/v1/moments/overview', async () => {
       const end = event.endDate ?? event.startDate;
       if (date < event.startDate || date > end) continue;
       const byTopic = eventTotals.get(event.eventId)!;
-      const topicLabel = s(row.topic_label) === 'Unknown Topic (999)' ? 'Uncategorized' : s(row.topic_label);
+      const rawTopicLabel = s(row.topic_label) ?? '';
+      const topicLabel = rawTopicLabel === 'Unknown Topic (999)' ? 'Uncategorized' : rawTopicLabel;
       const current = byTopic.get(topic) ?? { topic, topicLabel, postCount: 0 };
       current.postCount += n(row.post_count);
       byTopic.set(topic, current);
@@ -992,12 +1018,14 @@ app.get('/api/v1/moments/window/top-posts', async (request) => {
   const date = q.date ?? '2022-06-24';
   const width = Math.min(Math.max(Number(q.width ?? 7), 1), 45);
   const limit = clampLimit(q.limit, 10, 25);
+  const candidateLimit = Math.min(Math.max(limit * 60, 240), 600);
+  const sharerLimit = 80;
   const from = q.from ?? null;
   const to = q.to ?? null;
   const topic = normalizedTopic(q.topic);
   const state = q.state?.toUpperCase() ?? null;
   const party = q.party ?? null;
-  const rows = await sql`
+  const candidateRows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
     FROM posts p
     JOIN topics t ON t.topic = p.topic
@@ -1007,10 +1035,192 @@ app.get('/api/v1/moments/window/top-posts', async (request) => {
       AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
       AND (${state}::text IS NULL OR l.state = ${state})
       AND (${party}::text IS NULL OR l.party = ${party})
+      AND COALESCE(btrim(p.text), '') <> ''
     ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
-    LIMIT ${limit}
+    LIMIT ${candidateLimit}
   `;
-  return envelope(rows.map(postRow), 'posts + legislators', { date, width, from, to, topic, state, party, limit });
+  const groups = new Map<
+    string,
+    {
+      key: string;
+      representative: Record<string, unknown>;
+      rows: Record<string, unknown>[];
+      rawTexts: Set<string>;
+      peakEngagement: number;
+      candidateEngagement: number;
+    }
+  >();
+
+  for (const row of candidateRows) {
+    const key = canonicalPostText(row.text);
+    if (!key) continue;
+
+    const engagement = n(row.like_count) + n(row.retweet_count);
+    const group =
+      groups.get(key) ??
+      {
+        key,
+        representative: row,
+        rows: [] as Record<string, unknown>[],
+        rawTexts: new Set<string>(),
+        peakEngagement: engagement,
+        candidateEngagement: 0
+      };
+
+    group.rows.push(row);
+    group.rawTexts.add(cleanText(row.text));
+    group.candidateEngagement += engagement;
+
+    if (
+      engagement > group.peakEngagement ||
+      (engagement === group.peakEngagement && n(row.id) > n(group.representative.id))
+    ) {
+      group.representative = row;
+      group.peakEngagement = engagement;
+    }
+
+    groups.set(key, group);
+  }
+
+  const selectedGroups = [...groups.values()]
+    .sort(
+      (a, b) =>
+        b.peakEngagement - a.peakEngagement ||
+        b.candidateEngagement - a.candidateEngagement ||
+        a.key.localeCompare(b.key)
+    )
+    .slice(0, limit);
+
+  const selectedTexts = Array.from(
+    new Set(selectedGroups.flatMap((group) => [...group.rawTexts]))
+  );
+
+  const sharerRows = selectedTexts.length
+    ? await sql`
+      SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
+      FROM posts p
+      JOIN topics t ON t.topic = p.topic
+      JOIN legislators l ON l.lid = p.lid
+      WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+        AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+        AND p.text = ANY(${selectedTexts}::text[])
+      ORDER BY p.text, (p.like_count + p.retweet_count) DESC, p.id DESC
+    `
+    : [];
+
+  const stats = new Map<
+    string,
+    {
+      postCount: number;
+      totalLikes: number;
+      totalRetweets: number;
+      aggregateEngagement: number;
+      sharersByLid: Map<string, Record<string, unknown>>;
+    }
+  >();
+
+  for (const row of sharerRows) {
+    const key = canonicalPostText(row.text);
+    const current =
+      stats.get(key) ??
+      {
+        postCount: 0,
+        totalLikes: 0,
+        totalRetweets: 0,
+        aggregateEngagement: 0,
+        sharersByLid: new Map<string, Record<string, unknown>>()
+      };
+
+    const engagement = n(row.like_count) + n(row.retweet_count);
+    current.postCount += 1;
+    current.totalLikes += n(row.like_count);
+    current.totalRetweets += n(row.retweet_count);
+    current.aggregateEngagement += engagement;
+
+    const lid = s(row.lid) || `unknown:${n(row.id)}`;
+    const existing = current.sharersByLid.get(lid);
+
+    if (!existing || engagement > n(existing.engagement)) {
+      current.sharersByLid.set(lid, { ...row, engagement });
+    }
+
+    stats.set(key, current);
+  }
+
+  const rows = selectedGroups.map((group) => {
+    const stat = stats.get(group.key);
+    const fallbackRows = group.rows;
+    const fallbackSharers = new Map<string, Record<string, unknown>>();
+
+    for (const row of fallbackRows) {
+      const lid = s(row.lid) || `unknown:${n(row.id)}`;
+      const engagement = n(row.like_count) + n(row.retweet_count);
+      const existing = fallbackSharers.get(lid);
+      if (!existing || engagement > n(existing.engagement)) {
+        fallbackSharers.set(lid, { ...row, engagement });
+      }
+    }
+
+    const sharerRowsForGroup = [
+      ...(stat?.sharersByLid.values() ?? fallbackSharers.values())
+    ].sort(
+      (a, b) =>
+        n(b.engagement) - n(a.engagement) ||
+        String(s(a.name)).localeCompare(String(s(b.name)))
+    );
+
+    const postCount = stat?.postCount ?? fallbackRows.length;
+    const totalLikes =
+      stat?.totalLikes ??
+      fallbackRows.reduce((sum, row) => sum + n(row.like_count), 0);
+    const totalRetweets =
+      stat?.totalRetweets ??
+      fallbackRows.reduce((sum, row) => sum + n(row.retweet_count), 0);
+    const aggregateEngagement =
+      stat?.aggregateEngagement ??
+      fallbackRows.reduce(
+        (sum, row) => sum + n(row.like_count) + n(row.retweet_count),
+        0
+      );
+
+    return {
+      ...group.representative,
+      text_key: group.key,
+      candidate_count: group.rows.length,
+      share_count: postCount,
+      sharer_count: sharerRowsForGroup.length,
+      share_total_likes: totalLikes,
+      share_total_retweets: totalRetweets,
+      aggregate_engagement: aggregateEngagement,
+      sharers: sharerRowsForGroup.slice(0, sharerLimit).map((row) => ({
+        lid: s(row.lid),
+        name: s(row.name),
+        handle: s(row.handle),
+        state: s(row.state),
+        chamber: s(row.chamber),
+        party: s(row.party),
+        createdAt: s(row.created_at),
+        engagement: n(row.engagement)
+      }))
+    };
+  });
+
+  return envelope(rows.map(postRow), 'posts + legislators', {
+    date,
+    width,
+    from,
+    to,
+    topic,
+    state,
+    party,
+    limit,
+    candidateLimit,
+    sharerLimit,
+    dedupe: 'canonical_text'
+  });
 });
 
 app.get('/api/v1/posts/explore', async (request) => {

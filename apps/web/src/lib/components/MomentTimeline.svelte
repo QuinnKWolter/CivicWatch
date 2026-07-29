@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BarChart3, Building2, Landmark, LineChart, Scale, ScrollText, ShieldAlert, Siren, Vote } from 'lucide-svelte';
+  import { BarChart3, Building2, Landmark, LineChart, Repeat2, Scale, ScrollText, ShieldAlert, Siren, UsersRound, Vote } from 'lucide-svelte';
   import TopicIcon from '$lib/components/TopicIcon.svelte';
   import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import { withBase } from '$lib/paths';
@@ -30,6 +30,18 @@
   const postDate = (post: any) => String(post.createdAt ?? post.created_at ?? '').slice(0, 10);
   const postName = (post: any) => post.legislator?.name ?? post.name ?? 'Legislator';
   const postText = (post: any) => String(post.text ?? post.fullText ?? 'Post text unavailable').slice(0, 180);
+  const shareGroup = (post: any) => post.shareGroup ?? post.share_group ?? null;
+  const shareStats = (post: any) => {
+    const group = shareGroup(post);
+    const postCount = Number(group?.postCount ?? group?.post_count ?? 0) || 0;
+    const legislatorCount = Number(group?.legislatorCount ?? group?.legislator_count ?? group?.sharerCount ?? 0) || 0;
+    if (postCount <= 1 && legislatorCount <= 1) return null;
+    return {
+      postCount,
+      legislatorCount,
+      label: `${postCount.toLocaleString()} duplicate ${postCount === 1 ? 'post' : 'posts'} from ${legislatorCount.toLocaleString()} ${legislatorCount === 1 ? 'legislator' : 'legislators'}`
+    };
+  };
   const profileHref = (post: any) => {
     const lid = post.legislator?.lid ?? post.lid;
     return lid ? withBase(appendDrilldownContext(`/who/${encodeURIComponent(lid)}`, context)) : null;
@@ -57,7 +69,19 @@
     {#if featuredPosts.length}
       <div class="story-rail" aria-label="High-engagement posts across this moment">
         {#each featuredPosts.slice(0, 8) as post}
-          <article><time>{postDate(post)}</time><strong>{postName(post)}</strong><p>{postText(post)}</p>{#if profileHref(post)}<a href={profileHref(post) ?? undefined}>Explore this voice</a>{/if}</article>
+          {@const stats = shareStats(post)}
+          <article>
+            <time>{postDate(post)}</time>
+            <strong>{postName(post)}</strong>
+            {#if stats}
+              <span class="share-label" aria-label={stats.label} title={stats.label}>
+                <span><Repeat2 size={11}/><b>{stats.postCount.toLocaleString()}</b><em>dupes</em></span>
+                <span><b>{stats.legislatorCount.toLocaleString()}</b><UsersRound size={11}/></span>
+              </span>
+            {/if}
+            <p>{postText(post)}</p>
+            {#if profileHref(post)}<a href={profileHref(post) ?? undefined}>Explore this voice</a>{/if}
+          </article>
         {/each}
       </div>
     {/if}
@@ -112,7 +136,7 @@
   .tooltip { position:absolute; top:12px; right:12px; display:grid; gap:2px; padding:8px 10px; font-size:.7rem; background:color-mix(in srgb,var(--color-card) 96%,transparent); border:1px solid var(--color-rule); border-radius:5px; box-shadow:0 8px 24px rgb(0 0 0/.14); pointer-events:none; }
   .tooltip span { color:var(--color-mute); } .empty { padding:30px; text-align:center; color:var(--color-mute); }
   .event-layer { position:absolute; top:18px; right:1.8%; left:4.8%; z-index:5; height:58px; min-width:650px; overflow:visible; pointer-events:none; }
-  .event-shade { position:absolute; top:0; left:var(--event-left); z-index:-1; width:max(var(--event-width), 5px); height:242px; pointer-events:none; background:linear-gradient(to bottom,color-mix(in srgb,var(--color-seal) 22%,transparent),color-mix(in srgb,var(--color-seal) 5%,transparent)); border-inline:1px solid color-mix(in srgb,var(--color-seal) 42%,transparent); animation:event-in 140ms ease-out; }
+  .event-shade { position:absolute; top:10px; left:var(--event-left); z-index:-1; width:max(var(--event-width), 5px); height:232px; pointer-events:none; background:linear-gradient(to bottom,color-mix(in srgb,var(--color-seal) 22%,transparent),color-mix(in srgb,var(--color-seal) 5%,transparent)); border-inline:1px solid color-mix(in srgb,var(--color-seal) 42%,transparent); animation:event-in 140ms ease-out; }
   .event-bracket { position:absolute; top:calc(var(--event-lane) * 11px); left:var(--event-left); width:max(var(--event-width), 5px); height:10px; color:var(--color-seal); pointer-events:auto; text-decoration:none; }
   .bracket-line { position:absolute; inset:0; border:1px solid currentColor; border-bottom:0; opacity:.62; }
   .bracket-line::before,.bracket-line::after { position:absolute; top:8px; width:1px; height:230px; content:''; background:linear-gradient(to bottom,currentColor,color-mix(in srgb,currentColor 12%,transparent)); opacity:.36; }
@@ -135,5 +159,11 @@
   .story-rail article { display:grid; align-content:start; gap:5px; min-height:150px; padding:11px; border:1px solid var(--color-rule); border-radius:6px; background:var(--color-elevated); scroll-snap-align:start; }
   .story-rail time { color:var(--color-seal); font-family:var(--font-mono); font-size:.66rem; }
   .story-rail strong { font-size:.78rem; } .story-rail p { margin:0; color:var(--color-mute); font-size:.72rem; line-height:1.05rem; }
+  .share-label { display:inline-flex; width:fit-content; overflow:hidden; color:var(--color-mute); background:color-mix(in srgb,var(--color-card) 72%,transparent); border:1px solid color-mix(in srgb,var(--color-seal) 23%,var(--color-rule)); border-radius:999px; }
+  .share-label span { display:inline-flex; gap:3px; align-items:center; min-height:20px; padding:2px 6px; font-size:.6rem; font-weight:700; line-height:.82rem; white-space:nowrap; }
+  .share-label span:first-child { color:var(--color-seal); background:color-mix(in srgb,var(--color-seal) 9%,transparent); }
+  .share-label span + span { border-left:1px solid color-mix(in srgb,var(--color-seal) 18%,var(--color-rule)); }
+  .share-label b { color:var(--color-ink); font-family:var(--font-mono); font-size:.66rem; font-variant-numeric:tabular-nums; }
+  .share-label em { font-style:normal; }
   .story-rail a { margin-top:auto; font-size:.7rem; font-weight:700; }
 </style>

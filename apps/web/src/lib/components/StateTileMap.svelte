@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { compact } from '$lib/format';
+  import { compact as compactNumber } from '$lib/format';
   import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import { withBase } from '$lib/paths';
 
@@ -12,6 +12,10 @@
     normalizeByLegislators?: boolean;
     party?: 'both' | 'democratic' | 'republican';
     colorMode?: 'volume' | 'contribution';
+    compact?: boolean;
+    showLegend?: boolean;
+    showValues?: boolean;
+    interactive?: boolean;
     drilldownContext?: DrilldownContext;
   }
 
@@ -39,6 +43,10 @@
     normalizeByLegislators = false,
     party = 'both',
     colorMode = 'volume',
+    compact = false,
+    showLegend = true,
+    showValues = true,
+    interactive = true,
     drilldownContext = {}
   }: Props = $props();
 
@@ -156,7 +164,7 @@
         democraticLegislatorCount: metrics?.democraticLegislatorCount ?? 0,
         republicanLegislatorCount: metrics?.republicanLegislatorCount ?? 0,
         available,
-        href: available
+        href: interactive && available
           ? withBase(appendDrilldownContext(`${hrefPrefix}${encodeURIComponent(code)}`, drilldownContext))
           : null
       };
@@ -297,57 +305,84 @@
   }
 </script>
 
-<section class="tile-map" aria-label={ariaLabel}>
-  <div class="map-legend" class:contribution={colorMode === 'contribution'}>
-    <div class="legend-scale" aria-hidden="true">
-      <span class="low"></span><span class="medium"></span><span class="high"></span>
+<section class="tile-map" class:compact aria-label={ariaLabel}>
+  {#if showLegend}
+    <div class="map-legend" class:contribution={colorMode === 'contribution'}>
+      <div class="legend-scale" aria-hidden="true">
+        <span class="low"></span><span class="medium"></span><span class="high"></span>
+      </div>
+      <p>{colorMode === 'contribution'
+        ? 'Hue compares independently scaled Democratic (blue) and Republican (red) state contributions; equal relative contribution is purple.'
+        : `Darker cells indicate ${normalizeByPopulation || normalizeByLegislators ? normalizationUnit() : `more ${valueLabel}`}.`}
+        Hover or focus for details; select a state to open its profile.</p>
     </div>
-    <p>{colorMode === 'contribution'
-      ? 'Hue compares independently scaled Democratic (blue) and Republican (red) state contributions; equal relative contribution is purple.'
-      : `Darker cells indicate ${normalizeByPopulation || normalizeByLegislators ? normalizationUnit() : `more ${valueLabel}`}.`}
-      Hover or focus for details; select a state to open its profile.</p>
-  </div>
+  {/if}
 
-  <div class="map-scroll" tabindex="0" aria-label="Scrollable state tile map">
-    <div class="map-grid">
-      {#each tiles as tile (tile.code)}
-        <div class="tile-position" style={tileStyle(tile)}>
-          {#if tile.href}
-            <a class="state-tile" class:zero={tile.count === 0} href={tile.href} aria-label={accessibleLabel(tile)}>
-              <strong>{tile.code}</strong>
-              <span>{normalizeByPopulation || normalizeByLegislators
-                ? `${normalizedValue(tile)?.toLocaleString('en-US', { maximumFractionDigits: 1 }) ?? '—'}${normalizeByLegislators ? ' / leg.' : ' / 100k'}`
-                : compact(filteredCount(tile))}</span>
-              <span class="tooltip" role="tooltip">
-                <b>{tile.name}</b>
-                <span>{exactCount(filteredCount(tile))} {valueLabel}</span>
-                {#if colorMode === 'contribution'}
-                  <span>Democratic: {exactCount(tile.democraticPostCount)}</span>
-                  <span>Republican: {exactCount(tile.republicanPostCount)}</span>
+  {#if interactive}
+    <div class="map-scroll" role="region" aria-label="Scrollable state tile map">
+      <div class="map-grid">
+        {#each tiles as tile (tile.code)}
+          <div class="tile-position" style={tileStyle(tile)}>
+            {#if tile.href}
+              <a class="state-tile" class:zero={tile.count === 0} href={tile.href} aria-label={accessibleLabel(tile)}>
+                <strong>{tile.code}</strong>
+                {#if showValues}
+                  <span>{normalizeByPopulation || normalizeByLegislators
+                    ? `${normalizedValue(tile)?.toLocaleString('en-US', { maximumFractionDigits: 1 }) ?? '—'}${normalizeByLegislators ? ' / leg.' : ' / 100k'}`
+                    : compactNumber(filteredCount(tile))}</span>
                 {/if}
-                {#if (normalizeByPopulation || normalizeByLegislators) && normalizedValue(tile) !== null}
-                  <span>{normalizedValue(tile)?.toLocaleString('en-US', { maximumFractionDigits: 1 })} {normalizationUnit()}</span>
-                  {#if normalizeByLegislators}
-                    <span>{filteredLegislatorCount(tile).toLocaleString('en-US')} represented legislators</span>
+                <span class="tooltip" role="tooltip">
+                  <b>{tile.name}</b>
+                  <span>{exactCount(filteredCount(tile))} {valueLabel}</span>
+                  {#if colorMode === 'contribution'}
+                    <span>Democratic: {exactCount(tile.democraticPostCount)}</span>
+                    <span>Republican: {exactCount(tile.republicanPostCount)}</span>
                   {/if}
+                  {#if (normalizeByPopulation || normalizeByLegislators) && normalizedValue(tile) !== null}
+                    <span>{normalizedValue(tile)?.toLocaleString('en-US', { maximumFractionDigits: 1 })} {normalizationUnit()}</span>
+                    {#if normalizeByLegislators}
+                      <span>{filteredLegislatorCount(tile).toLocaleString('en-US')} represented legislators</span>
+                    {/if}
+                  {/if}
+                  <small>Open state profile →</small>
+                </span>
+              </a>
+            {:else}
+              <div class="state-tile unavailable" aria-label={accessibleLabel(tile)} role="img">
+                <strong>{tile.code}</strong>
+                {#if showValues}
+                  <span>—</span>
                 {/if}
-                <small>Open state profile →</small>
-              </span>
-            </a>
-          {:else}
-            <div class="state-tile unavailable" aria-label={accessibleLabel(tile)} role="img">
-              <strong>{tile.code}</strong>
-              <span>—</span>
-              <span class="tooltip" role="tooltip">
-                <b>{tile.name}</b>
-                <span>No activity data available</span>
-              </span>
-            </div>
-          {/if}
-        </div>
-      {/each}
+                <span class="tooltip" role="tooltip">
+                  <b>{tile.name}</b>
+                  <span>No activity data available</span>
+                </span>
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
     </div>
-  </div>
+  {:else}
+    <div class="map-scroll" aria-hidden="true">
+      <div class="map-grid">
+        {#each tiles as tile (tile.code)}
+          <div class="tile-position" style={tileStyle(tile)}>
+            <div class="state-tile" class:unavailable={!tile.available}>
+              <strong>{tile.code}</strong>
+              {#if showValues}
+                <span>{tile.available
+                  ? normalizeByPopulation || normalizeByLegislators
+                    ? `${normalizedValue(tile)?.toLocaleString('en-US', { maximumFractionDigits: 1 }) ?? '—'}${normalizeByLegislators ? ' / leg.' : ' / 100k'}`
+                    : compactNumber(filteredCount(tile))
+                  : '—'}</span>
+              {/if}
+            </div>
+          </div>
+        {/each}
+      </div>
+    </div>
+  {/if}
 </section>
 
 <style>
@@ -446,9 +481,41 @@
   .tooltip b { font-size: 0.76rem; line-height: 1.05rem; }
   .tooltip span, .tooltip small { color: var(--color-mute, #6b6659); font-size: 0.68rem; line-height: 0.95rem; }
   .state-tile:hover .tooltip, .state-tile:focus-visible .tooltip { visibility: visible; opacity: 1; transform: translate(-50%, 0); }
+  .tile-map.compact .map-scroll {
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+  }
+  .tile-map.compact .map-grid {
+    grid-template-columns: repeat(12, minmax(10px, 1fr));
+    grid-template-rows: repeat(8, minmax(10px, 1fr));
+    gap: 2px;
+    width: 176px;
+    min-width: 0;
+    max-width: 100%;
+    aspect-ratio: 12 / 8;
+    margin: 0;
+  }
+  .tile-map.compact .state-tile {
+    min-height: 0;
+    padding: 0;
+    border-radius: 2px;
+    box-shadow: none;
+  }
+  .tile-map.compact .state-tile strong {
+    overflow: hidden;
+    max-width: 100%;
+    font-size: clamp(0.4rem, 1.5vw, 0.56rem);
+    letter-spacing: 0;
+    text-overflow: clip;
+  }
+  .tile-map.compact .tooltip {
+    display: none;
+  }
   @media (max-width: 760px) {
     .map-scroll { padding-bottom: 8px; }
     .map-grid { margin-inline: 0; }
+    .tile-map.compact .map-scroll { padding-bottom: 0; }
   }
   @media (prefers-reduced-motion: reduce) { .state-tile, .tooltip { transition: none; } }
   @media (forced-colors: active) {

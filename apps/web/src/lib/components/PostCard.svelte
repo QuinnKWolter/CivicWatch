@@ -3,7 +3,8 @@
     ExternalLink,
     Heart,
     MessageCircle,
-    Repeat2
+    Repeat2,
+    UsersRound
   } from 'lucide-svelte';
 
   import {
@@ -54,6 +55,27 @@
     replyCount: number | null;
 
     sourceHref: string | null;
+    shareGroup: ShareGroup | null;
+  }
+
+  interface ShareGroupSharer {
+    lid: string | null;
+    href: string | null;
+    name: string;
+    handle: string | null;
+    state: string | null;
+    party: string | null;
+    chamber: string | null;
+    engagement: number;
+  }
+
+  interface ShareGroup {
+    postCount: number;
+    legislatorCount: number;
+    aggregateEngagement: number;
+    totalLikes: number;
+    totalRetweets: number;
+    sharers: ShareGroupSharer[];
   }
 
   let {
@@ -71,6 +93,20 @@
 
   const normalized = $derived(
     normalizePost(post)
+  );
+
+  const shareGroupLabel = $derived(
+    normalized.shareGroup
+      ? `${integer(normalized.shareGroup.postCount)} duplicate ${normalized.shareGroup.postCount === 1 ? 'post' : 'posts'} from ${integer(normalized.shareGroup.legislatorCount)} ${normalized.shareGroup.legislatorCount === 1 ? 'legislator' : 'legislators'}`
+      : ''
+  );
+
+  const sharerListLabel = $derived(
+    normalized.shareGroup
+      ? normalized.shareGroup.sharers.length >= normalized.shareGroup.legislatorCount
+        ? 'All sharers shown'
+        : `Showing ${integer(normalized.shareGroup.sharers.length)} of ${integer(normalized.shareGroup.legislatorCount)} sharers`
+      : ''
   );
 
   const profileHref = $derived.by(() => {
@@ -477,6 +513,11 @@
           source.url
       );
 
+    const shareGroup = normalizeShareGroup(
+      source.shareGroup ??
+        source.share_group
+    );
+
     return {
       id:
         cleanInlineText(
@@ -556,7 +597,142 @@
           source.replies
       ),
 
-      sourceHref
+      sourceHref,
+      shareGroup
+    };
+  }
+
+  function normalizeShareGroup(
+    value: unknown
+  ): ShareGroup | null {
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      Array.isArray(value)
+    ) {
+      return null;
+    }
+
+    const source = value as Record<
+      string,
+      unknown
+    >;
+
+    const postCount =
+      normalizeCount(
+        source.postCount ??
+          source.post_count ??
+          source.count
+      ) ?? 0;
+
+    const legislatorCount =
+      normalizeCount(
+        source.legislatorCount ??
+          source.legislator_count ??
+          source.sharerCount ??
+          source.sharer_count
+      ) ?? 0;
+
+    if (postCount <= 1 && legislatorCount <= 1) {
+      return null;
+    }
+
+    const sharers = Array.isArray(
+      source.sharers
+    )
+      ? source.sharers
+          .map(normalizeSharer)
+          .filter(
+            (
+              sharer
+            ): sharer is ShareGroupSharer =>
+              sharer !== null
+          )
+      : [];
+
+    return {
+      postCount,
+      legislatorCount,
+      aggregateEngagement:
+        normalizeCount(
+          source.aggregateEngagement ??
+            source.aggregate_engagement
+        ) ?? 0,
+      totalLikes:
+        normalizeCount(
+          source.totalLikes ??
+            source.total_likes
+        ) ?? 0,
+      totalRetweets:
+        normalizeCount(
+          source.totalRetweets ??
+            source.total_retweets
+        ) ?? 0,
+      sharers
+    };
+  }
+
+  function normalizeSharer(
+    value: unknown
+  ): ShareGroupSharer | null {
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      Array.isArray(value)
+    ) {
+      return null;
+    }
+
+    const source = value as Record<
+      string,
+      unknown
+    >;
+
+    const lid =
+      cleanInlineText(
+        source.lid ??
+          source.legislatorId ??
+          source.legislator_id
+      );
+
+    const rawName =
+      cleanInlineText(
+        source.name ??
+          source.legislatorName ??
+          source.legislator_name
+      );
+
+    const handle = normalizeHandle(
+      source.handle
+    );
+
+    return {
+      lid,
+      href: lid
+        ? appendDrilldownContext(
+            withBase(
+              `/who/${encodeURIComponent(
+                lid
+              )}`
+            ) ?? '#',
+            drilldownContext
+          )
+        : null,
+      name: rawName
+        ? titleCasePersonName(rawName)
+        : handle
+          ? `@${handle}`
+          : 'Unknown legislator',
+      handle,
+      state: normalizeState(source.state),
+      party: normalizeParty(source.party),
+      chamber: normalizeChamber(
+        source.chamber
+      ),
+      engagement:
+        normalizeCount(
+          source.engagement
+        ) ?? 0
     };
   }
 
@@ -704,6 +880,103 @@
   >
     {normalized.text}
   </p>
+
+  {#if normalized.shareGroup}
+    <section
+      class="share-cluster"
+      aria-label="Shared story cluster"
+    >
+      <div class="share-cluster-summary">
+        <span
+          class="share-cluster-icon"
+          aria-hidden="true"
+        >
+          <UsersRound
+            size={16}
+            strokeWidth={1.8}
+          />
+        </span>
+
+        <strong>Shared story</strong>
+        <span
+          class="share-count-pill"
+          aria-label={shareGroupLabel}
+          title={shareGroupLabel}
+        >
+          <span>
+            <Repeat2
+              size={13}
+              strokeWidth={2}
+            />
+            <b>{integer(normalized.shareGroup.postCount)}</b>
+            <em>dupes</em>
+          </span>
+
+          <span>
+            <b>{integer(normalized.shareGroup.legislatorCount)}</b>
+            <UsersRound
+              size={13}
+              strokeWidth={2}
+            />
+          </span>
+        </span>
+      </div>
+
+      <dl class="share-cluster-metrics">
+        <div>
+          <dt>Engagement</dt>
+          <dd>{integer(normalized.shareGroup.aggregateEngagement)}</dd>
+        </div>
+
+        <div>
+          <dt>Likes</dt>
+          <dd>{integer(normalized.shareGroup.totalLikes)}</dd>
+        </div>
+
+        <div>
+          <dt>Reposts</dt>
+          <dd>{integer(normalized.shareGroup.totalRetweets)}</dd>
+        </div>
+      </dl>
+
+      {#if normalized.shareGroup.sharers.length}
+        <details class="share-cluster-details">
+          <summary>
+            Sharers
+            <span>{sharerListLabel}</span>
+          </summary>
+
+          <ul>
+            {#each normalized.shareGroup.sharers as sharer, index (`${sharer.lid ?? sharer.name}-${index}`)}
+              <li>
+                {#if sharer.href}
+                  <a href={sharer.href}>{sharer.name}</a>
+                {:else}
+                  <span>{sharer.name}</span>
+                {/if}
+
+                <small>
+                  {#if sharer.handle}
+                    @{sharer.handle}
+                  {/if}
+                  {#if sharer.state}
+                    {sharer.handle ? ' · ' : ''}{sharer.state}
+                  {/if}
+                  {#if sharer.party}
+                    {sharer.handle || sharer.state ? ' · ' : ''}{sharer.party}
+                  {/if}
+                </small>
+
+                <data value={String(sharer.engagement)}>
+                  {integer(sharer.engagement)}
+                </data>
+              </li>
+            {/each}
+          </ul>
+        </details>
+      {/if}
+    </section>
+  {/if}
 
   {#if showTopic}
     <div
@@ -1053,7 +1326,8 @@
 
   .author-link:focus-visible,
   .topic-chip:focus-visible,
-  .source-link:focus-visible {
+  .source-link:focus-visible,
+  .share-cluster-details a:focus-visible {
     outline: 2px solid
       var(--color-seal, #8a5a1a);
     outline-offset: 2px;
@@ -1123,6 +1397,339 @@
   .post-text.unavailable {
     color: var(--color-mute, #6b6659);
     font-style: italic;
+  }
+
+  .share-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    align-items: center;
+    min-width: 0;
+    padding: 8px 9px;
+    background: color-mix(
+      in srgb,
+      var(--color-seal, #8a5a1a) 4%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(
+        in srgb,
+        var(--color-seal, #8a5a1a) 15%,
+        transparent
+      );
+    border-radius: 999px;
+  }
+
+  .share-cluster-summary {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    min-width: 0;
+    flex: 1 1 220px;
+  }
+
+  .share-cluster-icon {
+    display: grid;
+    flex: 0 0 auto;
+    width: 23px;
+    height: 23px;
+    place-items: center;
+    color: var(--color-seal, #8a5a1a);
+    background: color-mix(
+      in srgb,
+      var(--color-card, #fff) 58%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(
+        in srgb,
+        var(--color-seal, #8a5a1a) 22%,
+        var(--color-rule, #d9d2c1)
+      );
+    border-radius: 999px;
+  }
+
+  .share-cluster-summary strong {
+    flex: 0 0 auto;
+    color: var(--color-ink, #1a1917);
+    font-size: 0.72rem;
+    line-height: 1rem;
+  }
+
+  .share-cluster-summary > span:not(.share-count-pill) {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-mute, #6b6659);
+    font-size: 0.68rem;
+    line-height: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .share-count-pill {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: stretch;
+    overflow: hidden;
+    color: var(--color-ink, #1a1917);
+    background: color-mix(
+      in srgb,
+      var(--color-card, #fff) 72%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(
+        in srgb,
+        var(--color-seal, #8a5a1a) 22%,
+        var(--color-rule, #d9d2c1)
+      );
+    border-radius: 999px;
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink, #1a1917) 5%, transparent);
+  }
+
+  .share-count-pill span {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    min-height: 22px;
+    padding: 3px 7px;
+    color: var(--color-mute, #6b6659);
+    font-size: 0.65rem;
+    line-height: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .share-count-pill span:first-child {
+    color: var(--color-seal, #8a5a1a);
+    background: color-mix(
+      in srgb,
+      var(--color-seal, #8a5a1a) 9%,
+      transparent
+    );
+  }
+
+  .share-count-pill span + span {
+    border-left: 1px solid
+      color-mix(
+        in srgb,
+        var(--color-seal, #8a5a1a) 18%,
+        var(--color-rule, #d9d2c1)
+      );
+  }
+
+  .share-count-pill b {
+    color: var(--color-ink, #1a1917);
+    font-family: var(
+      --font-data,
+      var(
+        --type-mono,
+        'JetBrains Mono',
+        ui-monospace,
+        monospace
+      )
+    );
+    font-size: 0.72rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .share-count-pill em {
+    font-style: normal;
+    font-weight: 700;
+  }
+
+  .share-cluster-metrics {
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 0;
+  }
+
+  .share-cluster-metrics div {
+    display: flex;
+    gap: 4px;
+    align-items: baseline;
+    min-width: 0;
+    padding: 3px 7px;
+    background: color-mix(
+      in srgb,
+      var(--color-card, #fff) 62%,
+      transparent
+    );
+    border: 1px solid color-mix(in srgb, var(--color-rule, #d9d2c1) 82%, transparent);
+    border-radius: 999px;
+  }
+
+  .share-cluster-metrics dt,
+  .share-cluster-metrics dd {
+    margin: 0;
+  }
+
+  .share-cluster-metrics dt {
+    color: var(--color-mute, #6b6659);
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.045em;
+    line-height: 0.82rem;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .share-cluster-metrics dd {
+    color: var(--color-ink, #1a1917);
+    font-family: var(
+      --font-data,
+      var(
+        --type-mono,
+        'JetBrains Mono',
+        ui-monospace,
+        monospace
+      )
+    );
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .share-cluster-details {
+    min-width: min(100%, 220px);
+    margin-left: auto;
+  }
+
+  .share-cluster-details summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: baseline;
+    justify-content: flex-end;
+    color: var(--color-seal, #8a5a1a);
+    cursor: pointer;
+    font-size: 0.68rem;
+    font-weight: 750;
+    line-height: 1.1rem;
+    list-style: none;
+    text-transform: uppercase;
+  }
+
+  .share-cluster-details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .share-cluster-details summary span {
+    color: var(--color-mute, #6b6659);
+    font-size: 0.64rem;
+    font-weight: 500;
+    text-transform: none;
+  }
+
+  .share-cluster-details ul {
+    display: grid;
+    gap: 1px;
+    max-height: 170px;
+    padding: 0;
+    margin: 8px 0 0;
+    overflow: auto;
+    list-style: none;
+    border: 1px solid color-mix(in srgb, var(--color-rule, #d9d2c1) 78%, transparent);
+    border-radius: 7px;
+    scrollbar-width: thin;
+  }
+
+  .share-cluster-details li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 10px;
+    align-items: baseline;
+    min-width: 0;
+    padding: 6px 8px;
+    background: color-mix(
+      in srgb,
+      var(--color-card, #fff) 68%,
+      transparent
+    );
+  }
+
+  .share-cluster-details a,
+  .share-cluster-details li > span {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-ink, #1a1917);
+    font-size: 0.74rem;
+    font-weight: 650;
+    line-height: 1rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .share-cluster-details a {
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-underline-offset: 3px;
+  }
+
+  .share-cluster-details a:hover {
+    color: var(--color-seal, #8a5a1a);
+    text-decoration-color: currentColor;
+  }
+
+  .share-cluster-details small {
+    grid-column: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-mute, #6b6659);
+    font-size: 0.66rem;
+    line-height: 0.95rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .share-cluster-details data {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    color: var(--color-mute, #6b6659);
+    font-family: var(
+      --font-data,
+      var(
+        --type-mono,
+        'JetBrains Mono',
+        ui-monospace,
+        monospace
+      )
+    );
+    font-size: 0.68rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .compact .share-cluster {
+    gap: 5px;
+    padding: 6px 7px;
+  }
+
+  .compact .share-cluster-metrics div:nth-child(n + 2) {
+    display: none;
+  }
+
+  @media (max-width: 540px) {
+    .share-cluster {
+      border-radius: 8px;
+    }
+
+    .share-cluster-summary,
+    .share-cluster-details {
+      flex-basis: 100%;
+      margin-left: 0;
+    }
+
+    .share-cluster-summary > span:not(.share-count-pill) {
+      white-space: normal;
+    }
+
+    .share-cluster-details summary {
+      justify-content: flex-start;
+    }
   }
 
   .post-taxonomy {

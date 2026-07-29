@@ -49,11 +49,11 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     };
   }
   const [events, window, daily, topPosts, topics] = await Promise.all([
-    api(fetch, '/events'),
-    api(fetch, '/moments/window', filters),
-    api(fetch, '/moments/window/daily', filters),
-    api(fetch, '/moments/window/top-posts', { ...filters, limit: 10 }),
-    api(fetch, '/topics')
+    api<any>(fetch, '/events'),
+    api<any>(fetch, '/moments/window', filters),
+    api<any>(fetch, '/moments/window/daily', filters),
+    api<any>(fetch, '/moments/window/top-posts', { ...filters, limit: 10 }),
+    api<any>(fetch, '/topics')
   ]);
   const currentPath = `${url.pathname}${url.search}`;
   const topicLabel = context.topic
