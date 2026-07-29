@@ -24,7 +24,13 @@ function loadDotEnv(path) {
 
     const match = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
 
-    if (!match || process.env[match[1]] !== undefined) {
+    if (
+      !match ||
+      (
+        process.env[match[1]] !== undefined &&
+        process.env[match[1]] !== ''
+      )
+    ) {
       continue;
     }
 
@@ -43,6 +49,16 @@ function normalizeEnvValue(value) {
   }
 
   return result.replace(/\\n/g, '\n');
+}
+
+function normalizeBasePath(value) {
+  const trimmed = String(value ?? '').trim();
+
+  if (!trimmed || trimmed === '/') {
+    return '';
+  }
+
+  return `/${trimmed.replace(/^\/+|\/+$/g, '')}`;
 }
 
 function civicwatchAdapter() {
@@ -81,7 +97,7 @@ const config = {
   kit: {
     adapter: civicwatchAdapter(),
     paths: {
-      base: process.env.PUBLIC_BASE_PATH || ''
+      base: normalizeBasePath(process.env.PUBLIC_BASE_PATH)
     }
   }
 };

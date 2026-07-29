@@ -79,6 +79,10 @@ function run(args) {
 
 loadDotEnv(envPath);
 
+console.log(
+  `Building CivicWatch with PUBLIC_BASE_PATH=${process.env.PUBLIC_BASE_PATH || '(root)'}`
+);
+
 run(['--dir', 'apps/api', 'run', 'build']);
 run(['--dir', 'apps/web', 'exec', 'svelte-kit', 'sync']);
 run(['--dir', 'apps/web', 'run', 'build']);

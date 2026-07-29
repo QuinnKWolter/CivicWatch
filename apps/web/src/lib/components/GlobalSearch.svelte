@@ -9,6 +9,7 @@
     X
   } from 'lucide-svelte';
   import { titleCasePersonName } from '$lib/format';
+  import { appPath } from '$lib/paths';
 
   interface Props {
     apiBase?: string;
@@ -1124,7 +1125,7 @@
                     <li>
                       <a
                         class="result-link"
-                        href={`/who/${encodeURIComponent(item.lid)}`}
+                        href={appPath(`/who/${encodeURIComponent(item.lid)}`)}
                         onclick={handleResultSelection}
                       >
                         <strong>{item.name}</strong>
@@ -1155,7 +1156,7 @@
                     <li>
                       <a
                         class="result-link"
-                        href={`/place/${encodeURIComponent(item.code)}`}
+                        href={appPath(`/place/${encodeURIComponent(item.code)}`)}
                         onclick={handleResultSelection}
                       >
                         <strong>{item.name}</strong>
@@ -1183,7 +1184,7 @@
                     <li>
                       <a
                         class="result-link"
-                        href={`/topic/${encodeURIComponent(item.topic)}`}
+                        href={appPath(`/topic/${encodeURIComponent(item.topic)}`)}
                         onclick={handleResultSelection}
                       >
                         <strong>{item.label}</strong>
