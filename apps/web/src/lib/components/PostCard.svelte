@@ -1183,8 +1183,9 @@
   }
 
   .post-card.compact {
-    gap: 11px;
-    padding: 13px 14px;
+    gap: 8px;
+    padding: 10px;
+    contain-intrinsic-block-size: 188px;
   }
 
   .post-header {
@@ -1194,6 +1195,10 @@
     gap: 12px 18px;
     align-items: start;
     min-width: 0;
+  }
+
+  .post-card.compact .post-header {
+    gap: 7px 10px;
   }
 
   .author-region {
@@ -1231,8 +1236,9 @@
   }
 
   .compact .party-mark {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
+    font-size: 0.64rem;
   }
 
   .party-mark.democratic {
@@ -1265,6 +1271,12 @@
 
   .party-mark.independent {
     color: transparent;
+  }
+
+  .compact .party-mark.independent {
+    width: 22px;
+    height: 22px;
+    margin: 3px 2px 0;
   }
 
   .party-mark.unknown {
@@ -1306,6 +1318,11 @@
     line-height: 1.3rem;
   }
 
+  .post-card.compact h3 {
+    font-size: 0.86rem;
+    line-height: 1.12rem;
+  }
+
   .author-link {
     overflow-wrap: anywhere;
     color: inherit;
@@ -1343,6 +1360,11 @@
     white-space: nowrap;
   }
 
+  .post-card.compact .handle {
+    font-size: 0.7rem;
+    line-height: 0.95rem;
+  }
+
   .context {
     display: flex;
     flex-wrap: wrap;
@@ -1351,6 +1373,11 @@
     color: var(--color-mute, #6b6659);
     font-size: 0.75rem;
     line-height: 1.1rem;
+  }
+
+  .post-card.compact .context {
+    font-size: 0.69rem;
+    line-height: 0.96rem;
   }
 
   .separator {
@@ -1378,6 +1405,11 @@
     white-space: nowrap;
   }
 
+  .post-card.compact .post-date {
+    font-size: 0.66rem;
+    line-height: 0.92rem;
+  }
+
   .post-text {
     max-width: 76ch;
     margin: 0;
@@ -1390,8 +1422,25 @@
   }
 
   .compact .post-text {
+    max-width: none;
+    max-height: 7.2rem;
+    padding: 8px 9px;
+    color: var(--color-ink, #1a1917);
     font-size: 0.875rem;
-    line-height: 1.42rem;
+    line-height: 1.32rem;
+    overflow: auto;
+    background: color-mix(
+      in srgb,
+      var(--color-elevated, #f7f4ed) 72%,
+      transparent
+    );
+    border: 1px solid
+      color-mix(
+        in srgb,
+        var(--color-rule, #d9d2c1) 78%,
+        transparent
+      );
+    border-radius: 6px;
   }
 
   .post-text.unavailable {
@@ -1706,6 +1755,7 @@
   .compact .share-cluster {
     gap: 5px;
     padding: 6px 7px;
+    border-radius: 7px;
   }
 
   .compact .share-cluster-metrics div:nth-child(n + 2) {
@@ -1764,6 +1814,13 @@
       border-color 120ms ease;
   }
 
+  .post-card.compact .topic-chip {
+    min-height: 26px;
+    padding: 3px 7px;
+    font-size: 0.69rem;
+    line-height: 0.95rem;
+  }
+
   .topic-chip > span:last-child {
     min-width: 0;
     overflow: hidden;
@@ -1797,6 +1854,11 @@
       var(--color-rule, #d9d2c1);
   }
 
+  .post-card.compact .post-footer {
+    gap: 7px 10px;
+    padding-top: 7px;
+  }
+
   .engagement {
     display: flex;
     flex-wrap: wrap;
@@ -1807,6 +1869,10 @@
     list-style: none;
   }
 
+  .post-card.compact .engagement {
+    gap: 6px 10px;
+  }
+
   .engagement li {
     display: inline-flex;
     gap: 5px;
@@ -1815,6 +1881,12 @@
     font-size: 0.72rem;
     line-height: 1rem;
     white-space: nowrap;
+  }
+
+  .post-card.compact .engagement li,
+  .post-card.compact .source-link {
+    font-size: 0.68rem;
+    line-height: 0.95rem;
   }
 
   .engagement data {
@@ -1862,6 +1934,10 @@
     transition:
       color 120ms ease,
       text-decoration-color 120ms ease;
+  }
+
+  .post-card.compact .source-link {
+    min-height: 24px;
   }
 
   .source-link:hover {

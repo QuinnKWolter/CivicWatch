@@ -169,6 +169,8 @@ Then install dependencies, build, and start the built Node servers:
 ```bash
 pnpm install --frozen-lockfile
 pnpm run db:prepare
+pnpm run db:posts:canonical
+pnpm run db:network:prepare
 pnpm run build
 pnpm run start:prod:linux
 ```
@@ -177,6 +179,68 @@ pnpm run start:prod:linux
 `app_*` materialized helper views used by the API. Run it once after restoring
 or pointing at a new database. The command is safe to repeat when the underlying
 snapshot changes; it will rebuild the helper views and indexes.
+
+`pnpm run db:posts:canonical` is also non-destructive. It preserves raw `posts`
+and creates `app_posts_canonical` plus `app_post_duplicate_audit`, collapsing
+duplicate tweet-ID rows for visible post cards while retaining duplicate counts.
+Run it before launching a fresh production build.
+
+Optional derived interaction tables can be prepared separately:
+
+```bash
+pnpm run db:network:prepare
+```
+
+This creates and refreshes additive `app_legislator_handles`,
+`app_post_interactions`, `app_network_edges`, and `app_network_builds` tables
+from `posts` and `legislators`. It does not modify the source tables. You can
+scope a build when experimenting:
+
+```bash
+pnpm run db:network:prepare -- --state TX --topic 20
+pnpm run db:network:prepare -- --from 2024-01-01 --to 2024-12-31
+```
+
+The build uses staging tables first, then swaps only the derived `app_*` tables
+after the staging work succeeds.
+
+Hydrated tweet JSONL can also be imported non-destructively:
+
+```bash
+pnpm run db:hydration:import -- --file tweet-hydration/hydrated_tweets.jsonl
+```
+
+That command creates and fills `app_hydrated_tweets`,
+`app_hydrated_tweet_mentions`, `app_hydrated_post_interactions`, and
+`app_hydration_imports`. By default it only reports how many `posts.text` rows
+could be safely expanded. To test a small slice first:
+
+```bash
+pnpm run db:hydration:import -- --file tweet-hydration/hydrated_tweets.jsonl --limit 1000
+```
+
+To actually apply conservative text expansions:
+
+```bash
+pnpm run db:hydration:apply-text -- --file tweet-hydration/hydrated_tweets.jsonl
+```
+
+Text updates are intentionally narrow: the hydrated payload id must match the
+requested tweet id, the hydrated text must be longer, and the current database
+text must be an exact prefix of the hydrated text. No other `posts` columns are
+changed.
+
+If the JSONL import finishes but the final derived-table refresh is interrupted
+or hits a database timeout, rerun only the finalization step with the import id
+printed by the failed run:
+
+```bash
+pnpm run db:hydration:import -- --refresh-only --import-id hydration_YYYYMMDD_HHMMSS
+```
+
+This does not reread the JSONL file. It rebuilds the hydrated mention/reply/quote
+interaction tables, recomputes safe text-update candidates, and marks the import
+complete.
 
 `pnpm run build` loads the root `.env` before building. That is required for
 subpath deployments because SvelteKit must see `PUBLIC_BASE_PATH=/prototype04`
@@ -201,12 +265,17 @@ pnpm run check
 pnpm run build
 pnpm run db:start
 pnpm run db:prepare
+pnpm run db:network:prepare
+pnpm run db:hydration:import -- --limit 1000
 pnpm run db:stop
 ```
 
 `pnpm run check` validates the API TypeScript project and the SvelteKit app.
 `pnpm run db:prepare` applies the exploration views/index prep script against
-the database described by `.env`.
+the database described by `.env`. `pnpm run db:network:prepare` builds the
+network preprocessing tables. `pnpm run db:hydration:import` imports hydrated
+tweet metadata in dry-run text-update mode unless `--apply-text-updates` is
+passed.
 
 ## Troubleshooting
 

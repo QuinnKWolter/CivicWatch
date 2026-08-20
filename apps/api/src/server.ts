@@ -121,6 +121,7 @@ function postRow(row: Record<string, unknown>) {
     replyCount: n(row.reply_count),
     quoteCount: n(row.quote_count),
     engagement: n(row.like_count) + n(row.retweet_count),
+    duplicateCount: Math.max(1, n(row.duplicate_count) || 1),
     legislator: {
       name: titleCasePersonName(s(row.name)),
       handle: s(row.handle),
@@ -133,14 +134,14 @@ function postRow(row: Record<string, unknown>) {
 }
 
 async function maxPostId() {
-  const [row] = await sql`SELECT COALESCE(max(id), 1)::bigint AS max_id FROM posts`;
+  const [row] = await sql`SELECT COALESCE(max(id), 1)::bigint AS max_id FROM app_posts_canonical`;
   return n(row?.max_id);
 }
 
 async function topPostsForLegislator(lid: string, limit = 3) {
   const rows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-    FROM posts p
+    FROM app_posts_canonical p
     JOIN topics t ON t.topic = p.topic
     JOIN legislators l ON l.lid = p.lid
     WHERE p.lid = ${lid}
@@ -153,7 +154,7 @@ async function topPostsForLegislator(lid: string, limit = 3) {
 async function topPostsForTopic(topicId: string, limit = 3) {
   const rows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-    FROM posts p
+    FROM app_posts_canonical p
     JOIN topics t ON t.topic = p.topic
     JOIN legislators l ON l.lid = p.lid
     WHERE p.topic = ${topicId}
@@ -170,23 +171,6 @@ async function topPostsForState(
 ) {
   const topic = filters.topic ?? null;
   const party = filters.party ?? null;
-  if (!topic && !party) {
-    try {
-      const rows = await sql`
-        SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-        FROM app_state_top_posts stp
-        JOIN posts p ON p.id = stp.id
-        JOIN topics t ON t.topic = p.topic
-        JOIN legislators l ON l.lid = p.lid
-        WHERE stp.state = ${state}
-        ORDER BY stp.state_rank
-        LIMIT ${limit}
-      `;
-      return rows.map(postRow);
-    } catch (error) {
-      if ((error as { code?: string }).code !== '42P01') throw error;
-    }
-  }
 
   const rows = await sql`
     WITH state_lids AS (
@@ -200,7 +184,7 @@ async function topPostsForState(
       FROM state_lids sl
       JOIN LATERAL (
         SELECT *
-        FROM posts p
+        FROM app_posts_canonical p
         WHERE p.lid = sl.lid
           AND (${topic}::text IS NULL OR p.topic = ${topic})
         ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
@@ -515,7 +499,7 @@ app.get('/api/v1/legislators/:lid/posts', async (request) => {
   const rows = sort === 'engagement'
     ? await sql`
       SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-      FROM posts p
+      FROM app_posts_canonical p
       JOIN topics t ON t.topic = p.topic
       JOIN legislators l ON l.lid = p.lid
       WHERE p.lid = ${lid}
@@ -527,7 +511,7 @@ app.get('/api/v1/legislators/:lid/posts', async (request) => {
     `
     : await sql`
       SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-      FROM posts p
+      FROM app_posts_canonical p
       JOIN topics t ON t.topic = p.topic
       JOIN legislators l ON l.lid = p.lid
       WHERE p.lid = ${lid}
@@ -603,6 +587,263 @@ app.get('/api/v1/legislators/:lid/similar', async (request) => {
     })),
     'legislators',
     { lid }
+  );
+});
+
+app.get('/api/v1/legislators/:lid/network', async (request) => {
+  const { lid } = request.params as { lid: string };
+  const q = request.query as Query;
+  const topic = normalizedTopic(q.topic);
+  const interactionType =
+    q.type === 'mention' || q.type === 'retweet' ? q.type : null;
+  const direction =
+    q.direction === 'incoming' || q.direction === 'outgoing' ? q.direction : null;
+  const includeExternal = q.external === 'true';
+  const minPosts = Math.max(1, Math.trunc(Number(q.minPosts ?? 1)) || 1);
+  const limit =
+    q.limit === undefined || q.limit === 'all'
+      ? 50000
+      : clampLimit(q.limit, 360, 50000);
+  const queryLimit = q.limit === undefined || q.limit === 'all'
+    ? limit
+    : Math.min(50000, limit * 3);
+
+  const [center] = await sql`
+    SELECT lid, name, handle, state, chamber, party, mrp_ideology
+    FROM legislators
+    WHERE lid = ${lid}
+  `;
+  if (!center) {
+    return envelope(
+      { center: null, links: [], facets: { topics: [], parties: [], states: [], types: [], directions: [] }, summary: {} },
+      'app_network_edges',
+      { ...q, lid }
+    );
+  }
+
+  const rows = await sql`
+    WITH edge_rows AS (
+      SELECT
+        'outgoing'::text AS direction,
+        e.target_lid,
+        COALESCE(e.target_lid, 'external:' || e.target_handle) AS neighbor_key,
+        COALESCE(tl.name, '@' || e.target_handle) AS neighbor_name,
+        COALESCE(tl.handle, e.target_handle) AS neighbor_handle,
+        tl.state AS neighbor_state,
+        tl.chamber AS neighbor_chamber,
+        tl.party AS neighbor_party,
+        tl.mrp_ideology AS neighbor_ideology,
+        e.target_handle,
+        e.interaction_type,
+        e.topic,
+        COALESCE(t.topic_label, 'Topic ' || e.topic) AS topic_label,
+        e.post_count,
+        e.engagement,
+        (to_jsonb(e)->>'raw_interaction_count')::bigint AS raw_interaction_count,
+        (to_jsonb(e)->>'raw_engagement')::bigint AS raw_engagement,
+        (to_jsonb(e)->>'canonical_post_count')::bigint AS canonical_post_count,
+        (to_jsonb(e)->>'canonical_engagement')::bigint AS canonical_engagement,
+        e.first_seen,
+        e.last_seen,
+        e.sample_post_id,
+        e.confidence
+      FROM app_network_edges e
+      LEFT JOIN legislators tl ON tl.lid = e.target_lid
+      LEFT JOIN topics t ON t.topic = e.topic
+      WHERE e.source_lid = ${lid}
+        AND (${topic ?? null}::text IS NULL OR e.topic = ${topic ?? null})
+        AND (${interactionType ?? null}::text IS NULL OR e.interaction_type = ${interactionType ?? null})
+        AND (${direction ?? null}::text IS NULL OR ${direction ?? null}::text = 'outgoing')
+        AND (${includeExternal}::boolean OR e.target_lid IS NOT NULL)
+        AND e.post_count >= ${minPosts}
+
+      UNION ALL
+
+      SELECT
+        'incoming'::text AS direction,
+        e.source_lid AS target_lid,
+        e.source_lid AS neighbor_key,
+        sl.name AS neighbor_name,
+        sl.handle AS neighbor_handle,
+        sl.state AS neighbor_state,
+        sl.chamber AS neighbor_chamber,
+        sl.party AS neighbor_party,
+        sl.mrp_ideology AS neighbor_ideology,
+        e.target_handle,
+        e.interaction_type,
+        e.topic,
+        COALESCE(t.topic_label, 'Topic ' || e.topic) AS topic_label,
+        e.post_count,
+        e.engagement,
+        (to_jsonb(e)->>'raw_interaction_count')::bigint AS raw_interaction_count,
+        (to_jsonb(e)->>'raw_engagement')::bigint AS raw_engagement,
+        (to_jsonb(e)->>'canonical_post_count')::bigint AS canonical_post_count,
+        (to_jsonb(e)->>'canonical_engagement')::bigint AS canonical_engagement,
+        e.first_seen,
+        e.last_seen,
+        e.sample_post_id,
+        e.confidence
+      FROM app_network_edges e
+      JOIN legislators sl ON sl.lid = e.source_lid
+      LEFT JOIN topics t ON t.topic = e.topic
+      WHERE e.target_lid = ${lid}
+        AND (${topic ?? null}::text IS NULL OR e.topic = ${topic ?? null})
+        AND (${interactionType ?? null}::text IS NULL OR e.interaction_type = ${interactionType ?? null})
+        AND (${direction ?? null}::text IS NULL OR ${direction ?? null}::text = 'incoming')
+        AND e.post_count >= ${minPosts}
+    )
+    SELECT *
+    FROM edge_rows
+    ORDER BY post_count DESC, engagement DESC, neighbor_key, topic
+    LIMIT ${queryLimit}
+  `;
+
+  const topics = new Map<string, { topic: string | null; topicLabel: string | null; postCount: number }>();
+  const parties = new Map<string, number>();
+  const states = new Map<string, number>();
+  const typeCounts = new Map<string, number>();
+  const directionCounts = new Map<string, number>();
+
+  let totalPosts = 0;
+  let totalEngagement = 0;
+  let externalLinks = 0;
+  let knownLegislatorLinks = 0;
+
+  const duplicateRetweets = new Set(
+    rows
+      .filter((row) => s(row.interaction_type) === 'retweet')
+      .map((row) => [
+        s(row.direction),
+        s(row.neighbor_key),
+        s(row.target_handle),
+        s(row.topic),
+        n(row.post_count)
+      ].join('|'))
+  );
+
+  const dedupedRows = rows
+    .filter((row) => {
+      if (s(row.interaction_type) !== 'mention') return true;
+      const key = [
+        s(row.direction),
+        s(row.neighbor_key),
+        s(row.target_handle),
+        s(row.topic),
+        n(row.post_count)
+      ].join('|');
+      return !duplicateRetweets.has(key);
+    })
+    .slice(0, limit);
+
+  const links = dedupedRows.map((row) => {
+    const postCount = n(row.post_count);
+    const engagement = n(row.engagement);
+    const rawInteractionCount = n(row.raw_interaction_count) || postCount;
+    const rawEngagement = n(row.raw_engagement) || engagement;
+    const canonicalPostCount = n(row.canonical_post_count) || postCount;
+    const canonicalEngagement = n(row.canonical_engagement) || engagement;
+    totalPosts += postCount;
+    totalEngagement += engagement;
+    if (row.target_lid === null && row.direction === 'outgoing') externalLinks += 1;
+    else knownLegislatorLinks += 1;
+
+    const topicKey = s(row.topic) ?? 'unknown';
+    const topicFacet = topics.get(topicKey) ?? {
+      topic: s(row.topic),
+      topicLabel: s(row.topic_label) === 'Unknown Topic (999)' ? 'Uncategorized' : s(row.topic_label),
+      postCount: 0
+    };
+    topicFacet.postCount += postCount;
+    topics.set(topicKey, topicFacet);
+
+    const party = s(row.neighbor_party) ?? 'External';
+    parties.set(party, (parties.get(party) ?? 0) + postCount);
+
+    const state = s(row.neighbor_state) ?? 'External';
+    states.set(state, (states.get(state) ?? 0) + postCount);
+
+    const type = s(row.interaction_type) ?? 'unknown';
+    typeCounts.set(type, (typeCounts.get(type) ?? 0) + postCount);
+
+    const dir = s(row.direction) ?? 'unknown';
+    directionCounts.set(dir, (directionCounts.get(dir) ?? 0) + postCount);
+
+    const neighborLid = s(row.target_lid);
+    const neighborName = s(row.neighbor_name);
+
+    return {
+      id: [
+        dir,
+        s(row.neighbor_key),
+        s(row.target_handle),
+        type,
+        topicKey,
+        row.sample_post_id === null ? '' : n(row.sample_post_id)
+      ].join(':'),
+      direction: dir,
+      source: dir === 'outgoing' ? s(center.lid) : s(row.neighbor_key),
+      target: dir === 'outgoing' ? s(row.neighbor_key) : s(center.lid),
+      neighborKey: s(row.neighbor_key),
+      neighbor: {
+        lid: neighborLid,
+        name: neighborLid ? titleCasePersonName(neighborName) : neighborName,
+        handle: s(row.neighbor_handle),
+        state: s(row.neighbor_state),
+        chamber: s(row.neighbor_chamber),
+        party: s(row.neighbor_party),
+        ideology: row.neighbor_ideology === null ? null : Number(row.neighbor_ideology),
+        external: neighborLid === null
+      },
+      targetHandle: s(row.target_handle),
+      interactionType: type,
+      topic: topicKey,
+      topicLabel: s(row.topic_label) === 'Unknown Topic (999)' ? 'Uncategorized' : s(row.topic_label),
+      postCount,
+      engagement,
+      rawInteractionCount,
+      rawEngagement,
+      canonicalPostCount,
+      canonicalEngagement,
+      firstSeen: s(row.first_seen),
+      lastSeen: s(row.last_seen),
+      samplePostId: row.sample_post_id === null ? null : n(row.sample_post_id),
+      confidence: s(row.confidence)
+    };
+  });
+
+  const facetRows = <T>(map: Map<string, T>, mapper: (key: string, value: T) => unknown) =>
+    Array.from(map.entries()).map(([key, value]) => mapper(key, value));
+
+  return envelope(
+    {
+      center: {
+        lid: s(center.lid),
+        name: titleCasePersonName(s(center.name)),
+        handle: s(center.handle),
+        state: s(center.state),
+        chamber: s(center.chamber),
+        party: s(center.party),
+        ideology: center.mrp_ideology === null ? null : Number(center.mrp_ideology)
+      },
+      links,
+      facets: {
+        topics: Array.from(topics.values()).sort((a, b) => b.postCount - a.postCount),
+        parties: facetRows(parties, (party, postCount) => ({ party, postCount })).sort((a: any, b: any) => b.postCount - a.postCount),
+        states: facetRows(states, (state, postCount) => ({ state, postCount })).sort((a: any, b: any) => b.postCount - a.postCount),
+        types: facetRows(typeCounts, (type, postCount) => ({ type, postCount })),
+        directions: facetRows(directionCounts, (direction, postCount) => ({ direction, postCount }))
+      },
+      summary: {
+        linkRows: links.length,
+        totalPosts,
+        totalEngagement,
+        knownLegislatorLinks,
+        externalLinks,
+      limitedTo: q.limit === undefined || q.limit === 'all' ? null : limit
+      }
+    },
+    'app_network_edges + legislators + topics',
+    { ...q, lid, topic, interactionType, direction, includeExternal, minPosts, limit }
   );
 });
 
@@ -759,7 +1000,7 @@ app.get('/api/v1/topics/:topicId/top-posts', async (request) => {
   const party = q.party ?? null;
   const rows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-    FROM posts p
+    FROM app_posts_canonical p
     JOIN topics t ON t.topic = p.topic
     JOIN legislators l ON l.lid = p.lid
     WHERE p.topic = ${topicId}
@@ -1027,7 +1268,7 @@ app.get('/api/v1/moments/window/top-posts', async (request) => {
   const party = q.party ?? null;
   const candidateRows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-    FROM posts p
+    FROM app_posts_canonical p
     JOIN topics t ON t.topic = p.topic
     JOIN legislators l ON l.lid = p.lid
     WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
@@ -1098,7 +1339,7 @@ app.get('/api/v1/moments/window/top-posts', async (request) => {
   const sharerRows = selectedTexts.length
     ? await sql`
       SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-      FROM posts p
+      FROM app_posts_canonical p
       JOIN topics t ON t.topic = p.topic
       JOIN legislators l ON l.lid = p.lid
       WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
@@ -1241,10 +1482,92 @@ app.get('/api/v1/posts/explore', async (request) => {
       ? Math.trunc(minEngagement)
       : null;
   const sort = q.sort === 'engagement' ? 'engagement' : 'recent';
+
+  const edgeSourceLid = q.edgeSourceLid ?? null;
+  const edgeTargetLid = q.edgeTargetLid ?? null;
+  const edgeTargetHandle = q.edgeTargetHandle ?? null;
+  const edgeType =
+    q.edgeType === 'mention' || q.edgeType === 'retweet' ? q.edgeType : null;
+  const edgeTopic = normalizedTopic(q.edgeTopic);
+
+  if (edgeSourceLid || edgeTargetLid || edgeTargetHandle || edgeType || edgeTopic) {
+    const rows = sort === 'engagement'
+      ? await sql`
+        WITH edge_ids AS (
+          SELECT DISTINCT COALESCE(pc.id, i.post_id) AS id
+          FROM app_post_interactions i
+          LEFT JOIN app_posts_canonical pc
+            ON pc.tweet_id = i.tweet_id
+           AND pc.lid = i.source_lid
+          WHERE (${edgeSourceLid}::text IS NULL OR i.source_lid = ${edgeSourceLid})
+            AND (${edgeTargetLid}::text IS NULL OR i.target_lid = ${edgeTargetLid})
+            AND (${edgeTargetHandle}::text IS NULL OR lower(i.target_handle) = lower(${edgeTargetHandle}))
+            AND (${edgeType}::text IS NULL OR i.interaction_type = ${edgeType})
+            AND (${edgeTopic ?? null}::text IS NULL OR i.topic = ${edgeTopic ?? null})
+        )
+        SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party,
+               COUNT(*) OVER()::int AS total
+        FROM edge_ids e
+        JOIN app_posts_canonical p ON p.id = e.id
+        JOIN topics t ON t.topic = p.topic
+        JOIN legislators l ON l.lid = p.lid
+        WHERE (${state}::text IS NULL OR l.state = ${state})
+          AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+          AND (${party}::text IS NULL OR l.party = ${party})
+          AND (${chamber}::text IS NULL OR l.chamber = ${chamber})
+          AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+          AND (${to}::date IS NULL OR p.created_at < (${to}::date + INTERVAL '1 day'))
+          AND (${safeMinEngagement}::int IS NULL OR (p.like_count + p.retweet_count) >= ${safeMinEngagement})
+        ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
+        LIMIT ${limit}
+      `
+      : await sql`
+        WITH edge_ids AS (
+          SELECT DISTINCT COALESCE(pc.id, i.post_id) AS id
+          FROM app_post_interactions i
+          LEFT JOIN app_posts_canonical pc
+            ON pc.tweet_id = i.tweet_id
+           AND pc.lid = i.source_lid
+          WHERE (${edgeSourceLid}::text IS NULL OR i.source_lid = ${edgeSourceLid})
+            AND (${edgeTargetLid}::text IS NULL OR i.target_lid = ${edgeTargetLid})
+            AND (${edgeTargetHandle}::text IS NULL OR lower(i.target_handle) = lower(${edgeTargetHandle}))
+            AND (${edgeType}::text IS NULL OR i.interaction_type = ${edgeType})
+            AND (${edgeTopic ?? null}::text IS NULL OR i.topic = ${edgeTopic ?? null})
+        )
+        SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party,
+               COUNT(*) OVER()::int AS total
+        FROM edge_ids e
+        JOIN app_posts_canonical p ON p.id = e.id
+        JOIN topics t ON t.topic = p.topic
+        JOIN legislators l ON l.lid = p.lid
+        WHERE (${safeCursor}::bigint IS NULL OR p.id < ${safeCursor})
+          AND (${state}::text IS NULL OR l.state = ${state})
+          AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+          AND (${party}::text IS NULL OR l.party = ${party})
+          AND (${chamber}::text IS NULL OR l.chamber = ${chamber})
+          AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+          AND (${to}::date IS NULL OR p.created_at < (${to}::date + INTERVAL '1 day'))
+          AND (${safeMinEngagement}::int IS NULL OR (p.like_count + p.retweet_count) >= ${safeMinEngagement})
+        ORDER BY p.id DESC
+        LIMIT ${limit}
+      `;
+
+    return envelope(
+      rows.map(postRow),
+      'app_post_interactions + app_posts_canonical + legislators',
+      { ...q, limit, sort, edgeSourceLid, edgeTargetLid, edgeTargetHandle, edgeType, edgeTopic },
+      {
+        nextCursor: sort === 'recent' && rows.length === limit ? rows.at(-1)?.id ?? null : null,
+        total: rows.length ? n(rows[0].total) : 0,
+        totalKind: 'unique_canonical_posts'
+      }
+    );
+  }
+
   const rows = from || to
     ? await sql`
       SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-      FROM posts p
+      FROM app_posts_canonical p
       JOIN topics t ON t.topic = p.topic
       JOIN legislators l ON l.lid = p.lid
       WHERE (${safeCursor}::bigint IS NULL OR p.id < ${safeCursor})
@@ -1262,7 +1585,7 @@ app.get('/api/v1/posts/explore', async (request) => {
     : sort === 'engagement'
       ? await sql`
         SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-        FROM posts p
+        FROM app_posts_canonical p
         JOIN topics t ON t.topic = p.topic
         JOIN legislators l ON l.lid = p.lid
         WHERE (${lid}::text IS NULL OR p.lid = ${lid})
@@ -1276,7 +1599,7 @@ app.get('/api/v1/posts/explore', async (request) => {
       `
     : await sql`
       SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-      FROM posts p
+      FROM app_posts_canonical p
       JOIN topics t ON t.topic = p.topic
       JOIN legislators l ON l.lid = p.lid
       WHERE (${safeCursor}::bigint IS NULL OR p.id < ${safeCursor})
@@ -1316,7 +1639,7 @@ app.get('/api/v1/sampler', async (request) => {
       : null;
   const rows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
-    FROM posts p
+    FROM app_posts_canonical p
     JOIN topics t ON t.topic = p.topic
     JOIN legislators l ON l.lid = p.lid
     WHERE p.id >= ${anchor}
@@ -1491,7 +1814,7 @@ async function exportRows(spec: ExportSpec) {
     const rows = await sql`
       SELECT p.id, p.created_at::text, p.lid, l.name, p.topic, t.topic_label,
              p.like_count, p.retweet_count, p.reply_count, p.quote_count, p.text
-      FROM posts p
+      FROM app_posts_canonical p
       JOIN legislators l ON l.lid = p.lid
       JOIN topics t ON t.topic = p.topic
       WHERE p.lid = ${lid}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { env } from '$env/dynamic/public';
-  import { onDestroy, untrack } from 'svelte';
+  import { onDestroy, onMount, untrack } from 'svelte';
   import { Clock3, Plus, Shuffle, TrendingUp } from 'lucide-svelte';
   import AsyncSampler from './AsyncSampler.svelte';
   import PanelHeader from './PanelHeader.svelte';
@@ -26,6 +26,9 @@
     apiBase?: string;
     sampleSize?: number;
     pageSize?: number;
+    initialMode?: 'top' | 'recent' | 'sample';
+    showSample?: boolean;
+    compact?: boolean;
   }
 
   const DEFAULT_API_BASE =
@@ -42,7 +45,10 @@
     filters = {},
     apiBase = DEFAULT_API_BASE,
     sampleSize = 6,
-    pageSize = 8
+    pageSize = 8,
+    initialMode = 'top',
+    showSample = true,
+    compact = false
   }: Props = $props();
 
   const componentId = $props.id();
@@ -52,7 +58,13 @@
     party: filters.party === 'Democratic' || filters.party === 'Republican' ? filters.party : undefined
   } satisfies DrilldownContext));
 
-  let mode = $state<'top' | 'recent' | 'sample'>('top');
+  let mode = $state<'top' | 'recent' | 'sample'>(
+    untrack(() => (initialMode === 'sample' && !showSample ? 'top' : initialMode))
+  );
+  let topPosts = $state<any[]>(
+    untrack(() => Array.isArray(initialTopPosts) ? [...initialTopPosts] : [])
+  );
+  let topLoaded = $state(untrack(() => Array.isArray(initialTopPosts) && initialTopPosts.length > 0));
   let recentPosts = $state<any[]>(
     untrack(() => Array.isArray(initialRecentPosts) ? [...initialRecentPosts] : [])
   );
@@ -62,6 +74,7 @@
   let recentLoaded = $state(untrack(() => Array.isArray(initialRecentPosts) && initialRecentPosts.length > 0));
   let loading = $state(false);
   let error = $state('');
+  let totalAvailable = $state<number | null>(null);
 
   let controller: AbortController | undefined;
   let requestSequence = 0;
@@ -77,6 +90,10 @@
       ? Math.min(12, Math.max(1, Math.trunc(sampleSize)))
       : 6
   );
+
+  const visiblePosts = $derived(mode === 'recent' ? recentPosts : topPosts);
+  const visibleCount = $derived(visiblePosts.length);
+  const headerCount = $derived(totalAvailable ?? visibleCount);
 
   function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -116,6 +133,12 @@
     return params;
   }
 
+  function buildTopParams(): URLSearchParams {
+    const params = buildParams(null);
+    params.set('sort', 'engagement');
+    return params;
+  }
+
   function extractRows(payload: unknown): any[] {
     if (!isRecord(payload) || !Array.isArray(payload.data)) {
       throw new Error('INVALID_RESPONSE');
@@ -130,6 +153,17 @@
     return typeof cursor === 'string' || typeof cursor === 'number'
       ? cursor
       : null;
+  }
+
+  function extractTotal(payload: unknown): number | null {
+    if (!isRecord(payload) || !isRecord(payload.meta)) return null;
+    const total = payload.meta.total;
+    const parsed = typeof total === 'number' ? total : Number(total);
+    return Number.isFinite(parsed) && parsed >= 0 ? Math.trunc(parsed) : null;
+  }
+
+  function formatCount(value: number): string {
+    return value.toLocaleString('en-US');
   }
 
   function errorMessage(status: number): string {
@@ -174,11 +208,15 @@
       const payload: unknown = await response.json();
       const rows = extractRows(payload);
       const nextCursor = extractCursor(payload);
+      const total = extractTotal(payload);
 
       if (currentRequest !== requestSequence) return;
 
       recentPosts = reset ? rows : [...recentPosts, ...rows];
       recentCursor = nextCursor;
+      if (total !== null && (reset || totalAvailable === null)) {
+        totalAvailable = total;
+      }
       recentLoaded = true;
     } catch (cause) {
       if (cause instanceof DOMException && cause.name === 'AbortError') {
@@ -204,25 +242,103 @@
     }
   }
 
+  async function loadTop(): Promise<void> {
+    if (loading) return;
+
+    const currentRequest = ++requestSequence;
+    controller?.abort();
+    controller = new AbortController();
+    loading = true;
+    error = '';
+
+    try {
+      const base = apiBase.replace(/\/+$/, '');
+      const params = buildTopParams();
+      const response = await fetch(
+        `${base}/posts/explore?${params.toString()}`,
+        {
+          method: 'GET',
+          headers: { accept: 'application/json' },
+          credentials: 'same-origin',
+          cache: 'no-store',
+          signal: controller.signal
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP_${response.status}`);
+      }
+
+      const payload: unknown = await response.json();
+      const rows = extractRows(payload);
+      const total = extractTotal(payload);
+
+      if (currentRequest !== requestSequence) return;
+
+      topPosts = rows;
+      totalAvailable = total;
+      topLoaded = true;
+    } catch (cause) {
+      if (cause instanceof DOMException && cause.name === 'AbortError') {
+        return;
+      }
+
+      if (currentRequest !== requestSequence) return;
+
+      const match =
+        cause instanceof Error
+          ? /^HTTP_(\d+)$/.exec(cause.message)
+          : null;
+
+      error = match
+        ? errorMessage(Number(match[1]))
+        : cause instanceof Error && cause.message === 'INVALID_RESPONSE'
+          ? 'The post explorer returned an unexpected response.'
+          : 'The post explorer could not be updated. Check your connection and try again.';
+    } finally {
+      if (currentRequest === requestSequence) {
+        loading = false;
+      }
+    }
+  }
+
   function selectMode(nextMode: 'top' | 'recent' | 'sample'): void {
+    if (nextMode === 'sample' && !showSample) return;
     mode = nextMode;
+
+    if (nextMode === 'top' && !topLoaded) {
+      void loadTop();
+    }
 
     if (nextMode === 'recent' && !recentLoaded) {
       void loadRecent(true);
     }
   }
 
+  onMount(() => {
+    if (mode === 'top' && !topLoaded) {
+      void loadTop();
+    }
+
+    if (mode === 'recent' && !recentLoaded) {
+      void loadRecent(true);
+    }
+  });
+
   onDestroy(() => {
     controller?.abort();
   });
 </script>
 
-<section class="post-explorer" aria-busy={loading}>
+<section class="post-explorer" class:compact aria-busy={loading}>
   <PanelHeader
     {title}
     {caption}
     {source}
-    count={mode === 'recent' ? recentPosts.length : initialTopPosts.length}
+    count={headerCount}
+    countLabel="matching posts"
+    countSingular="matching post"
+    compact={compact}
   >
     <div slot="tools" class="mode-switch" aria-label="Post explorer mode">
       <button
@@ -241,16 +357,24 @@
         <Clock3 size={15} aria-hidden="true" />
         All posts
       </button>
-      <button
-        type="button"
-        class:active={mode === 'sample'}
-        onclick={() => selectMode('sample')}
-      >
-        <Shuffle size={15} aria-hidden="true" />
-        Sample
-      </button>
+      {#if showSample}
+        <button
+          type="button"
+          class:active={mode === 'sample'}
+          onclick={() => selectMode('sample')}
+        >
+          <Shuffle size={15} aria-hidden="true" />
+          Sample
+        </button>
+      {/if}
     </div>
   </PanelHeader>
+
+  {#if totalAvailable !== null}
+    <p class="explorer-extent">
+      Showing {formatCount(visibleCount)} of {formatCount(totalAvailable)} unique matching posts.
+    </p>
+  {/if}
 
   <p id={statusId} class="visually-hidden" aria-live="polite">
     {loading ? 'Loading posts.' : error}
@@ -269,17 +393,23 @@
 
   {#if mode === 'top'}
     <div class="post-grid">
-      {#each initialTopPosts as post}
-        <PostCard {post} {drilldownContext} />
+      {#if topPosts.length}
+        {#each topPosts as post}
+          <PostCard {post} {drilldownContext} {compact} />
+        {/each}
+      {:else if loading}
+        {#each Array(Math.min(safePageSize, 4)) as _}
+          <div class="skeleton" aria-hidden="true"></div>
+        {/each}
       {:else}
         <p class="empty-state">No high-engagement posts are available for this view.</p>
-      {/each}
+      {/if}
     </div>
   {:else if mode === 'recent'}
     {#if recentPosts.length}
       <div class="post-grid" class:loading>
         {#each recentPosts as post}
-          <PostCard {post} {drilldownContext} />
+          <PostCard {post} {drilldownContext} {compact} />
         {/each}
       </div>
     {:else if loading}
@@ -321,14 +451,20 @@
     min-width: 0;
   }
 
+  .explorer-extent {
+    margin: -4px 0 10px;
+    color: var(--color-mute);
+    font-size: 0.78rem;
+  }
+
   .mode-switch {
     display: inline-flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 4px;
-    border: 1px solid var(--color-rule);
+    padding: 0;
+    border: 0;
     border-radius: 999px;
-    background: var(--color-elevated);
+    background: transparent;
   }
 
   .mode-switch button {
@@ -350,6 +486,11 @@
     gap: 14px;
     min-width: 0;
     transition: opacity 140ms ease;
+  }
+
+  .post-explorer.compact .post-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 10px;
   }
 
   .post-grid.loading {

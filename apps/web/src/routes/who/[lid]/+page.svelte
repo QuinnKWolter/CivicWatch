@@ -1,6 +1,7 @@
 <script lang="ts">
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
   import FilterChips from '$lib/components/FilterChips.svelte';
+  import LegislatorNetwork from '$lib/components/LegislatorNetwork.svelte';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
   import PostExplorer from '$lib/components/PostExplorer.svelte';
   import VoiceFingerprint from '$lib/components/VoiceFingerprint.svelte';
@@ -46,6 +47,14 @@
       <dt>Gender</dt><dd>{profile.gender ?? '—'}</dd>
     </dl>
   </aside>
+</section>
+
+<section class="container band">
+  <LegislatorNetwork
+    network={data.network}
+    title={`${profile.name}'s interaction network`}
+    caption="Explore parsed retweets and mentions linked to known legislators and external handles. Filter by direction, topic, target party, target state, or interaction type."
+  />
 </section>
 
 <section class="container band">

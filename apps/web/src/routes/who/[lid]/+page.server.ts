@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
 
   const profile = await api<any>(fetch, `/legislators/${lid}`, filters);
 
-  const [fingerprint, posts, topPosts] = await Promise.all([
+  const [fingerprint, posts, topPosts, network] = await Promise.all([
     api<any>(fetch, `/legislators/${lid}/voice-fingerprint`, filters).catch(() => ({
       data: [],
       meta: {
@@ -30,6 +30,27 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
         sourceTable: 'posts',
         filters: { lid: params.lid, limit: 10, sort: 'engagement' }
       }
+    })),
+    api<any>(fetch, `/legislators/${lid}/network`, { limit: 1200, ...filters }).catch((error) => ({
+      data: {
+        center: {
+          lid: profile.data?.lid ?? params.lid,
+          name: profile.data?.name ?? null,
+          handle: profile.data?.handle ?? null,
+          state: profile.data?.state ?? null,
+          chamber: profile.data?.chamber ?? null,
+          party: profile.data?.party ?? null,
+          ideology: profile.data?.mrpIdeology ?? null
+        },
+        links: [],
+        facets: { topics: [], parties: [], states: [], types: [], directions: [] },
+        summary: {}
+      },
+      meta: {
+        sourceTable: 'app_network_edges',
+        filters: { lid: params.lid, limit: 1200 },
+        networkError: error instanceof Error ? error.message : String(error)
+      }
     }))
   ]);
 
@@ -44,5 +65,5 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
     context.color ? { label: 'Origin color', value: 'Party contribution', href: removeDrilldownFilter(currentPath, 'color') } : null
   ].filter(Boolean);
 
-  return { profile, fingerprint, posts, topPosts, context, inheritedFilters, clearContextHref: url.pathname };
+  return { profile, fingerprint, posts, topPosts, network, context, inheritedFilters, clearContextHref: url.pathname };
 };

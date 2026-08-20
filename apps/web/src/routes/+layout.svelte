@@ -892,28 +892,17 @@
 
   .toolbar {
     display: flex;
-    gap: 4px;
+    gap: 8px;
     align-items: center;
     justify-content: flex-end;
     width: auto;
     min-width: 0;
-    padding: 2px;
+    padding: 0;
     margin: 0;
-    background: color-mix(
-      in srgb,
-      var(--color-elevated, #fff) 78%,
-      transparent
-    );
-    border: 1px solid
-      color-mix(
-        in srgb,
-        var(--color-rule, #d8d6cc) 82%,
-        transparent
-      );
-    border-radius: 999px;
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 46%),
-      var(--shadow-sm, 0 1px 2px rgb(0 0 0 / 6%));
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .tool-slot {
