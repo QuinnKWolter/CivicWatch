@@ -1496,7 +1496,7 @@ app.get('/api/v1/posts/explore', async (request) => {
         WITH edge_ids AS (
           SELECT DISTINCT COALESCE(pc.id, i.post_id) AS id
           FROM app_post_interactions i
-          LEFT JOIN app_posts_canonical pc
+          LEFT JOIN app_posts_canonical_map pc
             ON pc.tweet_id = i.tweet_id
            AND pc.lid = i.source_lid
           WHERE (${edgeSourceLid}::text IS NULL OR i.source_lid = ${edgeSourceLid})
@@ -1525,7 +1525,7 @@ app.get('/api/v1/posts/explore', async (request) => {
         WITH edge_ids AS (
           SELECT DISTINCT COALESCE(pc.id, i.post_id) AS id
           FROM app_post_interactions i
-          LEFT JOIN app_posts_canonical pc
+          LEFT JOIN app_posts_canonical_map pc
             ON pc.tweet_id = i.tweet_id
            AND pc.lid = i.source_lid
           WHERE (${edgeSourceLid}::text IS NULL OR i.source_lid = ${edgeSourceLid})

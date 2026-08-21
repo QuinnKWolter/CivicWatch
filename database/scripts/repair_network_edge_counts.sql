@@ -4,12 +4,25 @@
 \timing on
 \echo Preparing CivicWatch network edge count repair...
 SET statement_timeout = 0;
+SET work_mem = '256MB';
+SET maintenance_work_mem = '1GB';
+\ir use_app_tablespace.sql
 
 ALTER TABLE app_network_edges
   ADD COLUMN IF NOT EXISTS raw_interaction_count bigint,
   ADD COLUMN IF NOT EXISTS raw_engagement bigint,
   ADD COLUMN IF NOT EXISTS canonical_post_count bigint,
   ADD COLUMN IF NOT EXISTS canonical_engagement bigint;
+
+CREATE TABLE IF NOT EXISTS app_posts_canonical_map (
+  id bigint PRIMARY KEY,
+  lid text NOT NULL,
+  tweet_id text,
+  duplicate_count integer NOT NULL DEFAULT 1,
+  like_count integer,
+  retweet_count integer,
+  canonical_text text
+);
 
 \echo Ensuring helper indexes exist...
 CREATE INDEX IF NOT EXISTS app_post_interactions_edge_repair_idx
@@ -38,7 +51,7 @@ WITH edge_post_rows AS (
       ELSE pi.engagement
     END AS canonical_post_engagement
   FROM app_post_interactions pi
-  LEFT JOIN app_posts_canonical pc
+  LEFT JOIN app_posts_canonical_map pc
     ON pc.tweet_id = pi.tweet_id
    AND pc.lid = pi.source_lid
 ), raw_edges AS (

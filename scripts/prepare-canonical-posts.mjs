@@ -13,8 +13,7 @@ const sqlPath = resolve(repoRoot, 'database/scripts/prepare_canonical_posts.sql'
 function usage() {
   console.log(`Usage: node ./scripts/prepare-canonical-posts.mjs [options]
 
-Builds a non-destructive canonical post table for UI post cards. Raw posts are
-not changed; duplicate tweet IDs are collapsed into app_posts_canonical.
+Builds a slim canonical post map and view without copying the posts table.
 
 Options:
   --build-id <id>   Stable build id. Defaults to canonical_posts_YYYYMMDD_HHMMSS.
