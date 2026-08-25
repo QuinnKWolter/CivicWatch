@@ -1,12 +1,7 @@
 <script lang="ts">
   import AnimatedNumber from '$lib/components/AnimatedNumber.svelte';
-  import AsyncSampler from '$lib/components/AsyncSampler.svelte';
-  import ChamberView from '$lib/components/ChamberView.svelte';
   import EntryMicrovisual from '$lib/components/EntryMicrovisual.svelte';
-  import PanelHeader from '$lib/components/PanelHeader.svelte';
-  import StateGrid from '$lib/components/StateGrid.svelte';
   import StatStrip from '$lib/components/StatStrip.svelte';
-  import TopicBars from '$lib/components/TopicBars.svelte';
   import { compact } from '$lib/format';
   import { appPath } from '$lib/paths';
 
@@ -40,7 +35,7 @@
       title: 'Explore a state',
       body: 'Compare chambers, state-level volume, topic mix, and top legislative voices.',
       visualKind: 'state',
-      visualLabel: 'State volume grid'
+      visualLabel: 'State activity grid'
     },
     {
       href: appPath('/topic'),
@@ -64,13 +59,6 @@
   const metaPayload = $derived(rootData.meta ?? null);
   const metadata = $derived(extractMetadata(metaPayload));
 
-  const samplerRows = $derived(readRows(rootData, 'sampler'));
-  const chamberRows = $derived(readRows(rootData, 'chamber'));
-  const topicRows = $derived(readRows(rootData, 'topics'));
-  const stateRows = $derived(readRows(rootData, 'states'));
-
-  const samplerSeed = $derived(readSeed(rootData.seed));
-
   const rowCounts = $derived(extractRowCounts(metadata));
 
   const postCountLabel = $derived(
@@ -79,14 +67,6 @@
 
   const legislatorCountLabel = $derived(
     displayCount(rowCounts.legislators, '5,927')
-  );
-
-  const stateCountLabel = $derived(
-    displayCount(rowCounts.states, '50')
-  );
-
-  const topicCountLabel = $derived(
-    displayCount(rowCounts.topics, '22')
   );
 
   const coverageLabel = $derived(
@@ -192,49 +172,6 @@
     } catch {
       return value.toLocaleString('en-US');
     }
-  }
-
-  function readRows(
-    source: Record<string, unknown>,
-    key: string
-  ): unknown[] {
-    const bucket = source[key];
-
-    if (Array.isArray(bucket)) {
-      return bucket;
-    }
-
-    if (!isRecord(bucket)) {
-      return [];
-    }
-
-    if (Array.isArray(bucket.data)) {
-      return bucket.data;
-    }
-
-    if (Array.isArray(bucket.rows)) {
-      return bucket.rows;
-    }
-
-    if (Array.isArray(bucket.items)) {
-      return bucket.items;
-    }
-
-    return [];
-  }
-
-  function readSeed(
-    value: unknown
-  ): string | undefined {
-    if (typeof value === 'string') {
-      return value;
-    }
-
-    if (typeof value === 'number') {
-      return String(value);
-    }
-
-    return undefined;
   }
 
   function extractMetadata(
@@ -447,10 +384,6 @@
 <section class="home-hero">
   <div class="container hero-layout">
     <div class="hero-copy">
-      <p class="eyebrow">
-        Public legislative communication archive
-      </p>
-
       <h1>
         Explore
         <AnimatedNumber value={rowCounts.posts} fallback={postCountLabel} />
@@ -525,143 +458,9 @@
   </div>
 </section>
 
-<section
-  class="sampler-band"
-  aria-labelledby="sampler-heading"
->
-  <div class="container wide">
-    <div class="sampler-shell">
-      <div class="section-heading compact">
-        <p class="eyebrow">Sample the archive</p>
-
-        <h2 id="sampler-heading">
-          Read representative posts before choosing a path
-        </h2>
-
-        <p>
-          The sampler keeps the homepage grounded in the
-          underlying public communication rather than only in
-          aggregate charts.
-        </p>
-      </div>
-
-      <AsyncSampler
-        initialPosts={samplerRows}
-        initialSeed={samplerSeed}
-      />
-    </div>
-  </div>
-</section>
-
-<section
-  class="overview-section"
-  aria-labelledby="overview-heading"
->
-  <div class="container wide">
-    <div class="section-heading">
-      <p class="eyebrow">Archive overview</p>
-
-      <h2 id="overview-heading">
-        The main dimensions at a glance
-      </h2>
-
-      <p>
-        These previews summarize chamber composition, topic
-        distribution, and state-level volume without replacing
-        the dedicated browse pages.
-      </p>
-    </div>
-
-    <div class="overview-stack">
-      <details
-        class="overview-panel"
-        open
-      >
-        <summary>
-          <span class="overview-summary-copy">
-            <strong>Chamber roll call</strong>
-            <em>
-              Legislators represented in the current public snapshot.
-            </em>
-          </span>
-          <span class="overview-cue" aria-hidden="true"></span>
-        </summary>
-
-        <div class="overview-panel-body">
-          <PanelHeader
-            source="legislator_index"
-            count={chamberRows.length}
-            compact
-          />
-
-          <ChamberView legislators={chamberRows} />
-        </div>
-      </details>
-
-      <details
-        class="overview-panel"
-        open
-      >
-        <summary>
-          <span class="overview-summary-copy">
-            <strong>Topic mix</strong>
-            <em>
-              Leading topic categories by post volume.
-            </em>
-          </span>
-          <span class="overview-cue" aria-hidden="true"></span>
-        </summary>
-
-        <div class="overview-panel-body">
-          <PanelHeader
-            source="topic_party_breakdown"
-            count={topicRows.length}
-            compact
-          />
-
-          <TopicBars
-            topics={topicRows}
-            sort="count"
-            limit={12}
-            showRank
-            showShare
-            showSummary
-          />
-        </div>
-      </details>
-
-      <details
-        class="overview-panel"
-        open
-      >
-        <summary>
-          <span class="overview-summary-copy">
-            <strong>State volume</strong>
-            <em>
-              All available states and jurisdictions, scaled by post volume.
-            </em>
-          </span>
-          <span class="overview-cue" aria-hidden="true"></span>
-        </summary>
-
-        <div class="overview-panel-body">
-          <StateGrid
-            states={stateRows}
-            sort="state"
-            showLegend
-            showSummary
-            showStateName
-            maxBlockSize="380px"
-          />
-        </div>
-      </details>
-    </div>
-  </div>
-</section>
-
 <style>
   .home-hero {
-    padding-block: clamp(54px, 8vw, 92px) 30px;
+    padding-block: clamp(34px, 5.5vw, 64px) 24px;
     color: var(--color-ink, #1a1917);
     background:
       linear-gradient(
@@ -676,10 +475,6 @@
       var(--color-paper, #f5f1e7);
     border-bottom: 1px solid
       var(--color-rule, #d9d2c1);
-  }
-
-  .container.wide {
-    max-width: min(1480px, calc(100vw - 32px));
   }
 
   .hero-layout {
@@ -706,17 +501,17 @@
   }
 
   h1 {
-    max-width: 15ch;
+    max-width: 18ch;
     margin: 0;
-    font-size: clamp(2.45rem, 7vw, 5.9rem);
-    font-weight: 760;
-    line-height: 0.94;
-    letter-spacing: -0.065em;
+    font-size: clamp(2.05rem, 5vw, 4.25rem);
+    font-weight: 740;
+    line-height: 0.98;
+    letter-spacing: -0.052em;
   }
 
   .lede {
     max-width: 74ch;
-    margin: 22px 0 0;
+    margin: 18px 0 0;
     color: var(--color-mute, #6b6659);
     font-size: clamp(1rem, 1.2vw, 1.16rem);
     line-height: 1.65rem;
@@ -737,18 +532,13 @@
     border-radius: 6px;
   }
 
-  .entry-section,
-  .overview-section {
+  .entry-section {
     padding-block: clamp(34px, 5vw, 58px);
   }
 
   .section-heading {
     max-width: 760px;
     margin-bottom: 18px;
-  }
-
-  .section-heading.compact {
-    margin-bottom: 16px;
   }
 
   .section-heading h2 {
@@ -840,164 +630,6 @@
     line-height: 1.2rem;
   }
 
-  .sampler-band {
-    padding-block: clamp(36px, 5vw, 62px);
-    background: color-mix(
-      in srgb,
-      var(--color-card, #fff) 58%,
-      var(--color-paper, #f5f1e7)
-    );
-    border-block: 1px solid var(--color-rule, #d9d2c1);
-  }
-
-  .sampler-shell {
-    display: grid;
-    gap: 14px;
-  }
-
-  .overview-stack {
-    display: grid;
-    gap: 18px;
-    min-width: 0;
-  }
-
-  .overview-panel {
-    min-width: 0;
-    padding: 0;
-    background: var(--color-card, #fff);
-    border: 1px solid var(--color-rule, #d9d2c1);
-    border-radius: 6px;
-    overflow: clip;
-  }
-
-  .overview-panel > summary {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    justify-content: flex-start;
-    min-height: 60px;
-    padding: 14px 16px;
-    color: var(--color-ink, #1a1917);
-    cursor: pointer;
-    list-style: none;
-    list-style-type: none;
-    appearance: none;
-    -webkit-appearance: none;
-    background: color-mix(
-      in srgb,
-      var(--color-card, #fff) 88%,
-      var(--color-paper, #f5f1e7)
-    );
-    border-bottom: 1px solid var(--color-rule, #d9d2c1);
-  }
-
-  .overview-panel:not([open]) > summary {
-    border-bottom: 0;
-  }
-
-  .overview-panel > summary::-webkit-details-marker {
-    display: none;
-    content: '';
-  }
-
-  .overview-panel > summary::marker {
-    content: '';
-    font-size: 0;
-  }
-
-  .overview-panel > summary::after {
-    display: none !important;
-    content: none !important;
-  }
-
-  .overview-summary-copy {
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-
-  .overview-cue {
-    display: grid;
-    margin-inline-start: auto;
-    width: 28px;
-    height: 28px;
-    flex: 0 0 auto;
-    place-items: center;
-    border: 1px solid var(--color-rule, #d9d2c1);
-    border-radius: 999px;
-    transition:
-      border-color 140ms ease,
-      background-color 140ms ease,
-      transform 140ms ease;
-  }
-
-  .overview-cue::before {
-    content: '';
-    display: block;
-    width: 8px;
-    height: 8px;
-    border-right: 2px solid var(--color-mute, #6b6659);
-    border-bottom: 2px solid var(--color-mute, #6b6659);
-    transform: translateX(-1px) rotate(-45deg);
-    transition:
-      border-color 140ms ease,
-      transform 140ms ease;
-  }
-
-  .overview-panel[open] .overview-cue::before {
-    transform: translateY(-2px) rotate(45deg);
-  }
-
-  .overview-panel > summary:hover .overview-cue {
-    border-color: color-mix(
-      in srgb,
-      var(--color-seal, #8a5a1a) 42%,
-      var(--color-rule, #d9d2c1)
-    );
-    background: color-mix(
-      in srgb,
-      var(--color-seal, #8a5a1a) 7%,
-      transparent
-    );
-  }
-
-  .overview-panel > summary:hover .overview-cue::before {
-    border-color: var(--color-seal, #8a5a1a);
-  }
-
-  .overview-panel > summary strong {
-    display: block;
-    font-size: 0.95rem;
-    line-height: 1.15rem;
-  }
-
-  .overview-panel > summary em {
-    display: block;
-    margin-top: 2px;
-    color: var(--color-mute, #6b6659);
-    font-size: 0.78rem;
-    font-style: normal;
-    line-height: 1.15rem;
-  }
-
-  .overview-panel > summary:hover {
-    color: var(--color-seal, #8a5a1a);
-    background: color-mix(
-      in srgb,
-      var(--color-seal, #8a5a1a) 5%,
-      var(--color-card, #fff)
-    );
-  }
-
-  .overview-panel > summary:focus-visible {
-    outline: 2px solid var(--color-seal, #8a5a1a);
-    outline-offset: 3px;
-  }
-
-  .overview-panel-body {
-    min-width: 0;
-    padding: 16px;
-  }
-
   @media (max-width: 1120px) {
     .hero-layout {
       grid-template-columns: 1fr;
@@ -1020,12 +652,12 @@
 
   @media (max-width: 720px) {
     .home-hero {
-      padding-block: 42px 24px;
+      padding-block: 30px 20px;
     }
 
     h1 {
-      max-width: 12ch;
-      font-size: clamp(2.3rem, 14vw, 4rem);
+      max-width: 14ch;
+      font-size: clamp(2rem, 11vw, 3.25rem);
     }
 
     .lede {
@@ -1046,18 +678,6 @@
       min-height: 132px;
     }
 
-    .container.wide {
-      max-width: min(1480px, calc(100vw - 20px));
-    }
-
-    .overview-panel > summary {
-      min-height: 56px;
-      padding: 12px;
-    }
-
-    .overview-panel-body {
-      padding: 12px;
-    }
   }
 
   @media (max-width: 460px) {
@@ -1076,9 +696,7 @@
   @media (forced-colors: active) {
     .home-hero,
     .hero-facts,
-    .entry-card,
-    .sampler-band,
-    .overview-panel {
+    .entry-card {
       color: CanvasText;
       background: Canvas;
       border-color: CanvasText;
@@ -1090,14 +708,12 @@
   }
 
   @media print {
-    .home-hero,
-    .sampler-band {
+    .home-hero {
       background: transparent;
       border-color: #999;
     }
 
     .entry-card,
-    .overview-panel,
     .hero-facts {
       break-inside: avoid;
       box-shadow: none;

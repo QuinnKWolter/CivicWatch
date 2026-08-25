@@ -25,19 +25,18 @@
   let normalizedTitle = '';
   let normalizedCaption = '';
   let normalizedEyebrow = '';
-  let normalizedSource = '';
-  let safeSourceHref: string | null = null;
   let countInfo: CountInfo | null = null;
   let hasProvenance = false;
 
   $: normalizedTitle = cleanText(title) ?? '';
   $: normalizedCaption = cleanText(caption) ?? '';
   $: normalizedEyebrow = cleanText(eyebrow) ?? '';
-  $: normalizedSource = cleanText(source) ?? '';
-  $: safeSourceHref = normalizeHref(sourceHref);
   $: countInfo = normalizeCount(count);
-  $: hasProvenance =
-    countInfo !== null || normalizedSource.length > 0;
+  $: hasProvenance = countInfo !== null;
+  $: {
+    source;
+    sourceHref;
+  }
 
   function cleanText(
     value: unknown
@@ -59,33 +58,6 @@
     }
 
     return text;
-  }
-
-  function normalizeHref(
-    value: string | null
-  ): string | null {
-    if (typeof value !== 'string') {
-      return null;
-    }
-
-    const href = value.trim();
-
-    if (!href) return null;
-
-    const compactHref = href.replace(
-      /[\u0000-\u0020\u007f]+/g,
-      ''
-    );
-
-    if (
-      /^(?:javascript|data|vbscript):/i.test(
-        compactHref
-      )
-    ) {
-      return null;
-    }
-
-    return href;
   }
 
   function normalizeCount(
@@ -170,24 +142,6 @@
           </li>
         {/if}
 
-        {#if normalizedSource}
-          <li class="source">
-            <span class="provenance-key">
-              Source:
-            </span>
-
-            {#if safeSourceHref}
-              <a
-                href={safeSourceHref}
-                aria-label={`Source: ${normalizedSource}`}
-              >
-                {normalizedSource}
-              </a>
-            {:else}
-              <span>{normalizedSource}</span>
-            {/if}
-          </li>
-        {/if}
       </ul>
     {/if}
   </div>
@@ -299,60 +253,9 @@
     min-width: 0;
   }
 
-  .provenance li + li::before {
-    margin-inline: 9px;
-    color: var(
-      --color-rule-strong,
-      var(--color-rule, #d9d2c1)
-    );
-    content: '·';
-  }
-
   .provenance data {
     color: var(--color-mute, #6b6659);
     font-weight: 600;
-  }
-
-  .provenance-key {
-    white-space: nowrap;
-  }
-
-  .source {
-    min-width: 0;
-  }
-
-  .source > span:last-child,
-  .source a {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .source a {
-    color: var(--color-mute, #6b6659);
-    text-decoration-line: underline;
-    text-decoration-color: color-mix(
-      in srgb,
-      currentColor 45%,
-      transparent
-    );
-    text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
-    border-radius: 2px;
-    transition:
-      color 120ms ease,
-      text-decoration-color 120ms ease;
-  }
-
-  .source a:hover {
-    color: var(--color-seal, #8a5a1a);
-    text-decoration-color: currentColor;
-  }
-
-  .source a:focus-visible {
-    color: var(--color-seal, #8a5a1a);
-    outline: 2px solid
-      var(--color-seal, #8a5a1a);
-    outline-offset: 2px;
   }
 
   .tools {
@@ -394,18 +297,8 @@
       gap: 3px;
     }
 
-    .provenance li + li::before {
-      display: none;
-    }
-
     .tools {
       gap: 7px;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .source a {
-      transition: none;
     }
   }
 
@@ -414,13 +307,8 @@
     .caption,
     .eyebrow,
     .provenance,
-    .provenance data,
-    .source a {
+    .provenance data {
       color: CanvasText;
-    }
-
-    .source a:focus-visible {
-      outline-color: Highlight;
     }
   }
 
@@ -433,9 +321,5 @@
       display: none;
     }
 
-    .source a {
-      color: #000;
-      text-decoration: none;
-    }
   }
 </style>

@@ -133,6 +133,13 @@ function postRow(row: Record<string, unknown>) {
   };
 }
 
+async function hasCanonicalDailyAggregate() {
+  const [row] = await sql`
+    SELECT to_regclass('app_topic_engagement_daily_canonical') IS NOT NULL AS exists
+  `;
+  return Boolean(row?.exists);
+}
+
 async function maxPostId() {
   const [row] = await sql`SELECT COALESCE(max(id), 1)::bigint AS max_id FROM app_posts_canonical`;
   return n(row?.max_id);
@@ -1144,12 +1151,20 @@ app.get('/api/v1/states/:state/top-posts', async (request) => {
 app.get('/api/v1/events', async () => envelope(events, 'events.ts'));
 
 app.get('/api/v1/moments/overview', async () => {
-  const rows = await sql`
-    SELECT date::text, topic, topic_label, post_count, total_likes, total_retweets
-    FROM topic_engagement_daily
-    WHERE date BETWEEN '2020-01-01'::date AND '2025-01-04'::date
-    ORDER BY date
-  `;
+  const hasCanonicalDaily = await hasCanonicalDailyAggregate();
+  const rows = hasCanonicalDaily
+    ? await sql`
+      SELECT date::text, topic, topic_label, post_count, total_likes, total_retweets
+      FROM app_topic_engagement_daily_canonical
+      WHERE date BETWEEN '2020-01-01'::date AND '2025-01-04'::date
+      ORDER BY date
+    `
+    : await sql`
+      SELECT date::text, topic, topic_label, post_count, total_likes, total_retweets
+      FROM topic_engagement_daily
+      WHERE date BETWEEN '2020-01-01'::date AND '2025-01-04'::date
+      ORDER BY date
+    `;
   const weeks = new Map<string, { date: string; post_count: number; engagement: number }>();
   const topicTotals = new Map<string, { topic: string; topic_label: string; post_count: number }>();
   const eventTotals = new Map<string, Map<string, { topic: string; topicLabel: string; postCount: number }>>();
@@ -1192,7 +1207,10 @@ app.get('/api/v1/moments/overview', async () => {
     daily: [...weeks.values()],
     topics: [...topicTotals.values()].sort((a, b) => b.post_count - a.post_count),
     eventTopics
-  }, 'topic_engagement_daily + events.ts', { bucket: 'week' });
+  }, hasCanonicalDaily ? 'app_topic_engagement_daily_canonical + events.ts' : 'topic_engagement_daily + events.ts', {
+    bucket: 'week',
+    dedupe: hasCanonicalDaily ? 'canonical_posts' : 'raw_daily_fallback'
+  });
 });
 
 app.get('/api/v1/moments/window', async (request) => {
@@ -1204,22 +1222,54 @@ app.get('/api/v1/moments/window', async (request) => {
   const topic = normalizedTopic(q.topic);
   const state = q.state?.toUpperCase() ?? null;
   const party = q.party ?? null;
-  const rows = await sql`
-    SELECT p.topic, t.topic_label, count(*)::bigint AS post_count,
-           sum(p.like_count)::bigint AS total_likes,
-           sum(p.retweet_count)::bigint AS total_retweets
-    FROM posts p
-    JOIN topics t ON t.topic = p.topic
-    JOIN legislators l ON l.lid = p.lid
-    WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
-      AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
-      AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
-      AND (${state}::text IS NULL OR l.state = ${state})
-      AND (${party}::text IS NULL OR l.party = ${party})
-    GROUP BY p.topic, t.topic_label
-    ORDER BY count(*) DESC
-  `;
-  return envelope(rows, 'posts + legislators', { date, width, from, to, topic, state, party });
+  const hasCanonicalDaily = await hasCanonicalDailyAggregate();
+  const usePrecomputedDaily = !state && !party;
+  const rows = usePrecomputedDaily
+    ? await sql`
+      SELECT topic, topic_label,
+             sum(post_count)::bigint AS post_count,
+             sum(total_likes)::bigint AS total_likes,
+             sum(total_retweets)::bigint AS total_retweets
+      FROM ${hasCanonicalDaily ? sql`app_topic_engagement_daily_canonical` : sql`topic_engagement_daily`}
+      WHERE date >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+        AND date < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+        AND (${topic ?? null}::text IS NULL OR topic = ${topic ?? null})
+      GROUP BY topic, topic_label
+      ORDER BY sum(post_count) DESC
+    `
+    : await sql`
+      SELECT p.topic, t.topic_label, count(*)::bigint AS post_count,
+             sum(p.like_count)::bigint AS total_likes,
+             sum(p.retweet_count)::bigint AS total_retweets
+      FROM app_posts_canonical p
+      JOIN topics t ON t.topic = p.topic
+      JOIN legislators l ON l.lid = p.lid
+      WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+        AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+      GROUP BY p.topic, t.topic_label
+      ORDER BY count(*) DESC
+    `;
+  return envelope(
+    rows,
+    usePrecomputedDaily
+      ? hasCanonicalDaily
+        ? 'app_topic_engagement_daily_canonical'
+        : 'topic_engagement_daily'
+      : 'app_posts_canonical + legislators',
+    {
+      date,
+      width,
+      from,
+      to,
+      topic,
+      state,
+      party,
+      dedupe: hasCanonicalDaily || !usePrecomputedDaily ? 'canonical_posts' : 'raw_daily_fallback'
+    }
+  );
 });
 
 app.get('/api/v1/moments/window/daily', async (request) => {
@@ -1232,26 +1282,69 @@ app.get('/api/v1/moments/window/daily', async (request) => {
   const state = q.state?.toUpperCase() ?? null;
   const party = q.party ?? null;
   const bucket = q.bucket === 'month' ? 'month' : q.bucket === 'week' ? 'week' : 'day';
-  const rows = await sql`
-    WITH filtered AS (
-      SELECT CASE
-               WHEN ${bucket}::text = 'month' THEN date_trunc('month', p.created_at::timestamp)::date
-               WHEN ${bucket}::text = 'week' THEN date_trunc('week', p.created_at::timestamp)::date
-               ELSE p.created_at::date
-             END AS bucket_start,
-             p.like_count, p.retweet_count
-      FROM posts p JOIN legislators l ON l.lid = p.lid
-      WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
-        AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
-        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
-        AND (${state}::text IS NULL OR l.state = ${state})
-        AND (${party}::text IS NULL OR l.party = ${party})
-    )
-    SELECT bucket_start::text AS date, count(*)::bigint AS post_count,
-           COALESCE(sum(like_count + retweet_count), 0)::bigint AS engagement
-    FROM filtered GROUP BY bucket_start ORDER BY bucket_start
-  `;
-  return envelope(rows, 'posts + legislators', { date, width, from, to, topic, state, party, bucket });
+  const hasCanonicalDaily = await hasCanonicalDailyAggregate();
+  const usePrecomputedDaily = !state && !party;
+  const rows = usePrecomputedDaily
+    ? await sql`
+      WITH filtered AS (
+        SELECT CASE
+                 WHEN ${bucket}::text = 'month' THEN date_trunc('month', date::timestamp)::date
+                 WHEN ${bucket}::text = 'week' THEN date_trunc('week', date::timestamp)::date
+                 ELSE date
+               END AS bucket_start,
+               post_count,
+               total_likes,
+               total_retweets
+        FROM ${hasCanonicalDaily ? sql`app_topic_engagement_daily_canonical` : sql`topic_engagement_daily`}
+        WHERE date >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+          AND date < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+          AND (${topic ?? null}::text IS NULL OR topic = ${topic ?? null})
+      )
+      SELECT bucket_start::text AS date,
+             COALESCE(sum(post_count), 0)::bigint AS post_count,
+             COALESCE(sum(total_likes + total_retweets), 0)::bigint AS engagement
+      FROM filtered
+      GROUP BY bucket_start
+      ORDER BY bucket_start
+    `
+    : await sql`
+      WITH filtered AS (
+        SELECT CASE
+                 WHEN ${bucket}::text = 'month' THEN date_trunc('month', p.created_at::timestamp)::date
+                 WHEN ${bucket}::text = 'week' THEN date_trunc('week', p.created_at::timestamp)::date
+                 ELSE p.created_at::date
+               END AS bucket_start,
+               p.like_count, p.retweet_count
+        FROM app_posts_canonical p JOIN legislators l ON l.lid = p.lid
+        WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+          AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+          AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+          AND (${state}::text IS NULL OR l.state = ${state})
+          AND (${party}::text IS NULL OR l.party = ${party})
+      )
+      SELECT bucket_start::text AS date, count(*)::bigint AS post_count,
+             COALESCE(sum(like_count + retweet_count), 0)::bigint AS engagement
+      FROM filtered GROUP BY bucket_start ORDER BY bucket_start
+    `;
+  return envelope(
+    rows,
+    usePrecomputedDaily
+      ? hasCanonicalDaily
+        ? 'app_topic_engagement_daily_canonical'
+        : 'topic_engagement_daily'
+      : 'app_posts_canonical + legislators',
+    {
+      date,
+      width,
+      from,
+      to,
+      topic,
+      state,
+      party,
+      bucket,
+      dedupe: hasCanonicalDaily || !usePrecomputedDaily ? 'canonical_posts' : 'raw_daily_fallback'
+    }
+  );
 });
 
 app.get('/api/v1/moments/window/top-posts', async (request) => {

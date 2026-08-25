@@ -1035,7 +1035,7 @@
 <style>
   .fingerprint {
     min-width: 0;
-    padding: 16px;
+    padding: 14px;
     margin: 0;
     color: var(--color-ink, #1a1917);
     background: var(--color-card, #fff);
@@ -1046,7 +1046,7 @@
 
   figcaption {
     display: flex;
-    gap: 18px;
+    gap: 14px;
     align-items: flex-start;
     justify-content: space-between;
     min-width: 0;
@@ -1055,7 +1055,7 @@
 
   .heading-copy {
     min-width: 0;
-    max-width: 76ch;
+    max-width: 64ch;
   }
 
   h2 {
@@ -1072,8 +1072,8 @@
   .caption {
     margin: 4px 0 0;
     color: var(--color-mute, #6b6659);
-    font-size: 0.84rem;
-    line-height: 1.35rem;
+    font-size: 0.8rem;
+    line-height: 1.25rem;
   }
 
   .distinctive {
@@ -1125,7 +1125,7 @@
 
   .summary {
     display: flex;
-    gap: 18px;
+    gap: 12px;
     flex: 0 0 auto;
     padding: 0;
     margin: 0;
@@ -1134,7 +1134,7 @@
   .summary > div {
     display: grid;
     gap: 1px;
-    min-width: 42px;
+    min-width: 36px;
   }
 
   .summary dt,
@@ -1171,7 +1171,8 @@
       1fr auto 1fr;
     gap: 12px;
     align-items: center;
-    margin-bottom: 8px;
+    max-width: none;
+    margin: 0 0 8px;
     color: var(--color-mute, #6b6659);
     font-size: 0.69rem;
     line-height: 1rem;
@@ -1227,17 +1228,19 @@
 
   .chart {
     min-width: 0;
+    max-width: none;
+    margin: 0;
   }
 
   .chart-heading,
   .fp-row {
     display: grid;
     grid-template-columns:
-      28px
-      minmax(140px, 1fr)
-      minmax(220px, 2fr)
-      minmax(70px, auto);
-    gap: 12px;
+      24px
+      minmax(126px, 0.55fr)
+      minmax(180px, 1.45fr)
+      minmax(66px, auto);
+    gap: 10px;
     align-items: center;
     min-width: 0;
   }
@@ -1245,9 +1248,9 @@
   .chart-heading.no-rank,
   .rows.no-rank .fp-row {
     grid-template-columns:
-      minmax(140px, 1fr)
-      minmax(220px, 2fr)
-      minmax(70px, auto);
+      minmax(126px, 0.55fr)
+      minmax(180px, 1.45fr)
+      minmax(66px, auto);
   }
 
   .chart-heading {
@@ -1307,8 +1310,8 @@
   }
 
   .fp-row {
-    min-height: 46px;
-    padding: 7px 9px;
+    min-height: 42px;
+    padding: 6px 8px;
     border-bottom: 1px solid
       color-mix(
         in srgb,
@@ -1371,7 +1374,7 @@
     min-width: 0;
     overflow: hidden;
     color: var(--color-ink, #1a1917);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     line-height: 1.05rem;
     text-overflow: ellipsis;
@@ -1391,7 +1394,7 @@
 
   .topic small {
     color: var(--color-mute, #6b6659);
-    font-size: 0.64rem;
+    font-size: 0.62rem;
     line-height: 0.9rem;
   }
 
@@ -1400,7 +1403,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     width: 100%;
-    height: 14px;
+    height: 12px;
     overflow: visible;
     background: color-mix(
       in srgb,
@@ -1494,7 +1497,7 @@
       ui-monospace,
       monospace
     );
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 600;
     line-height: 1rem;
     text-align: right;

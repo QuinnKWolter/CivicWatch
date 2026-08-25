@@ -78,10 +78,10 @@
         'Compare legislators and groups'
     },
     {
-      href: appPath('/methods'),
-      label: 'Methods',
+      href: appPath('/about'),
+      label: 'About',
       description:
-        'Review sources, definitions, and methods'
+        'Review the project, methods, and team'
     }
   ];
 
@@ -475,7 +475,7 @@
       </span>
 
       <span class="wordmark-copy">
-        <strong>CivicWatch</strong>
+        <strong><span>Civic</span><span>Watch</span></strong>
         <small>State legislative speech</small>
       </span>
     </a>
@@ -646,7 +646,6 @@
       class="footer-navigation"
       aria-label="Footer navigation"
     >
-      <a href={appPath('/methods')}>Methods</a>
       <a href={appPath('/about')}>About</a>
       <a href={appPath('/who')}>Legislators</a>
       <a href={appPath('/place')}>States</a>
@@ -737,15 +736,15 @@
 
   .wordmark {
     display: inline-flex;
-    gap: 9px;
+    gap: 10px;
     align-items: center;
     min-width: 0;
-    color: var(--color-ink, #1a1917);
+    color: var(--color-seal, #9ed8e8);
     text-decoration: none;
   }
 
   .wordmark:hover {
-    color: var(--color-seal, #8a5a1a);
+    color: var(--color-seal, #9ed8e8);
   }
 
   .wordmark:focus-visible,
@@ -758,21 +757,22 @@
 
   .wordmark-mark {
     display: grid;
-    width: 32px;
-    height: 32px;
+    width: 74px;
+    height: 43px;
     flex: 0 0 auto;
     place-items: center;
     overflow: hidden;
-    background: var(--color-ink, #101712);
-    border: 1px solid color-mix(in srgb, var(--color-rule) 72%, transparent);
-    border-radius: 7px;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .wordmark-mark img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    transform: scale(1.04);
   }
 
   .wordmark-copy {
@@ -787,6 +787,22 @@
     line-height: 1rem;
     letter-spacing: 0.065em;
     text-transform: uppercase;
+    color: var(--color-seal, #9ed8e8);
+    transition: color 150ms ease;
+  }
+
+  .wordmark-copy strong span {
+    transition: color 150ms ease;
+  }
+
+  .wordmark:hover .wordmark-copy strong span:first-child,
+  .wordmark:focus-visible .wordmark-copy strong span:first-child {
+    color: #dc2626;
+  }
+
+  .wordmark:hover .wordmark-copy strong span:last-child,
+  .wordmark:focus-visible .wordmark-copy strong span:last-child {
+    color: #2563eb;
   }
 
   .wordmark-copy small {

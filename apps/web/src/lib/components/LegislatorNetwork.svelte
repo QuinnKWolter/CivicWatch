@@ -140,6 +140,7 @@
   let draftTargetScope = targetScope;
   let draftSearch = search;
   let draftMinPosts = minPosts;
+  let appliedFilterVersion = 0;
 
   let activeNetwork: NetworkPayload = {
     data: {
@@ -183,7 +184,18 @@
   $: if (browser) {
     void syncEdgeDialog(selectedEdgeKey);
   }
-  $: filteredLinks = filterLinks(rawLinks);
+  $: appliedFilterKey = JSON.stringify({
+    direction,
+    interactionType,
+    topic,
+    party,
+    state,
+    targetScope,
+    search: search.trim(),
+    minPosts,
+    appliedFilterVersion
+  });
+  $: filteredLinks = filterLinks(rawLinks, appliedFilterKey);
   $: graph = buildGraph(filteredLinks);
   $: selectedSummary = summarize(filteredLinks, graph.nodes);
   $: filtersDirty =
@@ -250,7 +262,7 @@
     }
   }
 
-  function filterLinks(links: NetworkLink[]) {
+  function filterLinks(links: NetworkLink[], _filterKey = '') {
     const q = search.trim().toLocaleLowerCase();
 
     return links.filter((link) => {
@@ -444,9 +456,20 @@
     party = draftParty;
     state = draftState;
     targetScope = draftTargetScope;
-    search = draftSearch;
+    search = draftSearch.trim();
+    draftSearch = search;
     minPosts = draftMinPosts;
     hover = null;
+    selectedEdge = null;
+    appliedFilterVersion += 1;
+
+    if (browser && centerLid) {
+      const nextQuery = buildNetworkQuery();
+      if (nextQuery !== lastNetworkQuery) {
+        window.clearTimeout(fetchTimer);
+        void fetchNetwork(nextQuery);
+      }
+    }
   }
 
   function resetFilters() {
@@ -467,6 +490,16 @@
     draftSearch = search;
     draftMinPosts = minPosts;
     hover = null;
+    selectedEdge = null;
+    appliedFilterVersion += 1;
+
+    if (browser && centerLid) {
+      const nextQuery = buildNetworkQuery();
+      if (nextQuery !== lastNetworkQuery) {
+        window.clearTimeout(fetchTimer);
+        void fetchNetwork(nextQuery);
+      }
+    }
   }
 
   function resetView() {
@@ -986,7 +1019,10 @@
 
   .controls {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    grid-template-columns:
+      repeat(7, minmax(112px, 1fr))
+      auto
+      auto;
     gap: 8px;
     align-items: end;
     padding: 9px;
@@ -996,11 +1032,12 @@
   }
 
   .search-control {
-    min-width: min(100%, 160px);
+    grid-column: 1 / -1;
+    min-width: 0;
   }
 
   .range {
-    min-width: min(100%, 180px);
+    min-width: min(100%, 170px);
   }
 
   label {
@@ -1106,6 +1143,10 @@
     min-height: 38px;
     padding: 7px 10px;
     white-space: nowrap;
+  }
+
+  .controls > .icon-button {
+    align-self: end;
   }
 
   .apply-button {
@@ -1403,6 +1444,10 @@
   @media (max-width: 1180px) {
     .controls {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .search-control {
+      grid-column: 1 / -1;
     }
   }
 

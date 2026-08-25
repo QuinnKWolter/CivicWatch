@@ -156,11 +156,11 @@ DB_SSL=require
 With either version, `pnpm run start:local:bash` will skip local `.postgres-data`
 because the database host is not `localhost:55432`.
 
-If the app is mounted under a subpath such as `/prototype04`, build with:
+If the app is mounted under a subpath such as `/CivicWatch`, build with:
 
 ```txt
-PUBLIC_BASE_PATH=/prototype04
-PUBLIC_API_BASE_URL=/prototype04/api/v1
+PUBLIC_BASE_PATH=/CivicWatch
+PUBLIC_API_BASE_URL=/CivicWatch/api/v1
 API_BASE_URL=http://127.0.0.1:4004/api/v1
 ```
 
@@ -181,9 +181,28 @@ or pointing at a new database. The command is safe to repeat when the underlying
 snapshot changes; it will rebuild the helper views and indexes.
 
 `pnpm run db:posts:canonical` is also non-destructive. It preserves raw `posts`
-and creates `app_posts_canonical` plus `app_post_duplicate_audit`, collapsing
-duplicate tweet-ID rows for visible post cards while retaining duplicate counts.
-Run it before launching a fresh production build.
+and builds a slim `app_posts_canonical_map` plus an `app_posts_canonical` view
+(and `app_post_duplicate_audit`), collapsing duplicate tweet-ID rows for visible
+post cards while retaining duplicate counts. Run it before launching a fresh
+production build.
+
+On hosts where Postgres `data_directory` lives on a small volume (for example
+`/var` with only a few GB free) but `/home` has ample space, create a tablespace
+once before the derived-table jobs:
+
+```bash
+sudo mkdir -p /home/postgres-tablespaces/civicwatch_app
+sudo chown postgres:postgres /home/postgres-tablespaces/civicwatch_app
+sudo chmod 700 /home/postgres-tablespaces/civicwatch_app
+sudo -u postgres psql -d civicwatch -c "
+CREATE TABLESPACE civicwatch_app
+  LOCATION '/home/postgres-tablespaces/civicwatch_app';
+"
+```
+
+The prepare scripts automatically use `civicwatch_app` for derived `app_*`
+tables and temp/sort files when that tablespace exists. Core `posts` /
+`legislators` stay on the default data directory.
 
 Optional derived interaction tables can be prepared separately:
 
@@ -243,9 +262,9 @@ interaction tables, recomputes safe text-update candidates, and marks the import
 complete.
 
 `pnpm run build` loads the root `.env` before building. That is required for
-subpath deployments because SvelteKit must see `PUBLIC_BASE_PATH=/prototype04`
+subpath deployments because SvelteKit must see `PUBLIC_BASE_PATH=/CivicWatch`
 at build time; otherwise the browser will request assets from `/_app/...`
-instead of `/prototype04/_app/...`.
+instead of `/CivicWatch/_app/...`.
 
 `start:prod:linux` passes `--skip-db-start` because production should usually
 point at a managed or separately supervised Postgres instance. If you really do

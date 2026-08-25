@@ -4,6 +4,7 @@
   import TopicIcon from './TopicIcon.svelte';
 
   type SortMode = 'input' | 'count' | 'label';
+  type ScaleMode = 'linear' | 'log';
 
   interface Props {
     topics?: unknown[];
@@ -15,6 +16,8 @@
     showRank?: boolean;
     showShare?: boolean;
     showSummary?: boolean;
+    dense?: boolean;
+    scale?: ScaleMode;
     ariaLabel?: string;
     valueLabel?: string;
     valueLabelSingular?: string;
@@ -41,6 +44,8 @@
     showRank = true,
     showShare = true,
     showSummary = false,
+    dense = false,
+    scale = 'linear',
     ariaLabel = 'Topics by post count',
     valueLabel = 'posts',
     valueLabelSingular = 'post',
@@ -283,6 +288,10 @@
       return 0;
     }
 
+    if (scale === 'log') {
+      return Math.min(1, Math.log1p(value) / Math.log1p(scaleMaximum));
+    }
+
     return Math.min(1, value / scaleMaximum);
   }
 
@@ -335,7 +344,7 @@
   }
 </script>
 
-<section class="topic-bars" aria-label={ariaLabel}>
+<section class="topic-bars" class:dense aria-label={ariaLabel}>
   {#if visibleTopics.length}
     <ol class:no-rank={!showRank}>
       {#each visibleTopics as topic, index (topic.key)}
@@ -358,7 +367,7 @@
 
               <span class="topic-copy">
                 <strong class="topic-title">
-                  <TopicIcon label={topic.label} size={13} />
+                  <TopicIcon label={topic.label} size={dense ? 12 : 13} />
                   <span>{topic.label}</span>
                 </strong>
 
@@ -397,7 +406,7 @@
 
               <span class="topic-copy">
                 <strong class="topic-title">
-                  <TopicIcon label={topic.label} size={13} />
+                  <TopicIcon label={topic.label} size={dense ? 12 : 13} />
                   <span>{topic.label}</span>
                 </strong>
 
@@ -457,6 +466,7 @@
   .topic-bars {
     min-width: 0;
     color: var(--color-ink, #1a1917);
+    container-type: inline-size;
   }
 
   ol {
@@ -474,12 +484,12 @@
   .topic-row {
     display: grid;
     grid-template-columns:
-      30px
-      minmax(140px, 1fr)
-      minmax(120px, 1.8fr)
-      minmax(60px, auto);
+      28px
+      minmax(0, 1.15fr)
+      minmax(88px, 1fr)
+      minmax(48px, max-content);
     grid-template-areas: 'rank topic bar value';
-    gap: 12px;
+    gap: 10px;
     align-items: center;
     min-width: 0;
     min-height: 52px;
@@ -497,9 +507,9 @@
 
   ol.no-rank .topic-row {
     grid-template-columns:
-      minmax(140px, 1fr)
-      minmax(120px, 1.8fr)
-      minmax(60px, auto);
+      minmax(0, 1.15fr)
+      minmax(88px, 1fr)
+      minmax(48px, max-content);
     grid-template-areas: 'topic bar value';
   }
 
@@ -652,6 +662,47 @@
     white-space: nowrap;
   }
 
+  .topic-bars.dense ol {
+    gap: 1px;
+  }
+
+  .topic-bars.dense .topic-row {
+    min-height: 34px;
+    padding: 5px 7px;
+    grid-template-columns:
+      22px
+      minmax(0, 1fr)
+      minmax(92px, 1.15fr)
+      minmax(46px, max-content);
+    gap: 8px;
+  }
+
+  .topic-bars.dense ol.no-rank .topic-row {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(92px, 1.15fr)
+      minmax(46px, max-content);
+  }
+
+  .topic-bars.dense .rank {
+    font-size: 0.61rem;
+  }
+
+  .topic-bars.dense .topic-title {
+    gap: 6px;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .topic-bars.dense .bar {
+    height: 6px;
+  }
+
+  .topic-bars.dense .value {
+    font-size: 0.68rem;
+    line-height: 0.9rem;
+  }
+
   .summary {
     display: flex;
     flex-wrap: wrap;
@@ -689,6 +740,35 @@
   }
 
   @media (max-width: 680px) {
+    .topic-row {
+      grid-template-columns:
+        26px minmax(0, 1fr) auto;
+      grid-template-areas:
+        'rank topic value'
+        '. bar bar';
+      gap: 6px 9px;
+      min-height: 60px;
+      padding-block: 9px;
+    }
+
+    ol.no-rank .topic-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'topic value'
+        'bar bar';
+    }
+
+    .topic-title {
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .topic-title > span:last-child {
+      white-space: normal;
+    }
+  }
+
+  @container (max-width: 560px) {
     .topic-row {
       grid-template-columns:
         26px minmax(0, 1fr) auto;

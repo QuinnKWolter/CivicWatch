@@ -15,7 +15,7 @@
   let stateView: 'map' | 'grid' = 'map';
   let normalizationMode: 'none' | 'population' | 'legislators' = 'none';
   let partyMode: 'both' | 'democratic' | 'republican' = 'both';
-  let colorMode: 'volume' | 'contribution' = 'volume';
+  let colorMode: 'volume' | 'contribution' = 'contribution';
   let selectedTopic = 'all';
   let loadedTopic = 'all';
   let stateRows = data.states.data;
@@ -77,7 +77,7 @@
 
 <section class="container band">
   <h1>Explore a state</h1>
-  <p class="muted">Every state's chamber, topic mix, and top voices. Cells are shaded by post volume.</p>
+  <p class="muted">Every state's chamber, topic mix, and top voices. Cells can be shaded by post volume or party contribution.</p>
   <div class="state-view-heading">
     <PanelHeader
       title="State volume"
@@ -172,6 +172,26 @@
     color: var(--color-danger, #9d332f);
     font-size: 0.72rem;
   }
+  .state-detail-grid {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 0.92fr)
+      minmax(420px, 1.08fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .state-detail-grid > .card {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .state-sample-card {
+    container-type: inline-size;
+  }
+  @media (max-width: 980px) {
+    .state-detail-grid {
+      grid-template-columns: 1fr;
+    }
+  }
   @media (max-width: 620px) { .state-view-heading { display: grid; gap: 8px; } }
 </style>
 
@@ -182,7 +202,7 @@
   </div>
 </section>
 
-<section class="container split band">
+<section class="container state-detail-grid band">
   <div class="card">
     <PanelHeader title="State-by-topic table" caption="The numerical data behind the small multiples." source="topic_state_breakdown" count={data.matrix.data.length} />
     <DataTable rows={data.matrix.data} columns={[
@@ -191,7 +211,7 @@
       { key: 'post_count', label: 'Posts', numeric: true }
     ]} caption="State-by-topic aggregates" initialSort="state" />
   </div>
-  <div class="card">
+  <div class="card state-sample-card">
     <PanelHeader title="First state sample" caption="A quick read on the first aggregate slice." />
     <TopicBars topics={topRows} />
   </div>

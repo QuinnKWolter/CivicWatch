@@ -3,6 +3,7 @@
   import { env } from '$env/dynamic/public';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
+  import type { Snippet } from 'svelte';
   import { onDestroy } from 'svelte';
   import { Search, X } from 'lucide-svelte';
   import LegislatorTable from './LegislatorTable.svelte';
@@ -15,10 +16,15 @@
     initialQ?: string;
     initialState?: string;
     initialParty?: string;
+    initialChamber?: string;
     initialTotal?: number | null;
     apiBase?: string;
     resultLimit?: number;
     debounceMs?: number;
+    showLookup?: boolean;
+    syncTableUrl?: boolean;
+    afterSearch?: Snippet;
+    afterTable?: Snippet<[any[]]>;
   }
 
   interface ActiveFilters {
@@ -36,10 +42,15 @@
     initialQ = '',
     initialState = '',
     initialParty = '',
+    initialChamber = '',
     initialTotal = null,
     apiBase = DEFAULT_API_BASE,
     resultLimit = 6000,
-    debounceMs = 250
+    debounceMs = 250,
+    showLookup = true,
+    syncTableUrl = false,
+    afterSearch,
+    afterTable
   }: Props = $props();
 
   const componentId = $props.id();
@@ -419,150 +430,156 @@
   });
 </script>
 
-<form
-  class="lookup"
-  aria-label="Search and filter legislators"
-  onsubmit={(event) => {
-    event.preventDefault();
-    void search();
-  }}
->
-  <div class="control query-control">
-    <label for={queryId}>Legislator</label>
+{#if showLookup}
+  <form
+    class="lookup"
+    aria-label="Search and filter legislators"
+    onsubmit={(event) => {
+      event.preventDefault();
+      void search();
+    }}
+  >
+    <div class="control query-control">
+      <label for={queryId}>Legislator</label>
 
-    <div class="field-shell query-shell">
-      <span
-        class="field-icon"
-        aria-hidden="true"
-      >
-        <Search
-          size={18}
-          strokeWidth={1.75}
+      <div class="field-shell query-shell">
+        <span
+          class="field-icon"
+          aria-hidden="true"
+        >
+          <Search
+            size={18}
+            strokeWidth={1.75}
+          />
+        </span>
+
+        <input
+          id={queryId}
+          class="field query-field"
+          type="search"
+          value={q}
+          placeholder="Name, handle, district, or state"
+          maxlength="120"
+          autocomplete="off"
+          spellcheck={false}
+          aria-describedby={statusId}
+          oninput={handleQueryInput}
+          oncompositionstart={() => (composing = true)}
+          oncompositionend={handleCompositionEnd}
         />
-      </span>
+
+        {#if q}
+          <button
+            class="clear-field"
+            type="button"
+            aria-label="Clear legislator search"
+            onclick={clearQuery}
+          >
+            <X size={16} strokeWidth={1.8} aria-hidden="true" />
+          </button>
+        {/if}
+      </div>
+    </div>
+
+    <div class="control party-control">
+      <label for={partyId}>Party</label>
+
+      <select
+        id={partyId}
+        class="field"
+        value={party}
+        onchange={handlePartyChange}
+      >
+        <option value="">All parties and unlabeled</option>
+        <option value="Democratic">Democratic</option>
+        <option value="Republican">Republican</option>
+        <option value="Independent">Independent</option>
+      </select>
+    </div>
+
+    <div class="control state-control">
+      <label for={stateId}>State</label>
 
       <input
-        id={queryId}
-        class="field query-field"
-        type="search"
-        value={q}
-        placeholder="Name, handle, district, or state"
-        maxlength="120"
+        id={stateId}
+        class="field state-field"
+        type="text"
+        value={stateFilter}
+        placeholder="TX"
+        maxlength="2"
         autocomplete="off"
+        autocapitalize="characters"
         spellcheck={false}
-        aria-describedby={statusId}
-        oninput={handleQueryInput}
-        oncompositionstart={() => (composing = true)}
-        oncompositionend={handleCompositionEnd}
+        list={`${componentId}-states`}
+        aria-invalid={stateIncomplete}
+        aria-describedby={stateIncomplete ? stateHintId : undefined}
+        oninput={handleStateInput}
       />
 
-      {#if q}
+      <datalist id={`${componentId}-states`}>
+        {#each stateCodes as code}
+          <option value={code}></option>
+        {/each}
+      </datalist>
+    </div>
+
+    <div class="actions">
+      <button
+        class="search-button"
+        type="submit"
+        aria-busy={loading}
+      >
+        <Search size={17} strokeWidth={1.8} aria-hidden="true" />
+        <span>{loading ? 'Updating' : 'Search'}</span>
+      </button>
+
+      {#if hasFilters}
         <button
-          class="clear-field"
+          class="reset-button"
           type="button"
-          aria-label="Clear legislator search"
-          onclick={clearQuery}
+          onclick={clearFilters}
         >
-          <X size={16} strokeWidth={1.8} aria-hidden="true" />
+          Clear
         </button>
       {/if}
     </div>
-  </div>
 
-  <div class="control party-control">
-    <label for={partyId}>Party</label>
+    {#if stateIncomplete}
+      <p id={stateHintId} class="state-hint">
+        Enter one more letter to use a state filter.
+      </p>
+    {/if}
+  </form>
 
-    <select
-      id={partyId}
-      class="field"
-      value={party}
-      onchange={handlePartyChange}
+  <div class="lookup-feedback">
+    <p
+      id={statusId}
+      class="result-summary"
+      aria-live="polite"
+      aria-atomic="true"
     >
-      <option value="">All parties and unlabeled</option>
-      <option value="Democratic">Democratic</option>
-      <option value="Republican">Republican</option>
-      <option value="Independent">Independent</option>
-    </select>
-  </div>
+      {resultSummary()}
+    </p>
 
-  <div class="control state-control">
-    <label for={stateId}>State</label>
+    {#if error}
+      <div class="notice" role="alert">
+        <p>{error}</p>
 
-    <input
-      id={stateId}
-      class="field state-field"
-      type="text"
-      value={stateFilter}
-      placeholder="TX"
-      maxlength="2"
-      autocomplete="off"
-      autocapitalize="characters"
-      spellcheck={false}
-      list={`${componentId}-states`}
-      aria-invalid={stateIncomplete}
-      aria-describedby={stateIncomplete ? stateHintId : undefined}
-      oninput={handleStateInput}
-    />
-
-    <datalist id={`${componentId}-states`}>
-      {#each stateCodes as code}
-        <option value={code}></option>
-      {/each}
-    </datalist>
-  </div>
-
-  <div class="actions">
-    <button
-      class="search-button"
-      type="submit"
-      aria-busy={loading}
-    >
-      <Search size={17} strokeWidth={1.8} aria-hidden="true" />
-      <span>{loading ? 'Updating' : 'Search'}</span>
-    </button>
-
-    {#if hasFilters}
-      <button
-        class="reset-button"
-        type="button"
-        onclick={clearFilters}
-      >
-        Clear
-      </button>
+        <button
+          type="button"
+          class="retry-button"
+          onclick={() => void search()}
+        >
+          Retry
+        </button>
+      </div>
     {/if}
   </div>
 
-  {#if stateIncomplete}
-    <p id={stateHintId} class="state-hint">
-      Enter one more letter to use a state filter.
-    </p>
+  {#if afterSearch}
+    {@render afterSearch()}
   {/if}
-</form>
-
-<div class="lookup-feedback">
-  <p
-    id={statusId}
-    class="result-summary"
-    aria-live="polite"
-    aria-atomic="true"
-  >
-    {resultSummary()}
-  </p>
-
-  {#if error}
-    <div class="notice" role="alert">
-      <p>{error}</p>
-
-      <button
-        type="button"
-        class="retry-button"
-        onclick={() => void search()}
-      >
-        Retry
-      </button>
-    </div>
-  {/if}
-</div>
+{/if}
 
 <section
   class:refreshing={loading}
@@ -578,7 +595,16 @@
 
   {#if legislators.length}
     <div class="table-wrap">
-      <LegislatorTable {legislators} />
+      <LegislatorTable
+        {legislators}
+        initialQuery={initialQ}
+        initialParty={initialParty}
+        initialState={initialState}
+        initialChamber={initialChamber}
+        maxTableHeight="min(58vh, 680px)"
+        syncUrl={syncTableUrl}
+        {afterTable}
+      />
     </div>
   {:else if loading}
     <div class="loading-panel" role="status">

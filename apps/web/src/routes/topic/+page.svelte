@@ -12,6 +12,25 @@
 <section class="container band">
   <h1>Follow an issue</h1>
   <p class="muted">22 categories, five years, one glance. Topic 999 is labeled Uncategorized and remains visible.</p>
+
+  <div class="topic-overview card">
+    <PanelHeader
+      title="Topic mix"
+      caption="A log-scaled overview so smaller categories remain visible beside Uncategorized."
+      count={data.topics.data.length}
+      compact
+    />
+
+    <TopicBars
+      topics={data.topics.data}
+      sort="count"
+      scale="log"
+      dense
+      showRank={false}
+      showShare={false}
+    />
+  </div>
+
   <PanelHeader title="Topic tiles" caption="Sortable-by-volume tiles for all topic categories in the snapshot." source="topic_party_breakdown" count={data.topics.data.length} />
   <div class="grid grid-3">
     {#each data.topics.data as topic}
@@ -27,6 +46,12 @@
 </section>
 
 <style>
+  .topic-overview {
+    min-width: 0;
+    margin-block: 18px 22px;
+    overflow: hidden;
+  }
+
   .topic-chip-title {
     display: flex;
     gap: 10px;
@@ -43,10 +68,6 @@
 
 <section class="container split band">
   <TopicRibbon rows={data.ribbon.data} />
-  <div class="card">
-    <PanelHeader title="Topic volume" caption="Aggregate topic volume across the corpus." source="topic_party_breakdown" count={data.topics.data.length} />
-    <TopicBars topics={data.topics.data} />
-  </div>
   <div class="card">
     <PanelHeader title="Daily aggregate sample" caption="First rows from the materialized fast path for the ribbon." source="topic_engagement_daily" count={data.ribbon.data.length} />
     <DataTable rows={data.ribbon.data} columns={[

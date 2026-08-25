@@ -99,10 +99,12 @@
     <label class="moment-field compact"><span>State</span><input class="field" name="state" value={data.context.state ?? ''} maxlength="2" placeholder="All" /></label>
     <label class="moment-field"><span>Party</span><select class="field" name="party"><option value="">All parties</option><option value="Democratic" selected={data.context.party === 'Democratic'}>Democratic</option><option value="Republican" selected={data.context.party === 'Republican'}>Republican</option></select></label>
 
-    <button type="submit">
-      <RotateCcw size={16} aria-hidden="true" />
-      Update
-    </button>
+    <div class="button-field" aria-label="Apply moment filters">
+      <span class="button-label">Update</span>
+      <button class="update-button" type="submit" aria-label="Update moment filters" title="Update">
+        <RotateCcw size={16} aria-hidden="true" />
+      </button>
+    </div>
   </form>
 </section>
 
@@ -180,13 +182,39 @@
 
 <style>
   .moment-controls {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns:
+      minmax(146px, 0.68fr)
+      minmax(146px, 0.68fr)
+      minmax(220px, 1.45fr)
+      minmax(94px, 0.45fr)
+      minmax(150px, 0.72fr)
+      auto;
     gap: 10px;
     align-items: end;
     margin-top: 18px;
   }
-  .moment-field.compact { max-width: 90px; }
+  .moment-field.compact { min-width: 94px; }
+
+  .button-field {
+    display: grid;
+    grid-template-rows: 1rem 42px;
+    gap: 5px;
+    min-width: 0;
+    align-items: start;
+  }
+
+  .button-field .button-label {
+    display: inline-flex;
+    min-height: 1rem;
+    align-items: center;
+    color: var(--color-mute);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.055em;
+    line-height: 1rem;
+    text-transform: uppercase;
+  }
 
   .topic-array { display:grid; gap:5px; }
   .topic-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:9px; align-items:center; padding:7px 8px; color:inherit; text-decoration:none; border-radius:5px; }
@@ -199,9 +227,11 @@
 
   .moment-field {
     display: grid;
+    grid-template-rows: 1rem 42px;
     gap: 5px;
-    min-width: min(100%, 160px);
+    min-width: 0;
     margin: 0;
+    align-items: start;
   }
 
   .moment-field > span {
@@ -218,11 +248,27 @@
 
   .moment-field .field {
     width: 100%;
-    min-height: 40px;
+    height: 42px;
+    min-height: 42px;
+    margin: 0;
+    padding: 8px 10px;
+    line-height: 1.2;
   }
 
-  .moment-controls button {
-    min-height: 40px;
+  .moment-controls .update-button {
+    display: inline-grid;
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    min-height: 42px;
+    place-items: center;
+    border-radius: 6px;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .moment-controls .update-button:hover {
+    transform: none;
   }
 
   .moment-layout {
@@ -386,13 +432,32 @@
     border: 0;
   }
 
+  @media (max-width: 1120px) {
+    .moment-controls {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .moment-controls .update-button {
+      justify-self: start;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .moment-controls {
+      grid-template-columns: 1fr;
+    }
+
+    .moment-controls .update-button {
+      width: 42px;
+    }
+  }
+
   @media (max-width: 520px) {
     .moment-controls {
       align-items: stretch;
     }
 
-    .moment-field,
-    .moment-controls button {
+    .moment-field {
       width: 100%;
     }
   }

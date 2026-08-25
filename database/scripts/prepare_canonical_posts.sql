@@ -204,6 +204,26 @@ BEGIN
 END
 $$;
 
+\echo Preparing canonical daily topic aggregate...
+DROP MATERIALIZED VIEW IF EXISTS app_topic_engagement_daily_canonical;
+CREATE MATERIALIZED VIEW app_topic_engagement_daily_canonical AS
+SELECT
+  p.created_at::date AS date,
+  p.topic,
+  t.topic_label,
+  count(*)::bigint AS post_count,
+  COALESCE(sum(p.like_count), 0)::bigint AS total_likes,
+  COALESCE(sum(p.retweet_count), 0)::bigint AS total_retweets
+FROM app_posts_canonical p
+JOIN topics t ON t.topic = p.topic
+GROUP BY p.created_at::date, p.topic, t.topic_label;
+
+CREATE UNIQUE INDEX app_topic_engagement_daily_canonical_date_topic_idx
+  ON app_topic_engagement_daily_canonical (date, topic);
+CREATE INDEX app_topic_engagement_daily_canonical_topic_date_idx
+  ON app_topic_engagement_daily_canonical (topic, date);
+ANALYZE app_topic_engagement_daily_canonical;
+
 ANALYZE app_posts_canonical_map;
 ANALYZE app_post_duplicate_audit;
 

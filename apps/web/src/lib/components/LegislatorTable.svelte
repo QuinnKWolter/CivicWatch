@@ -1,5 +1,9 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
+  import { replaceState } from '$app/navigation';
+  import { page } from '$app/state';
   import { onMount, untrack } from 'svelte';
+  import type { Snippet } from 'svelte';
   import {
     ArrowDown,
     ArrowUp,
@@ -25,8 +29,15 @@
     profileBase?: string;
     initialSort?: SortKey;
     initialDirection?: SortDirection;
+    initialQuery?: string;
+    initialParty?: string;
+    initialState?: string;
+    initialChamber?: string;
     initialPageSize?: number;
     pageSize?: number;
+    maxTableHeight?: string | null;
+    syncUrl?: boolean;
+    afterTable?: Snippet<[any[]]>;
 
     /**
      * Indicates that the API has another cursor page available.
@@ -70,11 +81,18 @@
     profileBase = '/who',
     initialSort = 'totalPosts',
     initialDirection = 'desc',
+    initialQuery = '',
+    initialParty = '',
+    initialState = '',
+    initialChamber = '',
     initialPageSize = 40,
     pageSize = 40,
+    maxTableHeight = null,
+    syncUrl = false,
     hasMore = false,
     loadingMore = false,
-    loadMore = null
+    loadMore = null,
+    afterTable
   }: Props = $props();
 
   const componentId = $props.id();
@@ -89,10 +107,10 @@
     numeric: true
   });
 
-  let query = $state('');
-  let partyFilter = $state('');
-  let stateFilter = $state('');
-  let chamberFilter = $state('');
+  let query = $state(untrack(() => initialQuery.slice(0, 120)));
+  let partyFilter = $state(untrack(() => normalizeInitialSelect(initialParty)));
+  let stateFilter = $state(untrack(() => normalizeInitialState(initialState)));
+  let chamberFilter = $state(untrack(() => normalizeInitialSelect(initialChamber)));
 
   let sortKey = $state<SortKey>(
     untrack(() => initialSort)
@@ -285,6 +303,10 @@
     sortedRows.slice(0, renderedCount)
   );
 
+  const filteredLegislators = $derived(
+    sortedRows.map((row) => row.raw)
+  );
+
   const hasLocalMore = $derived(
     visibleRows.length < sortedRows.length
   );
@@ -345,6 +367,40 @@
       renderedCount = safeInitialPageSize;
     }
   });
+
+  $effect(() => {
+    if (!syncUrl || !browser) return;
+
+    const url = new URL(window.location.href);
+
+    setOrDelete(url.searchParams, 'q', query.trim().slice(0, 120));
+    setOrDelete(url.searchParams, 'party', partyFilter);
+    setOrDelete(url.searchParams, 'state', stateFilter);
+    setOrDelete(url.searchParams, 'chamber', chamberFilter);
+    url.searchParams.delete('limit');
+
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    const current = `${page.url.pathname}${page.url.search}${page.url.hash}`;
+
+    if (next !== current) {
+      replaceState(next, page.state);
+    }
+  });
+
+  function normalizeInitialSelect(value: string): string {
+    return value === '__unknown'
+      ? value
+      : cleanText(value) ?? '';
+  }
+
+  function normalizeInitialState(value: string): string {
+    if (value === '__unknown') return value;
+
+    return value
+      .toUpperCase()
+      .replace(/[^A-Z]/g, '')
+      .slice(0, 2);
+  }
 
   function normalizePageSize(
     value: number,
@@ -639,6 +695,18 @@
     chamberFilter = '';
   }
 
+  function setOrDelete(
+    params: URLSearchParams,
+    key: string,
+    value: string
+  ): void {
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+  }
+
   async function showMore(): Promise<void> {
     if (isLoadingMore) return;
 
@@ -855,7 +923,7 @@
   </div>
 
   {#if sortedRows.length}
-    <div class="table-wrap">
+    <div class="table-wrap" style:max-height={maxTableHeight ?? undefined}>
       <table>
         <caption class="visually-hidden">
           {caption}
@@ -1181,6 +1249,10 @@
       {/if}
     </div>
   {/if}
+
+  {#if afterTable}
+    {@render afterTable(filteredLegislators)}
+  {/if}
 </section>
 
 <style>
@@ -1383,7 +1455,7 @@
 
   .table-wrap {
     max-width: 100%;
-    overflow-x: auto;
+    overflow: auto;
     background: var(--color-card, #fff);
     border: 1px solid
       var(--color-rule, #d9d2c1);

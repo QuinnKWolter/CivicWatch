@@ -10,7 +10,7 @@
 
   let {
     party = $bindable<PartyMode>('both'),
-    colorMode = $bindable<ColorMode>('volume'),
+    colorMode = $bindable<ColorMode>('contribution'),
     compact = false
   }: Props = $props();
 </script>
