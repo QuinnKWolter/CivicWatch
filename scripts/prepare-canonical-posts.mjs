@@ -21,7 +21,7 @@ Options:
 
 Examples:
   pnpm run db:posts:canonical
-  pnpm run db:posts:canonical -- --build-id demo_refresh
+  pnpm run db:posts:canonical --build-id demo_refresh
 `);
 }
 
@@ -41,7 +41,9 @@ for (let index = 2; index < process.argv.length; index += 1) {
   const arg = process.argv[index];
   const next = () => process.argv[++index] ?? '';
 
-  if (arg === '-h' || arg === '--help') {
+  if (arg === '--') {
+    continue;
+  } else if (arg === '-h' || arg === '--help') {
     usage();
     process.exit(0);
   } else if (arg === '--build-id') {

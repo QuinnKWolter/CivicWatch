@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { env } from '$env/dynamic/public';
   import { browser } from '$app/environment';
-  import { afterNavigate } from '$app/navigation';
+  import { afterNavigate, goto } from '$app/navigation';
   import { page } from '$app/state';
   import {
     Check,
@@ -13,28 +14,50 @@
   } from 'lucide-svelte';
   import { appPath, withoutBase } from '$lib/paths';
 
-  type Props = {
-    snapshotId?: string;
-  };
-
   type ActiveFilter = {
     key: string;
     label: string;
     value: string;
   };
 
-  type ExportView = {
+  type FilterControl = {
+    key: string;
     label: string;
+    type: 'search' | 'text' | 'date' | 'number' | 'select';
+    value: string;
+    placeholder?: string;
+    maxLength?: number;
+    min?: string | number;
+    max?: string | number;
+    options?: { value: string; label: string }[];
+  };
+
+  type ExportOption = {
+    id: string;
+    label: string;
+    description: string;
+    chart: string;
+    filters: Record<string, string>;
+  };
+
+  type RailContext = {
     routeLabel: string;
-    rows: Record<string, unknown>[];
-    samples: string[];
+    pageSlug: string;
+    recordLabel: string;
+    includedCount: number | null;
+    activeFilters: ActiveFilter[];
+    controls: FilterControl[];
+    exportOptions: ExportOption[];
+    formAction: string;
+    clearHref: string;
   };
 
   const DOWNLOAD_CAP = 5000;
-
+  const DEFAULT_API_BASE =
+    env.PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:4000/api/v1';
+  const IGNORED_PARAMS = new Set(['snap', 'analyst']);
   const FILTER_LABELS: Record<string, string> = {
     q: 'Search',
-    query: 'Search',
     state: 'State',
     party: 'Party',
     chamber: 'Chamber',
@@ -43,38 +66,34 @@
     to: 'To',
     date: 'Date',
     width: 'Window',
-    window: 'Window',
     bucket: 'Time bucket',
-    slots: 'Comparison slots',
-    slot: 'Comparison slot',
-    sort: 'Sort',
-    color: 'Color',
-    normalize: 'Scale',
-    direction: 'Direction',
-    type: 'Interaction type',
-    minPosts: 'Minimum posts',
-    external: 'Targets'
+    sort: 'Sort'
   };
-
-  const IGNORED_PARAMS = new Set(['snap', 'analyst']);
-
-  let { snapshotId = 'cw_2026_07_02_full' }: Props = $props();
 
   let open = $state(false);
   let downloadOpen = $state(false);
   let copied = $state(false);
   let status = $state('');
+  let selectedExportId = $state('');
+  let downloading = $state(false);
   let statusTimer: ReturnType<typeof setTimeout> | undefined;
 
   const routePath = $derived(withoutBase(page.url.pathname));
-  const activeFilters = $derived(readActiveFilters(page.url, routePath));
-  const exportView = $derived(buildExportView(page.data, page.url, routePath));
-  const exportRows = $derived(exportView.rows.slice(0, DOWNLOAD_CAP));
-  const hasTruncatedDownload = $derived(exportView.rows.length > DOWNLOAD_CAP);
-  const downloadableCount = $derived(exportRows.length);
-  const downloadableLabel = $derived(
-    `${downloadableCount.toLocaleString()} ${pluralize(exportView.label, downloadableCount)}`
+  const rail = $derived(buildRailContext(page.data, page.url, routePath));
+  const selectedExport = $derived(
+    rail.exportOptions.find((option) => option.id === selectedExportId) ??
+      rail.exportOptions[0] ??
+      null
   );
+
+  $effect(() => {
+    if (
+      rail.exportOptions.length &&
+      !rail.exportOptions.some((option) => option.id === selectedExportId)
+    ) {
+      selectedExportId = rail.exportOptions[0].id;
+    }
+  });
 
   afterNavigate(() => {
     open = false;
@@ -82,37 +101,343 @@
     copied = false;
   });
 
-  function readActiveFilters(url: URL, path: string): ActiveFilter[] {
-    const filters: ActiveFilter[] = [];
+  function buildRailContext(
+    data: App.PageData,
+    url: URL,
+    path: string
+  ): RailContext {
+    const pageData: Record<string, unknown> = isRecord(data) ? data : {};
     const segments = path.split('/').filter(Boolean);
+    const params = url.searchParams;
+    const topicOptions = topicSelectOptions(pageData);
+    const basePath = `/${segments.join('/')}`;
+    const formAction = appPath(basePath === '/' ? '/' : basePath);
+    const queryFilters = readQueryFilters(params);
 
     if (segments[0] === 'who' && segments[1]) {
-      filters.push({
-        key: 'legislator',
-        label: 'Legislator',
-        value: decodeURIComponent(segments[1])
+      const lid = decodeURIComponent(segments[1]);
+      const profile = envelopeData(pageData.profile);
+      const name = cleanString(profile?.name) || `Legislator ${lid}`;
+      const filters = filterObject({
+        lid,
+        topic: params.get('topic') ?? '',
+        from: params.get('from') ?? '',
+        to: params.get('to') ?? ''
       });
+
+      return {
+        routeLabel: name,
+        pageSlug: 'legislator',
+        recordLabel: 'profile',
+        includedCount: null,
+        activeFilters: [
+          { key: 'lid', label: 'Legislator', value: name },
+          ...queryFilters
+        ],
+        controls: [
+          selectControl('topic', 'Topic', params.get('topic') ?? '', topicOptions),
+          dateControl('from', 'From', params.get('from') ?? ''),
+          dateControl('to', 'To', params.get('to') ?? '')
+        ],
+        exportOptions: [
+          {
+            id: 'legislator_posts',
+            label: 'Legislator posts',
+            description: 'Canonical posts by this legislator using the current topic and date filters.',
+            chart: 'legislator_posts',
+            filters
+          },
+          {
+            id: 'legislator_posts_engaged',
+            label: 'Most engaged posts',
+            description: 'The same posts, ordered by likes plus reposts.',
+            chart: 'legislator_posts',
+            filters: { ...filters, sort: 'engagement' }
+          }
+        ],
+        formAction,
+        clearHref: formAction
+      };
+    }
+
+    if (segments[0] === 'who') {
+      const filters = filterObject({
+        q: params.get('q') ?? '',
+        state: params.get('state') ?? '',
+        party: params.get('party') ?? '',
+        chamber: params.get('chamber') ?? ''
+      });
+
+      return {
+        routeLabel: 'Legislators',
+        pageSlug: 'legislators',
+        recordLabel: 'legislators',
+        includedCount: metaTotal(pageData.legislators) ?? envelopeRows(pageData.legislators).length,
+        activeFilters: queryFilters,
+        controls: [
+          textControl('q', 'Search', params.get('q') ?? '', 'Name or handle'),
+          textControl('state', 'State', params.get('state') ?? '', 'TX', 2),
+          selectControl('party', 'Party', params.get('party') ?? '', partyOptions()),
+          selectControl('chamber', 'Chamber', params.get('chamber') ?? '', chamberOptions())
+        ],
+        exportOptions: [
+          {
+            id: 'legislators',
+            label: 'Legislator records',
+            description: 'Public-record legislator rows matching the search, state, party, and chamber filters.',
+            chart: 'legislators',
+            filters
+          }
+        ],
+        formAction,
+        clearHref: formAction
+      };
     }
 
     if (segments[0] === 'place' && segments[1]) {
-      filters.push({
-        key: 'state-path',
-        label: 'State',
-        value: decodeURIComponent(segments[1]).toUpperCase()
+      const state = decodeURIComponent(segments[1]).toUpperCase();
+      const filters = filterObject({
+        state,
+        topic: params.get('topic') ?? '',
+        party: params.get('party') ?? '',
+        from: params.get('from') ?? '',
+        to: params.get('to') ?? ''
       });
+
+      return {
+        routeLabel: `${state} state profile`,
+        pageSlug: `state-${state.toLowerCase()}`,
+        recordLabel: 'state profile records',
+        includedCount: null,
+        activeFilters: [
+          { key: 'state-path', label: 'State', value: state },
+          ...queryFilters
+        ],
+        controls: [
+          selectControl('topic', 'Topic', params.get('topic') ?? '', topicOptions),
+          selectControl('party', 'Party', params.get('party') ?? '', partyOptions()),
+          dateControl('from', 'From', params.get('from') ?? ''),
+          dateControl('to', 'To', params.get('to') ?? '')
+        ],
+        exportOptions: [
+          {
+            id: 'state_topics',
+            label: 'State topic mix',
+            description: 'Topic totals for this state under the current topic and party filters.',
+            chart: 'state_topics',
+            filters
+          },
+          {
+            id: 'state_posts',
+            label: 'State posts',
+            description: 'Canonical posts from this state under the current filters.',
+            chart: 'state_posts',
+            filters
+          }
+        ],
+        formAction,
+        clearHref: formAction
+      };
+    }
+
+    if (segments[0] === 'place') {
+      const filters = filterObject({
+        topic: params.get('topic') ?? '',
+        party: params.get('party') ?? ''
+      });
+
+      return {
+        routeLabel: 'States',
+        pageSlug: 'states',
+        recordLabel: 'states',
+        includedCount: envelopeRows(pageData.states).length,
+        activeFilters: queryFilters,
+        controls: [
+          selectControl('topic', 'Topic', params.get('topic') ?? '', topicOptions),
+          selectControl('party', 'Party', params.get('party') ?? '', partyOptions())
+        ],
+        exportOptions: [
+          {
+            id: 'states',
+            label: 'State summaries',
+            description: 'One row per state with post, engagement, and represented-legislator totals.',
+            chart: 'states',
+            filters
+          },
+          {
+            id: 'state_topics',
+            label: 'State-topic table',
+            description: 'Topic totals by state under the current filters.',
+            chart: 'state_topics',
+            filters
+          }
+        ],
+        formAction,
+        clearHref: formAction
+      };
     }
 
     if (segments[0] === 'topic' && segments[1]) {
-      filters.push({
-        key: 'topic-path',
-        label: 'Topic',
-        value: labelFromSlug(segments[1])
+      const topic = decodeURIComponent(segments[1]);
+      const topicLabel = topicLabelFromData(pageData) || labelFromSlug(topic);
+      const filters = filterObject({
+        topic,
+        state: params.get('state') ?? '',
+        party: params.get('party') ?? '',
+        from: params.get('from') ?? '',
+        to: params.get('to') ?? ''
       });
+
+      return {
+        routeLabel: topicLabel,
+        pageSlug: `topic-${topic}`,
+        recordLabel: 'topic records',
+        includedCount: null,
+        activeFilters: [
+          { key: 'topic-path', label: 'Topic', value: topicLabel },
+          ...queryFilters
+        ],
+        controls: [
+          textControl('state', 'State', params.get('state') ?? '', 'TX', 2),
+          selectControl('party', 'Party', params.get('party') ?? '', partyOptions()),
+          dateControl('from', 'From', params.get('from') ?? ''),
+          dateControl('to', 'To', params.get('to') ?? '')
+        ],
+        exportOptions: [
+          {
+            id: 'topic_posts',
+            label: 'Topic posts',
+            description: 'Canonical posts for this topic under the current state, party, and date filters.',
+            chart: 'topic_posts',
+            filters
+          },
+          {
+            id: 'topic_daily',
+            label: 'Daily topic activity',
+            description: 'Daily aggregate rows for this topic and date range.',
+            chart: 'topic_daily',
+            filters
+          }
+        ],
+        formAction,
+        clearHref: formAction
+      };
     }
 
-    for (const [key, rawValue] of url.searchParams.entries()) {
-      if (IGNORED_PARAMS.has(key) || !rawValue) continue;
+    if (segments[0] === 'topic') {
+      const filters = filterObject({
+        from: params.get('from') ?? '',
+        to: params.get('to') ?? ''
+      });
 
+      return {
+        routeLabel: 'Topics',
+        pageSlug: 'topics',
+        recordLabel: 'topics',
+        includedCount: envelopeRows(pageData.topics).length,
+        activeFilters: queryFilters,
+        controls: [
+          dateControl('from', 'From', params.get('from') ?? ''),
+          dateControl('to', 'To', params.get('to') ?? '')
+        ],
+        exportOptions: [
+          {
+            id: 'topics',
+            label: 'Topic summaries',
+            description: 'All topic categories and post totals shown on this page.',
+            chart: 'topics',
+            filters: {}
+          },
+          {
+            id: 'topic_daily',
+            label: 'Daily topic activity',
+            description: 'Daily aggregate rows for all topics, optionally bounded by date.',
+            chart: 'topic_daily',
+            filters
+          }
+        ],
+        formAction,
+        clearHref: formAction
+      };
+    }
+
+    if (segments[0] === 'moment') {
+      const filters = filterObject({
+        date: params.get('date') ?? '',
+        width: params.get('width') ?? '',
+        from: params.get('from') ?? '',
+        to: params.get('to') ?? '',
+        topic: params.get('topic') ?? '',
+        state: params.get('state') ?? '',
+        party: params.get('party') ?? '',
+        bucket: params.get('bucket') ?? ''
+      });
+
+      return {
+        routeLabel: 'Moments',
+        pageSlug: 'moments',
+        recordLabel: 'window records',
+        includedCount: envelopeRows(pageData.daily).length,
+        activeFilters: queryFilters,
+        controls: [
+          dateControl('from', 'From', params.get('from') ?? ''),
+          dateControl('to', 'To', params.get('to') ?? ''),
+          selectControl('topic', 'Topic', params.get('topic') ?? '', topicOptions),
+          textControl('state', 'State', params.get('state') ?? '', 'TX', 2),
+          selectControl('party', 'Party', params.get('party') ?? '', partyOptions()),
+          selectControl('bucket', 'Time bucket', params.get('bucket') ?? '', [
+            { value: '', label: 'Auto/day' },
+            { value: 'day', label: 'Day' },
+            { value: 'week', label: 'Week' },
+            { value: 'month', label: 'Month' }
+          ])
+        ],
+        exportOptions: [
+          {
+            id: 'moment_posts',
+            label: 'Window posts',
+            description: 'Canonical posts in the selected moment window.',
+            chart: 'moment_posts',
+            filters
+          },
+          {
+            id: 'moment_topics',
+            label: 'Window topic mix',
+            description: 'Topic totals for the selected moment window.',
+            chart: 'moment_topics',
+            filters
+          },
+          {
+            id: 'moment_daily',
+            label: 'Daily window activity',
+            description: 'Daily, weekly, or monthly activity in the selected moment window.',
+            chart: 'moment_daily',
+            filters
+          }
+        ],
+        formAction,
+        clearHref: formAction
+      };
+    }
+
+    return {
+      routeLabel: 'Current view',
+      pageSlug: 'current-view',
+      recordLabel: 'records',
+      includedCount: null,
+      activeFilters: queryFilters,
+      controls: [],
+      exportOptions: [],
+      formAction,
+      clearHref: formAction
+    };
+  }
+
+  function readQueryFilters(params: URLSearchParams): ActiveFilter[] {
+    const filters: ActiveFilter[] = [];
+
+    for (const [key, rawValue] of params.entries()) {
+      if (IGNORED_PARAMS.has(key) || !rawValue) continue;
       filters.push({
         key,
         label: FILTER_LABELS[key] ?? humanize(key),
@@ -123,194 +448,21 @@
     return dedupeFilters(filters);
   }
 
-  function buildExportView(data: App.PageData, url: URL, path: string): ExportView {
-    const pageData: Record<string, unknown> = isRecord(data) ? data : {};
-    const segments = path.split('/').filter(Boolean);
-    let label = 'records';
-    let routeLabel = 'Current view';
-    let rows: Record<string, unknown>[] = [];
+  function applyFilterForm(event: SubmitEvent): void {
+    if (!browser) return;
+    event.preventDefault();
 
-    if (segments[0] === 'who' && segments[1]) {
-      routeLabel = 'Legislator profile';
-      label = 'profile records';
-      rows = rowsFromFirst(pageData, ['profile', 'posts', 'topPosts', 'fingerprint']);
-    } else if (segments[0] === 'who') {
-      routeLabel = 'Legislators';
-      label = 'legislators';
-      rows = filterLegislators(envelopeRows(pageData.legislators), url);
-    } else if (segments[0] === 'place' && segments[1]) {
-      routeLabel = 'State profile';
-      label = 'state records';
-      rows = rowsFromFirst(pageData, ['summary', 'topics', 'topPosts', 'chamber', 'trend']);
-    } else if (segments[0] === 'place') {
-      routeLabel = 'States';
-      label = 'states';
-      rows = envelopeRows(pageData.states);
-    } else if (segments[0] === 'topic' && segments[1]) {
-      routeLabel = 'Topic profile';
-      label = 'topic records';
-      rows = rowsFromFirst(pageData, ['topic', 'salience', 'beeswarm', 'topPosts', 'partyChamber']);
-    } else if (segments[0] === 'topic') {
-      routeLabel = 'Topics';
-      label = 'topics';
-      rows = envelopeRows(pageData.topics);
-    } else if (segments[0] === 'moment') {
-      routeLabel = 'Moments';
-      label = 'moment records';
-      rows = rowsFromFirst(pageData, ['topPosts', 'window', 'daily', 'events']);
-    } else if (segments[0] === 'compare') {
-      routeLabel = 'Comparison';
-      label = 'comparison records';
-      rows = rowsFromFirst(pageData, ['compare']);
-    } else {
-      routeLabel = 'Overview';
-      label = 'records';
-      rows = firstArray(pageData);
+    const form = event.currentTarget as HTMLFormElement;
+    const data = new FormData(form);
+    const params = new URLSearchParams();
+
+    for (const [key, value] of data.entries()) {
+      const text = String(value).trim();
+      if (text) params.set(key, text);
     }
 
-    const normalizedRows = rows.map((row) => normalizeRow(row));
-
-    return {
-      label,
-      routeLabel,
-      rows: normalizedRows,
-      samples: normalizedRows.slice(0, 4).map(describeRow).filter(Boolean)
-    };
-  }
-
-  function rowsFromFirst(
-    data: Record<string, unknown>,
-    keys: string[]
-  ): Record<string, unknown>[] {
-    for (const key of keys) {
-      const rows = envelopeRows(data[key]);
-      if (rows.length) return rows;
-    }
-
-    return [];
-  }
-
-  function firstArray(value: unknown): Record<string, unknown>[] {
-    if (!isRecord(value)) return [];
-
-    for (const candidate of Object.values(value)) {
-      const rows = envelopeRows(candidate);
-      if (rows.length) return rows;
-    }
-
-    return [];
-  }
-
-  function envelopeRows(value: unknown): Record<string, unknown>[] {
-    if (Array.isArray(value)) {
-      return value.filter(isRecord);
-    }
-
-    if (!isRecord(value)) return [];
-
-    if (Array.isArray(value.data)) {
-      return value.data.filter(isRecord);
-    }
-
-    if (Array.isArray(value.rows)) {
-      return value.rows.filter(isRecord);
-    }
-
-    if (isRecord(value.data)) {
-      return [value.data];
-    }
-
-    return [value];
-  }
-
-  function filterLegislators(rows: Record<string, unknown>[], url: URL): Record<string, unknown>[] {
-    const query = (url.searchParams.get('q') ?? '').trim().toLocaleLowerCase();
-    const party = url.searchParams.get('party') ?? '';
-    const stateParam = url.searchParams.get('state') ?? '';
-    const state = stateParam === '__unknown' ? stateParam : stateParam.toUpperCase();
-    const chamber = url.searchParams.get('chamber') ?? '';
-
-    return rows.filter((row) => {
-      if (query) {
-        const haystack = [
-          row.name,
-          row.displayName,
-          row.display_name,
-          row.handle,
-          row.username,
-          row.party,
-          row.state,
-          row.chamber
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLocaleLowerCase();
-
-        if (!haystack.includes(query)) return false;
-      }
-
-      if (party && !matchesFilter(row.party, party)) return false;
-      if (state && !matchesFilter(row.state, state)) return false;
-      if (chamber && !matchesFilter(row.chamber, chamber)) return false;
-
-      return true;
-    });
-  }
-
-  function matchesFilter(value: unknown, filter: string): boolean {
-    if (filter === '__unknown') return !cleanString(value);
-    return cleanString(value) === filter;
-  }
-
-  function isRecord(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-  }
-
-  function normalizeRow(row: Record<string, unknown>): Record<string, unknown> {
-    const normalized: Record<string, unknown> = {};
-
-    for (const [key, value] of Object.entries(row)) {
-      if (typeof value === 'function' || value === undefined) continue;
-      normalized[key] = serializeCell(value);
-    }
-
-    return normalized;
-  }
-
-  function serializeCell(value: unknown): unknown {
-    if (
-      value === null ||
-      typeof value === 'string' ||
-      typeof value === 'number' ||
-      typeof value === 'boolean'
-    ) {
-      return value;
-    }
-
-    if (value instanceof Date) return value.toISOString();
-
-    try {
-      return JSON.stringify(value);
-    } catch {
-      return String(value);
-    }
-  }
-
-  function describeRow(row: Record<string, unknown>): string {
-    const candidates = [
-      row.name,
-      row.displayName,
-      row.display_name,
-      row.topicLabel,
-      row.topic_label,
-      row.state,
-      row.handle,
-      row.username,
-      row.id,
-      row.lid
-    ];
-
-    return String(candidates.find((value) => cleanString(value)) ?? '').trim();
+    const target = `${form.action}${params.size ? `?${params.toString()}` : ''}`;
+    void goto(target);
   }
 
   async function copyLink(): Promise<void> {
@@ -337,70 +489,50 @@
     }
   }
 
-  function download(format: 'csv' | 'json'): void {
-    if (!browser) return;
+  async function download(format: 'csv' | 'json'): Promise<void> {
+    if (!browser || !selectedExport) return;
 
-    const filename = `civicwatch_${slugify(exportView.routeLabel)}_${new Date()
-      .toISOString()
-      .slice(0, 10)}.${format}`;
+    downloading = true;
 
-    const payload =
-      format === 'json'
-        ? JSON.stringify(
-            {
-              snapshotId,
-              generatedAt: new Date().toISOString(),
-              sourceUrl: currentShareLink(),
-              totalMatchingRecords: exportView.rows.length,
-              exportedRecords: exportRows.length,
-              cap: DOWNLOAD_CAP,
-              filters: activeFilters,
-              rows: exportRows
-            },
-            null,
-            2
-          )
-        : toCsv(exportRows);
+    try {
+      const base = DEFAULT_API_BASE.replace(/\/+$/, '');
+      const response = await fetch(`${base}/exports/${format}`, {
+        method: 'POST',
+        headers: {
+          accept: format === 'json' ? 'application/json' : 'text/csv',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          chart: selectedExport.chart,
+          filters: selectedExport.filters,
+          limit: DOWNLOAD_CAP
+        })
+      });
 
-    const type =
-      format === 'json'
-        ? 'application/json;charset=utf-8'
-        : 'text/csv;charset=utf-8';
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    const blob = new Blob([payload], { type });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-
-    downloadOpen = false;
-    showStatus(`${format.toUpperCase()} download prepared.`);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = exportFilename(format);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      downloadOpen = false;
+      showStatus(`${format.toUpperCase()} download prepared.`);
+    } catch {
+      showStatus('Download could not be prepared. Try again in a moment.');
+    } finally {
+      downloading = false;
+    }
   }
 
-  function toCsv(rows: Record<string, unknown>[]): string {
-    if (!rows.length) return 'value\n';
-
-    const columns = [
-      ...new Set(rows.slice(0, 100).flatMap((row) => Object.keys(row)))
-    ];
-
-    return [
-      columns.map(csvCell).join(','),
-      ...rows.map((row) =>
-        columns.map((column) => csvCell(row[column])).join(',')
-      )
-    ].join('\n');
-  }
-
-  function csvCell(value: unknown): string {
-    const text = String(value ?? '');
-    return /[",\n\r]/.test(text)
-      ? `"${text.replaceAll('"', '""')}"`
-      : text;
+  function exportFilename(format: 'csv' | 'json'): string {
+    const date = new Date().toISOString().slice(0, 10);
+    const dataset = selectedExport ? selectedExport.id : 'export';
+    return `civicwatch_${slugify(rail.pageSlug)}_${slugify(dataset)}_${date}.${format}`;
   }
 
   function showStatus(message: string): void {
@@ -422,15 +554,97 @@
     return url.toString();
   }
 
-  function formatFilterValue(key: string, value: string): string {
-    if (key === 'slots' || key === 'slot') {
-      return value
-        .split(',')
-        .map((part) => part.replace(':', ': '))
-        .join(', ');
-    }
+  function textControl(
+    key: string,
+    label: string,
+    value: string,
+    placeholder = '',
+    maxLength?: number
+  ): FilterControl {
+    return { key, label, type: key === 'q' ? 'search' : 'text', value, placeholder, maxLength };
+  }
 
+  function dateControl(key: string, label: string, value: string): FilterControl {
+    return { key, label, type: 'date', value, min: '2020-01-01', max: '2025-01-04' };
+  }
+
+  function selectControl(
+    key: string,
+    label: string,
+    value: string,
+    options: { value: string; label: string }[]
+  ): FilterControl {
+    return { key, label, type: 'select', value, options };
+  }
+
+  function partyOptions() {
+    return [
+      { value: '', label: 'All parties' },
+      { value: 'Democratic', label: 'Democratic' },
+      { value: 'Republican', label: 'Republican' },
+      { value: 'Independent', label: 'Independent' },
+      { value: '__unknown', label: 'Unknown' }
+    ];
+  }
+
+  function chamberOptions() {
+    return [
+      { value: '', label: 'All chambers' },
+      { value: 'HOUSE', label: 'House' },
+      { value: 'SENATE', label: 'Senate' },
+      { value: '__unknown', label: 'Unknown' }
+    ];
+  }
+
+  function topicSelectOptions(data: Record<string, unknown>) {
+    const rows = envelopeRows(data.topics);
+    const options = rows.map((row) => ({
+      value: cleanString(row.topic),
+      label: cleanString(row.topicLabel ?? row.topic_label) || `Topic ${cleanString(row.topic)}`
+    }));
+
+    return [{ value: '', label: 'All topics' }, ...options.filter((option) => option.value)];
+  }
+
+  function topicLabelFromData(data: Record<string, unknown>): string {
+    const topic = envelopeData(data.topic);
+    return cleanString(topic?.topicLabel ?? topic?.topic_label);
+  }
+
+  function envelopeData(value: unknown): Record<string, unknown> | null {
+    if (!isRecord(value)) return null;
+    if (isRecord(value.data)) return value.data;
+    return value;
+  }
+
+  function envelopeRows(value: unknown): Record<string, unknown>[] {
+    if (Array.isArray(value)) return value.filter(isRecord);
+    if (!isRecord(value)) return [];
+    if (Array.isArray(value.data)) return value.data.filter(isRecord);
+    if (Array.isArray(value.rows)) return value.rows.filter(isRecord);
+    return [];
+  }
+
+  function metaTotal(value: unknown): number | null {
+    if (!isRecord(value) || !isRecord(value.meta)) return null;
+    const total = Number(value.meta.total);
+    return Number.isFinite(total) ? total : null;
+  }
+
+  function filterObject(input: Record<string, string>): Record<string, string> {
+    return Object.fromEntries(
+      Object.entries(input).filter(([, value]) => cleanString(value))
+    );
+  }
+
+  function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  function formatFilterValue(key: string, value: string): string {
     if (value === '__unknown') return 'Unknown';
+    if (key === 'topic' && value === '999') return 'Uncategorized';
+    if (key === 'width') return `${value} days`;
     return decodeURIComponent(value).replaceAll('_', ' ');
   }
 
@@ -461,14 +675,6 @@
     return String(value).trim();
   }
 
-  function pluralize(label: string, count: number): string {
-    if (count === 1) {
-      return label.replace(/s$/, '');
-    }
-
-    return label;
-  }
-
   function slugify(value: string): string {
     return (
       value
@@ -492,7 +698,7 @@
   >
     <Filter size={15} strokeWidth={1.9} aria-hidden="true" />
     <span>Filters</span>
-    <strong>{activeFilters.length}</strong>
+    <strong>{rail.activeFilters.length}</strong>
   </button>
 
   {#if open}
@@ -504,7 +710,7 @@
       <div class="panel-heading">
         <div>
           <p class="eyebrow">Active filters</p>
-          <h2>{exportView.routeLabel}</h2>
+          <h2>{rail.routeLabel}</h2>
         </div>
 
         <button
@@ -520,9 +726,9 @@
         </button>
       </div>
 
-      {#if activeFilters.length}
+      {#if rail.activeFilters.length}
         <div class="filter-list" aria-label="Current filters">
-          {#each activeFilters as filter (`${filter.key}:${filter.value}`)}
+          {#each rail.activeFilters as filter (`${filter.key}:${filter.value}`)}
             <span class="filter-chip">
               <span>{filter.label}</span>
               <strong>{filter.value}</strong>
@@ -530,30 +736,77 @@
           {/each}
         </div>
       {:else}
-        <p class="quiet">
-          No active filters are applied to this view.
-        </p>
+        <p class="quiet">No active filters are applied to this view.</p>
+      {/if}
+
+      {#if rail.controls.length}
+        <form class="filter-form" method="get" action={rail.formAction} onsubmit={applyFilterForm}>
+          <div class="control-grid">
+            {#each rail.controls as control (control.key)}
+              <label>
+                <span>{control.label}</span>
+                {#if control.type === 'select'}
+                  <select class="field" name={control.key} value={control.value}>
+                    {#each control.options ?? [] as option}
+                      <option value={option.value} selected={option.value === control.value}>{option.label}</option>
+                    {/each}
+                  </select>
+                {:else}
+                  <input
+                    class="field"
+                    type={control.type}
+                    name={control.key}
+                    value={control.value}
+                    placeholder={control.placeholder ?? ''}
+                    maxlength={control.maxLength}
+                    min={control.min}
+                    max={control.max}
+                  />
+                {/if}
+              </label>
+            {/each}
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="action-button">Apply</button>
+            <a class="action-button secondary" href={rail.clearHref}>Clear</a>
+          </div>
+        </form>
       {/if}
 
       <div class="record-summary">
         <div>
-          <span class="summary-number">{exportView.rows.length.toLocaleString()}</span>
-          <span>{pluralize(exportView.label, exportView.rows.length)} included</span>
+          <span class="summary-number">{rail.includedCount === null ? '—' : rail.includedCount.toLocaleString()}</span>
+          <span>{rail.recordLabel} included</span>
         </div>
 
-        {#if exportView.samples.length}
-          <p>{exportView.samples.join(' · ')}</p>
-        {:else}
-          <p>No page records are available for export in this view.</p>
-        {/if}
+        <p>
+          Choose the dataset that matches what you want from this page, then download CSV or JSON.
+        </p>
       </div>
 
+      {#if rail.exportOptions.length}
+        <fieldset class="download-options">
+          <legend>Download data</legend>
+          {#each rail.exportOptions as option (option.id)}
+            <label class:active={selectedExport?.id === option.id}>
+              <input
+                type="radio"
+                name="download-option"
+                value={option.id}
+                bind:group={selectedExportId}
+              />
+              <span>
+                <strong>{option.label}</strong>
+                <small>{option.description}</small>
+              </span>
+            </label>
+          {/each}
+        </fieldset>
+      {/if}
+
       <div class="actions">
-        <button
-          type="button"
-          class="action-button"
-          onclick={copyLink}
-        >
+        <button type="button" class="action-button" onclick={copyLink}>
           {#if copied}
             <Check size={16} strokeWidth={2} aria-hidden="true" />
             Copied
@@ -568,19 +821,20 @@
             type="button"
             class="action-button"
             aria-expanded={downloadOpen}
+            disabled={!selectedExport || downloading}
             onclick={() => (downloadOpen = !downloadOpen)}
           >
             <Download size={16} strokeWidth={1.9} aria-hidden="true" />
-            Download
+            {downloading ? 'Preparing' : 'Download'}
           </button>
 
-          {#if downloadOpen}
+          {#if downloadOpen && selectedExport}
             <div class="download-menu" role="menu" aria-label="Download format">
-              <button type="button" role="menuitem" onclick={() => download('csv')}>
+              <button type="button" role="menuitem" onclick={() => download('csv')} disabled={downloading}>
                 <FileSpreadsheet size={15} strokeWidth={1.8} aria-hidden="true" />
                 CSV
               </button>
-              <button type="button" role="menuitem" onclick={() => download('json')}>
+              <button type="button" role="menuitem" onclick={() => download('json')} disabled={downloading}>
                 <FileJson size={15} strokeWidth={1.8} aria-hidden="true" />
                 JSON
               </button>
@@ -590,8 +844,8 @@
       </div>
 
       <p class="cap-note">
-        Downloads are capped at {DOWNLOAD_CAP.toLocaleString()} records{hasTruncatedDownload ? `; this file will include ${downloadableLabel}.` : '.'}
-        For larger extracts, <a href={appPath('/about')}>contact us through About</a>.
+        Downloads are capped at {DOWNLOAD_CAP.toLocaleString()} records.
+        For larger extracts, <a href={appPath('/about')}>contact us through the About page</a>.
       </p>
 
       {#if status}
@@ -644,8 +898,8 @@
   }
 
   .analyst-panel {
-    width: min(420px, calc(100vw - 24px));
-    max-height: min(72vh, 620px);
+    width: min(460px, calc(100vw - 24px));
+    max-height: min(78vh, 720px);
     overflow: auto;
     border: 1px solid var(--color-rule);
     border-radius: 8px;
@@ -721,12 +975,59 @@
     font-weight: 750;
   }
 
+  .filter-form {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 11px;
+    padding: 10px;
+    border: 1px solid var(--color-rule);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--color-elevated), transparent 18%);
+  }
+
+  .control-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .control-grid label {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .control-grid label span,
+  .download-options legend {
+    color: var(--color-mute);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.055em;
+    line-height: 1rem;
+    text-transform: uppercase;
+  }
+
+  .control-grid .field {
+    width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    margin: 0;
+    padding: 7px 9px;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
   .quiet,
   .cap-note,
   .record-summary p,
-  .status {
+  .status,
+  .download-options small {
     color: var(--color-mute);
-    font-size: 0.86rem;
+    font-size: 0.84rem;
   }
 
   .quiet {
@@ -756,11 +1057,45 @@
 
   .record-summary p {
     margin: 0;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
+  }
+
+  .download-options {
+    display: grid;
+    gap: 7px;
+    margin: 0 0 11px;
+    padding: 0;
+    border: 0;
+  }
+
+  .download-options label {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    padding: 8px;
+    border: 1px solid var(--color-rule);
+    border-radius: 7px;
+    background: var(--color-elevated);
+    cursor: pointer;
+  }
+
+  .download-options label.active {
+    border-color: color-mix(in srgb, var(--color-seal) 55%, var(--color-rule));
+    background: color-mix(in srgb, var(--color-seal) 10%, var(--color-elevated));
+  }
+
+  .download-options input {
+    margin-top: 3px;
+  }
+
+  .download-options span {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .download-options strong {
+    font-size: 0.88rem;
   }
 
   .actions {
@@ -771,11 +1106,19 @@
   }
 
   .action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 34px;
     border-radius: 999px;
     padding: 6px 10px;
     font-size: 0.86rem;
     box-shadow: none;
+    text-decoration: none;
+  }
+
+  .action-button.secondary {
+    color: var(--color-mute);
   }
 
   .download-control {
@@ -830,7 +1173,11 @@
 
     .analyst-panel {
       width: 100%;
-      max-height: 70vh;
+      max-height: 74vh;
+    }
+
+    .control-grid {
+      grid-template-columns: 1fr;
     }
   }
 </style>

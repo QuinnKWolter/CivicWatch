@@ -90,7 +90,6 @@
     <div class="card"><span class="caption">Engagement</span><strong class="number">{compact(topic.totalEngagement)}</strong></div>
     <div class="card"><span class="caption">Ideology dots</span><strong class="number">{compact(data.beeswarm.data.length)}</strong></div>
   </div>
-  <p class="compare-action"><a class="button" href={appPath(`/compare?slots=topic:${topic.topic}`)}>Compare with…</a></p>
 </section>
 
 <section class="container split band">

@@ -1867,55 +1867,350 @@ function csvLines(rows: Record<string, unknown>[]) {
 async function exportRows(spec: ExportSpec) {
   const chart = spec.chart ?? 'topics';
   const filters = spec.filters ?? {};
-  const limit = clampLimit(spec.limit, 100, 1000);
-  if (chart === 'states') {
+  const limit = clampLimit(spec.limit, 5000, 5000);
+
+  if (chart === 'legislators') {
+    const lid = cleanText(filters.lid) || null;
+    const search = cleanText(filters.q) || null;
+    const state = cleanText(filters.state).toUpperCase() || null;
+    const party = cleanText(filters.party) || null;
+    const chamber = cleanText(filters.chamber).toUpperCase() || null;
     const rows = await sql`
-      SELECT state, sum(post_count)::bigint AS post_count,
-             sum(total_likes)::bigint AS total_likes,
-             sum(total_retweets)::bigint AS total_retweets
-      FROM topic_state_breakdown
-      GROUP BY state
-      ORDER BY state
+      SELECT l.lid, l.name, l.handle, l.state, l.chamber, l.party,
+             l.mrp_ideology, l.shor_ideo, l.district_name, l.district_num,
+             l.gender, l.race, l.yr_elected, l.vote_pct,
+             ls.total_posts, ls.total_likes, ls.total_retweets,
+             ls.total_replies, ls.total_quotes, ls.first_post_date, ls.last_post_date
+      FROM legislators l
+      LEFT JOIN app_legislator_summary ls ON ls.lid = l.lid
+      WHERE (${lid}::text IS NULL OR l.lid = ${lid})
+        AND (${search}::text IS NULL OR l.name ILIKE ${search ? `%${search}%` : null} OR l.handle ILIKE ${search ? `%${search}%` : null})
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+        AND (${chamber}::text IS NULL OR l.chamber = ${chamber})
+      ORDER BY COALESCE(ls.total_posts, 0) DESC, l.name ASC
+      LIMIT ${limit}
+    `;
+    return { chart, rows: rows.map((row) => ({ ...row, name: titleCasePersonName(s(row.name)) })) as Record<string, unknown>[] };
+  }
+
+  if (chart === 'legislator_posts') {
+    const lid = cleanText(filters.lid);
+    const topic = normalizedTopic(cleanText(filters.topic) || undefined);
+    const from = cleanText(filters.from) || null;
+    const to = cleanText(filters.to) || null;
+    const sort = cleanText(filters.sort) === 'engagement' ? 'engagement' : 'recent';
+    const rows = await sql`
+      SELECT p.id, p.tweet_id, p.created_at::text, p.lid, l.name, l.handle,
+             l.state, l.chamber, l.party, p.topic, t.topic_label,
+             p.like_count, p.retweet_count, p.reply_count, p.quote_count,
+             NULL::int AS duplicate_count, p.text
+      FROM posts p
+      JOIN legislators l ON l.lid = p.lid
+      JOIN topics t ON t.topic = p.topic
+      WHERE p.lid = ${lid}
+        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < ${to}::date + 1)
+      ORDER BY
+        CASE WHEN ${sort} = 'engagement' THEN COALESCE(p.like_count, 0) + COALESCE(p.retweet_count, 0) END DESC,
+        p.created_at DESC,
+        p.id DESC
+      LIMIT ${limit}
+    `;
+    return { chart, rows: rows.map((row) => ({ ...row, name: titleCasePersonName(s(row.name)) })) as Record<string, unknown>[] };
+  }
+
+  if (chart === 'states') {
+    const topic = normalizedTopic(cleanText(filters.topic) || undefined);
+    const party = cleanText(filters.party) || null;
+    const rows = party
+      ? await sql`
+        WITH activity AS (
+          SELECT l.state,
+                 sum(alt.post_count)::bigint AS post_count
+          FROM app_legislator_topic alt
+          JOIN legislators l USING (lid)
+          WHERE l.state IS NOT NULL
+            AND l.party = ${party}
+            AND (${topic ?? null}::text IS NULL OR alt.topic = ${topic ?? null})
+          GROUP BY l.state
+        ), represented AS (
+          SELECT state,
+                 count(DISTINCT lid)::int AS legislator_count,
+                 count(DISTINCT lid) FILTER (WHERE party = 'Democratic')::int AS democratic_legislator_count,
+                 count(DISTINCT lid) FILTER (WHERE party = 'Republican')::int AS republican_legislator_count
+          FROM legislators
+          WHERE state IS NOT NULL AND party = ${party}
+          GROUP BY state
+        )
+        SELECT activity.state,
+               activity.post_count,
+               0::bigint AS total_likes,
+               0::bigint AS total_retweets,
+               represented.legislator_count,
+               represented.democratic_legislator_count,
+               represented.republican_legislator_count
+        FROM activity
+        LEFT JOIN represented USING (state)
+        ORDER BY activity.state
+      `
+      : await sql`
+      WITH activity AS (
+        SELECT state,
+               sum(post_count)::bigint AS post_count,
+               sum(total_likes)::bigint AS total_likes,
+               sum(total_retweets)::bigint AS total_retweets
+        FROM topic_state_breakdown
+        WHERE (${topic ?? null}::text IS NULL OR topic = ${topic ?? null})
+        GROUP BY state
+      ), represented AS (
+        SELECT state,
+               count(DISTINCT lid)::int AS legislator_count,
+               count(DISTINCT lid) FILTER (WHERE party = 'Democratic')::int AS democratic_legislator_count,
+               count(DISTINCT lid) FILTER (WHERE party = 'Republican')::int AS republican_legislator_count
+        FROM legislators
+        WHERE state IS NOT NULL
+        GROUP BY state
+      )
+      SELECT activity.state,
+             activity.post_count,
+             activity.total_likes,
+             activity.total_retweets,
+             represented.legislator_count,
+             represented.democratic_legislator_count,
+             represented.republican_legislator_count
+      FROM activity
+      LEFT JOIN represented USING (state)
+      ORDER BY activity.state
     `;
     return { chart, rows: rows as Record<string, unknown>[] };
   }
-  if (chart === 'state-topics') {
-    const state = String(filters.state ?? 'TX').toUpperCase();
-    const rows = await sql`
+
+  if (chart === 'state_topics') {
+    const state = cleanText(filters.state).toUpperCase() || null;
+    const topic = normalizedTopic(cleanText(filters.topic) || undefined);
+    const party = cleanText(filters.party) || null;
+    const rows = party
+      ? await sql`
+        SELECT l.state, alt.topic, alt.topic_label,
+               sum(alt.post_count)::bigint AS post_count,
+               0::bigint AS total_likes,
+               0::bigint AS total_retweets
+        FROM app_legislator_topic alt
+        JOIN legislators l USING (lid)
+        WHERE (${state}::text IS NULL OR l.state = ${state})
+          AND (${topic ?? null}::text IS NULL OR alt.topic = ${topic ?? null})
+          AND l.party = ${party}
+        GROUP BY l.state, alt.topic, alt.topic_label
+        ORDER BY l.state, sum(alt.post_count) DESC
+      `
+      : await sql`
       SELECT state, topic, topic_label, post_count, total_likes, total_retweets
       FROM topic_state_breakdown
-      WHERE state = ${state}
-      ORDER BY post_count DESC
+      WHERE (${state}::text IS NULL OR state = ${state})
+        AND (${topic ?? null}::text IS NULL OR topic = ${topic ?? null})
+      ORDER BY state, post_count DESC
     `;
     return { chart, rows: rows as Record<string, unknown>[] };
   }
-  if (chart === 'topic-ribbon') {
-    const topic = normalizedTopic(String(filters.topic ?? '20'));
+
+  if (chart === 'state_posts') {
+    const state = cleanText(filters.state).toUpperCase();
+    const topic = normalizedTopic(cleanText(filters.topic) || undefined);
+    const party = cleanText(filters.party) || null;
+    const from = cleanText(filters.from) || null;
+    const to = cleanText(filters.to) || null;
+    const rows = await sql`
+      SELECT p.id, p.tweet_id, p.created_at::text, p.lid, l.name, l.handle,
+             l.state, l.chamber, l.party, p.topic, t.topic_label,
+             p.like_count, p.retweet_count, p.reply_count, p.quote_count,
+             NULL::int AS duplicate_count, p.text
+      FROM posts p
+      JOIN legislators l ON l.lid = p.lid
+      JOIN topics t ON t.topic = p.topic
+      WHERE l.state = ${state}
+        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${party}::text IS NULL OR l.party = ${party})
+        AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < ${to}::date + 1)
+      ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
+      LIMIT ${limit}
+    `;
+    return { chart, rows: rows.map((row) => ({ ...row, name: titleCasePersonName(s(row.name)) })) as Record<string, unknown>[] };
+  }
+
+  if (chart === 'topic_daily') {
+    const topic = normalizedTopic(cleanText(filters.topic) || undefined);
+    const from = cleanText(filters.from) || null;
+    const to = cleanText(filters.to) || null;
     const rows = await sql`
       SELECT date::text, topic, topic_label, post_count, total_likes, total_retweets
       FROM topic_engagement_daily
       WHERE (${topic ?? null}::text IS NULL OR topic = ${topic ?? null})
-        AND (${String(filters.from ?? '') || null}::date IS NULL OR date >= ${String(filters.from ?? '') || null}::date)
-        AND (${String(filters.to ?? '') || null}::date IS NULL OR date <= ${String(filters.to ?? '') || null}::date)
+        AND (${from}::date IS NULL OR date >= ${from}::date)
+        AND (${to}::date IS NULL OR date <= ${to}::date)
       ORDER BY date
       LIMIT ${limit}
     `;
     return { chart, rows: rows as Record<string, unknown>[] };
   }
-  if (chart === 'legislator-posts') {
-    const lid = String(filters.lid ?? '');
+
+  if (chart === 'topic_posts') {
+    const topic = normalizedTopic(cleanText(filters.topic) || undefined);
+    const state = cleanText(filters.state).toUpperCase() || null;
+    const party = cleanText(filters.party) || null;
+    const from = cleanText(filters.from) || null;
+    const to = cleanText(filters.to) || null;
     const rows = await sql`
-      SELECT p.id, p.created_at::text, p.lid, l.name, p.topic, t.topic_label,
-             p.like_count, p.retweet_count, p.reply_count, p.quote_count, p.text
-      FROM app_posts_canonical p
+      SELECT p.id, p.tweet_id, p.created_at::text, p.lid, l.name, l.handle,
+             l.state, l.chamber, l.party, p.topic, t.topic_label,
+             p.like_count, p.retweet_count, p.reply_count, p.quote_count,
+             NULL::int AS duplicate_count, p.text
+      FROM posts p
       JOIN legislators l ON l.lid = p.lid
       JOIN topics t ON t.topic = p.topic
-      WHERE p.lid = ${lid}
-      ORDER BY p.created_at DESC, p.id DESC
+      WHERE (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+        AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < ${to}::date + 1)
+      ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
       LIMIT ${limit}
     `;
+    return { chart, rows: rows.map((row) => ({ ...row, name: titleCasePersonName(s(row.name)) })) as Record<string, unknown>[] };
+  }
+
+  if (chart === 'moment_daily') {
+    const date = cleanText(filters.date) || '2022-06-24';
+    const width = Math.min(Math.max(Number(filters.width ?? 7), 1), 45);
+    const from = cleanText(filters.from) || null;
+    const to = cleanText(filters.to) || null;
+    const topic = normalizedTopic(cleanText(filters.topic) || undefined);
+    const state = cleanText(filters.state).toUpperCase() || null;
+    const party = cleanText(filters.party) || null;
+    const bucket = cleanText(filters.bucket) === 'month' ? 'month' : cleanText(filters.bucket) === 'week' ? 'week' : 'day';
+    const hasCanonicalDaily = await hasCanonicalDailyAggregate();
+    const rows = !state && !party
+      ? await sql`
+        WITH filtered AS (
+          SELECT CASE
+                   WHEN ${bucket}::text = 'month' THEN date_trunc('month', date::timestamp)::date
+                   WHEN ${bucket}::text = 'week' THEN date_trunc('week', date::timestamp)::date
+                   ELSE date
+                 END AS bucket_start,
+                 post_count,
+                 total_likes,
+                 total_retweets
+          FROM ${hasCanonicalDaily ? sql`app_topic_engagement_daily_canonical` : sql`topic_engagement_daily`}
+          WHERE date >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+            AND date < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+            AND (${topic ?? null}::text IS NULL OR topic = ${topic ?? null})
+        )
+        SELECT bucket_start::text AS date,
+               COALESCE(sum(post_count), 0)::bigint AS post_count,
+               COALESCE(sum(total_likes + total_retweets), 0)::bigint AS engagement
+        FROM filtered
+        GROUP BY bucket_start
+        ORDER BY bucket_start
+        LIMIT ${limit}
+      `
+      : await sql`
+        WITH filtered AS (
+          SELECT CASE
+                   WHEN ${bucket}::text = 'month' THEN date_trunc('month', p.created_at::timestamp)::date
+                   WHEN ${bucket}::text = 'week' THEN date_trunc('week', p.created_at::timestamp)::date
+                   ELSE p.created_at::date
+                 END AS bucket_start,
+                 p.like_count,
+                 p.retweet_count
+          FROM posts p
+          JOIN legislators l ON l.lid = p.lid
+          WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+            AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+            AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+            AND (${state}::text IS NULL OR l.state = ${state})
+            AND (${party}::text IS NULL OR l.party = ${party})
+        )
+        SELECT bucket_start::text AS date,
+               count(*)::bigint AS post_count,
+               COALESCE(sum(like_count + retweet_count), 0)::bigint AS engagement
+        FROM filtered
+        GROUP BY bucket_start
+        ORDER BY bucket_start
+        LIMIT ${limit}
+      `;
     return { chart, rows: rows as Record<string, unknown>[] };
   }
+
+  if (chart === 'moment_topics') {
+    const date = cleanText(filters.date) || '2022-06-24';
+    const width = Math.min(Math.max(Number(filters.width ?? 7), 1), 45);
+    const from = cleanText(filters.from) || null;
+    const to = cleanText(filters.to) || null;
+    const topic = normalizedTopic(cleanText(filters.topic) || undefined);
+    const state = cleanText(filters.state).toUpperCase() || null;
+    const party = cleanText(filters.party) || null;
+    const hasCanonicalDaily = await hasCanonicalDailyAggregate();
+    const rows = !state && !party
+      ? await sql`
+        SELECT topic, topic_label,
+               sum(post_count)::bigint AS post_count,
+               sum(total_likes)::bigint AS total_likes,
+               sum(total_retweets)::bigint AS total_retweets
+        FROM ${hasCanonicalDaily ? sql`app_topic_engagement_daily_canonical` : sql`topic_engagement_daily`}
+        WHERE date >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+          AND date < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+          AND (${topic ?? null}::text IS NULL OR topic = ${topic ?? null})
+        GROUP BY topic, topic_label
+        ORDER BY sum(post_count) DESC
+      `
+      : await sql`
+        SELECT p.topic, t.topic_label,
+               count(*)::bigint AS post_count,
+               COALESCE(sum(p.like_count), 0)::bigint AS total_likes,
+               COALESCE(sum(p.retweet_count), 0)::bigint AS total_retweets
+        FROM posts p
+        JOIN legislators l ON l.lid = p.lid
+        JOIN topics t ON t.topic = p.topic
+        WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+          AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+          AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+          AND (${state}::text IS NULL OR l.state = ${state})
+          AND (${party}::text IS NULL OR l.party = ${party})
+        GROUP BY p.topic, t.topic_label
+        ORDER BY count(*) DESC
+      `;
+    return { chart, rows: rows as Record<string, unknown>[] };
+  }
+
+  if (chart === 'moment_posts') {
+    const date = cleanText(filters.date) || '2022-06-24';
+    const width = Math.min(Math.max(Number(filters.width ?? 7), 1), 45);
+    const from = cleanText(filters.from) || null;
+    const to = cleanText(filters.to) || null;
+    const topic = normalizedTopic(cleanText(filters.topic) || undefined);
+    const state = cleanText(filters.state).toUpperCase() || null;
+    const party = cleanText(filters.party) || null;
+    const rows = await sql`
+      SELECT p.id, p.tweet_id, p.created_at::text, p.lid, l.name, l.handle,
+             l.state, l.chamber, l.party, p.topic, t.topic_label,
+             p.like_count, p.retweet_count, p.reply_count, p.quote_count,
+             NULL::int AS duplicate_count, p.text
+      FROM posts p
+      JOIN legislators l ON l.lid = p.lid
+      JOIN topics t ON t.topic = p.topic
+      WHERE p.created_at >= COALESCE(${from}::date, ${date}::date - ${width}::int)
+        AND p.created_at < COALESCE(${to}::date + 1, ${date}::date + ${width}::int + 1)
+        AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+      ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
+      LIMIT ${limit}
+    `;
+    return { chart, rows: rows.map((row) => ({ ...row, name: titleCasePersonName(s(row.name)) })) as Record<string, unknown>[] };
+  }
+
   const rows = await sql`
     SELECT topic, topic_label, sum(post_count)::bigint AS post_count,
            sum(total_likes)::bigint AS total_likes,
@@ -1930,6 +2225,7 @@ async function exportRows(spec: ExportSpec) {
 app.post('/api/v1/exports/csv', async (request, reply) => {
   const spec = exportSpec(request.body);
   const { chart, rows } = await exportRows(spec);
+  const generatedDate = new Date().toISOString().slice(0, 10);
   const header = [
     `# CivicWatch export`,
     `# snapshot_id=${SNAPSHOT_ID}`,
@@ -1938,8 +2234,28 @@ app.post('/api/v1/exports/csv', async (request, reply) => {
     `# generated_at=${new Date().toISOString()}`,
   ];
   reply.header('content-type', 'text/csv; charset=utf-8');
-  reply.header('content-disposition', `attachment; filename="civicwatch_${chart}_${SNAPSHOT_ID}.csv"`);
+  reply.header('content-disposition', `attachment; filename="civicwatch_${chart}_${generatedDate}.csv"`);
   return [...header, ...csvLines(rows)].join('\n');
+});
+
+app.post('/api/v1/exports/json', async (request, reply) => {
+  const spec = exportSpec(request.body);
+  const { chart, rows } = await exportRows(spec);
+  const generatedAt = new Date().toISOString();
+  const generatedDate = generatedAt.slice(0, 10);
+
+  reply.header('content-type', 'application/json; charset=utf-8');
+  reply.header('content-disposition', `attachment; filename="civicwatch_${chart}_${generatedDate}.json"`);
+  return {
+    snapshotId: SNAPSHOT_ID,
+    chart,
+    filters: spec.filters ?? {},
+    requestedLimit: spec.limit ?? 5000,
+    exportedRecords: rows.length,
+    cap: 5000,
+    generatedAt,
+    rows
+  };
 });
 
 app.post('/api/v1/exports/png', async (request, reply) => {

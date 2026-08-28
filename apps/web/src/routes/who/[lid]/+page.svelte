@@ -32,7 +32,6 @@
     <div class="card"><span class="caption">Coverage</span><strong>{dateLabel(profile.firstPostDate)} to {dateLabel(profile.lastPostDate)}</strong></div>
   </div>
   <div class="notice">Voting-record position is available for 3,335 of 5,927 legislators. Missing values are shown, not hidden.</div>
-  <p class="compare-action"><a class="button" href={appPath(`/compare?slots=legislator:${profile.lid}`)}>Compare with…</a></p>
 </section>
 
 <section class="container split band">

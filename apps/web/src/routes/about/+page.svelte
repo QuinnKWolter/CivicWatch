@@ -3,6 +3,9 @@
     BookOpenCheck,
     Database,
     ExternalLink,
+    Github,
+    Globe,
+    Linkedin,
     Mail,
     Users
   } from 'lucide-svelte';
@@ -18,7 +21,16 @@
     links: LinkItem[];
   };
 
-  const contactEmail = 'QuinnKWolter@pitt.edu';
+  const contactEmail = 'QuinnKWolter@gmail.com';
+
+  const contactLinks: LinkItem[] = [
+    { label: 'Email', href: `mailto:${contactEmail}` },
+    {
+      label: 'LinkedIn',
+      href: 'https://www.linkedin.com/in/quinn-k-wolter-4b68bb8b/'
+    },
+    { label: 'GitHub', href: 'https://github.com/QuinnKWolter' }
+  ];
 
   const acknowledgements: Acknowledgement[] = [
     {
@@ -29,7 +41,15 @@
     {
       name: 'Quinn K Wolter',
       role: 'Lead Researcher & Developer',
-      links: [{ label: 'Site', href: 'https://quinnkwolter.com/' }]
+      links: [
+        { label: 'Site', href: 'https://quinnkwolter.com/' },
+        {
+          label: 'LinkedIn',
+          href: 'https://www.linkedin.com/in/quinn-k-wolter-4b68bb8b/'
+        },
+        { label: 'GitHub', href: 'https://github.com/QuinnKWolter' },
+        { label: 'Email', href: `mailto:${contactEmail}` }
+      ]
     },
     {
       name: 'Professor Yu-Ru Lin',
@@ -116,8 +136,8 @@
       </div>
 
       <p>
-        CivicWatch is based on a dated snapshot, not a live feed. The restored
-        corpus covers January 1, 2020 through December 31, 2024 and contains
+        CivicWatch is based on a restored analytical corpus, not a live feed.
+        The corpus covers January 1, 2020 through December 31, 2024 and contains
         approximately 22.2 million posts, 5,927 legislators, and 22 topic
         categories.
       </p>
@@ -133,8 +153,8 @@
       <p>
         Topic 999 is labeled Uncategorized and remains visible by default.
         Missing legislator metadata is shown as missing rather than silently
-        excluded. The API returns snapshot metadata with analytical responses so
-        that views can be associated with the data version that produced them.
+        excluded, so users can see where coverage or public-record fields are
+        incomplete.
       </p>
     </section>
 
@@ -170,12 +190,29 @@
         contact Quinn K Wolter.
       </p>
 
-      <p>
-        <a class="contact-link" href={`mailto:${contactEmail}`}>
-          <Mail size={17} strokeWidth={1.8} aria-hidden="true" />
-          {contactEmail}
-        </a>
-      </p>
+      <nav class="contact-links" aria-label="Quinn K Wolter contact links">
+        {#each contactLinks as link (link.href)}
+          <a
+            class="icon-link"
+            href={link.href}
+            title={link.label === 'Email' ? contactEmail : link.label}
+            aria-label={link.label === 'Email' ? `Email ${contactEmail}` : link.label}
+            target={link.href.startsWith('mailto:') ? undefined : '_blank'}
+            rel={link.href.startsWith('mailto:') ? undefined : 'noreferrer'}
+          >
+            {#if link.label === 'GitHub'}
+              <Github size={17} strokeWidth={1.9} aria-hidden="true" />
+            {:else if link.label === 'LinkedIn'}
+              <Linkedin size={17} strokeWidth={1.9} aria-hidden="true" />
+            {:else if link.label === 'Email'}
+              <Mail size={17} strokeWidth={1.9} aria-hidden="true" />
+            {:else}
+              <Globe size={17} strokeWidth={1.9} aria-hidden="true" />
+            {/if}
+            <span class="sr-only">{link.label}</span>
+          </a>
+        {/each}
+      </nav>
     </section>
 
     <section class="prose-section" aria-labelledby="acknowledgements-heading">
@@ -198,11 +235,22 @@
                   href={link.href}
                   target={link.href.startsWith('mailto:') ? undefined : '_blank'}
                   rel={link.href.startsWith('mailto:') ? undefined : 'noreferrer'}
+                  class="icon-link"
+                  title={link.label}
+                  aria-label={`${acknowledgement.name} ${link.label}`}
                 >
-                  {link.label}
-                  {#if !link.href.startsWith('mailto:')}
-                    <ExternalLink size={13} strokeWidth={1.8} aria-hidden="true" />
+                  {#if link.label === 'GitHub'}
+                    <Github size={15} strokeWidth={1.9} aria-hidden="true" />
+                  {:else if link.label === 'LinkedIn'}
+                    <Linkedin size={15} strokeWidth={1.9} aria-hidden="true" />
+                  {:else if link.label === 'Email'}
+                    <Mail size={15} strokeWidth={1.9} aria-hidden="true" />
+                  {:else if link.label === 'Site'}
+                    <Globe size={15} strokeWidth={1.9} aria-hidden="true" />
+                  {:else}
+                    <ExternalLink size={15} strokeWidth={1.9} aria-hidden="true" />
                   {/if}
+                  <span class="sr-only">{link.label}</span>
                 </a>
               {/each}
             </nav>
@@ -270,21 +318,11 @@
     margin-bottom: 0;
   }
 
-  .contact-link {
-    display: inline-flex;
-    align-items: center;
+  .contact-links {
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
-    border: 1px solid color-mix(in srgb, var(--color-seal), var(--color-rule) 42%);
-    border-radius: 999px;
-    background: var(--color-elevated);
-    color: var(--color-seal);
-    padding: 8px 12px;
-    font-weight: 800;
-    text-decoration: none;
-  }
-
-  .contact-link:hover {
-    box-shadow: var(--shadow-sm);
+    margin-top: 2px;
   }
 
   .acknowledgement-list {
@@ -324,26 +362,64 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 7px;
+    gap: 6px;
   }
 
-  .acknowledgement-list a {
+  .icon-link {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
     border: 1px solid var(--color-rule);
-    border-radius: 999px;
-    background: var(--color-elevated);
+    border-radius: 6px;
+    background:
+      color-mix(
+        in srgb,
+        var(--color-elevated) 86%,
+        transparent
+      );
     color: var(--color-ink);
-    padding: 5px 8px;
-    font-size: 0.84rem;
-    font-weight: 700;
     text-decoration: none;
+    transition:
+      color 140ms ease,
+      border-color 140ms ease,
+      background-color 140ms ease,
+      transform 140ms ease;
   }
 
-  .acknowledgement-list a:hover {
-    border-color: var(--color-seal);
+  .icon-link:hover {
+    border-color:
+      color-mix(
+        in srgb,
+        var(--color-seal) 76%,
+        var(--color-rule)
+      );
+    background:
+      color-mix(
+        in srgb,
+        var(--color-seal) 10%,
+        var(--color-elevated)
+      );
     color: var(--color-seal);
+    transform: translateY(-1px);
+  }
+
+  .icon-link:focus-visible {
+    outline: 2px solid var(--color-seal);
+    outline-offset: 2px;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    white-space: nowrap;
+    border: 0;
+    clip: rect(0 0 0 0);
   }
 
   @media (max-width: 720px) {

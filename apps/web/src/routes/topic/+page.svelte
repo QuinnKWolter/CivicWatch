@@ -31,7 +31,7 @@
     />
   </div>
 
-  <PanelHeader title="Topic tiles" caption="Sortable-by-volume tiles for all topic categories in the snapshot." source="topic_party_breakdown" count={data.topics.data.length} />
+  <PanelHeader title="Topic tiles" caption="Sortable-by-volume tiles for all topic categories in the corpus." source="topic_party_breakdown" count={data.topics.data.length} />
   <div class="grid grid-3">
     {#each data.topics.data as topic}
       <a class="chip" href={appPath(`/topic/${topic.topic}`)}>

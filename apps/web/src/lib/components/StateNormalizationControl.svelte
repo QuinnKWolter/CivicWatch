@@ -32,7 +32,7 @@
       >Census 2025</a>
     </small>
   {:else if value === 'legislators'}
-    <small>Posts per legislator represented in this CivicWatch snapshot</small>
+    <small>Posts per legislator represented in CivicWatch</small>
   {/if}
 </div>
 

@@ -25,15 +25,15 @@
   }[] = [
     {
       id: 'overview',
-      label: 'What it is'
+      label: 'What is it?'
     },
     {
       id: 'usage',
-      label: 'How to use it'
+      label: 'How do I use it?'
     },
     {
       id: 'data',
-      label: 'Where data comes from'
+      label: 'Where does the data come from?'
     }
   ];
 
@@ -406,7 +406,7 @@
               aria-hidden="true"
             />
 
-            <h3>What CivicWatch is</h3>
+            <h3>What is it?</h3>
           </div>
 
           <p>
@@ -433,6 +433,22 @@
               text and its available metadata.
             </span>
           </div>
+
+          <div class="acknowledgements">
+            <strong>Acknowledgements</strong>
+
+            <p>
+              CivicWatch is developed through the
+              University of Pittsburgh Computational
+              Social Dynamics (PICSO) Lab. Quinn K
+              Wolter leads research and development,
+              advised by Professor Yu-Ru Lin, with
+              development by Radhika Purohit, Chase
+              Lahner, and Andrew Aquilinas, and
+              research advising from Yongsu Ahn and
+              Ahana Biswas.
+            </p>
+          </div>
         </div>
 
         <div
@@ -449,7 +465,7 @@
               aria-hidden="true"
             />
 
-            <h3>How to explore</h3>
+            <h3>How do I use it?</h3>
           </div>
 
           <ol class="steps">
@@ -477,9 +493,10 @@
               <strong>Refine the view.</strong>
 
               <span>
-                Analyst mode adds date, party,
-                chamber, state, topic, engagement,
-                comparison, and export controls.
+                The Filters panel adds date, party,
+                chamber, state, topic, and export
+                controls suited to the page you are
+                viewing.
               </span>
             </li>
 
@@ -487,9 +504,9 @@
               <strong>Share or reproduce it.</strong>
 
               <span>
-                Filters are stored in the URL.
-                Permalinks can also be pinned to a
-                specific data snapshot.
+                Filters are stored in the URL, so a
+                copied link opens the same filtered
+                view.
               </span>
             </li>
           </ol>
@@ -509,15 +526,14 @@
               aria-hidden="true"
             />
 
-            <h3>Where the data comes from</h3>
+            <h3>Where does the data come from?</h3>
           </div>
 
           <p>
-            Each page is backed by the active
-            CivicWatch PostgreSQL snapshot and
-            bounded analytical aggregates built
-            from the underlying post and legislator
-            records.
+            Each page is backed by the CivicWatch
+            PostgreSQL database and bounded
+            analytical aggregates built from the
+            underlying post and legislator records.
           </p>
 
           <p>
@@ -531,13 +547,13 @@
           </p>
 
           <div class="principle">
-            <strong>Snapshots preserve reproducibility.</strong>
+            <strong>Views are tied to the restored corpus.</strong>
 
             <span>
-              A pinned view continues to reference
-              the same published data version even
-              after a newer snapshot becomes
-              available.
+              The public interface reports what is
+              present in the restored analytical
+              database and keeps missing fields
+              visible where they affect coverage.
             </span>
           </div>
         </div>
@@ -822,6 +838,27 @@
     color: var(--color-mute, #6b6659);
     font-size: 0.8rem;
     line-height: 1.25rem;
+  }
+
+  .acknowledgements {
+    display: grid;
+    gap: 5px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid
+      var(--color-rule, #d9d2c1);
+  }
+
+  .acknowledgements strong {
+    font-size: 0.84rem;
+    line-height: 1.2rem;
+  }
+
+  .acknowledgements p {
+    margin: 0;
+    color: var(--color-mute, #6b6659);
+    font-size: 0.8rem;
+    line-height: 1.35rem;
   }
 
   .steps {

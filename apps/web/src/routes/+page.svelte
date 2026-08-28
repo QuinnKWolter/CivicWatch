@@ -33,7 +33,7 @@
       href: appPath('/place'),
       eyebrow: 'Places',
       title: 'Explore a state',
-      body: 'Compare chambers, state-level volume, topic mix, and top legislative voices.',
+      body: 'Scan chambers, state-level volume, topic mix, and top legislative voices.',
       visualKind: 'state',
       visualLabel: 'State activity grid'
     },

@@ -14,10 +14,11 @@
   export let data: any;
   let stateView: 'map' | 'grid' = 'map';
   let normalizationMode: 'none' | 'population' | 'legislators' = 'none';
-  let partyMode: 'both' | 'democratic' | 'republican' = 'both';
+  let partyMode: 'both' | 'democratic' | 'republican' =
+    data.context?.party === 'Democratic' ? 'democratic' : data.context?.party === 'Republican' ? 'republican' : 'both';
   let colorMode: 'volume' | 'contribution' = 'contribution';
-  let selectedTopic = 'all';
-  let loadedTopic = 'all';
+  let selectedTopic = data.context?.topic ? String(data.context.topic) : 'all';
+  let loadedTopic = selectedTopic;
   let stateRows = data.states.data;
   let topicLoading = false;
   let topicError = '';

@@ -43,9 +43,6 @@
   const instanceId = $props.id();
   const navigationId = `${instanceId}-primary-navigation`;
 
-  const fallbackSnapshotId =
-    'cw_2026_07_02_full';
-
   const navigationItems: NavigationItem[] = [
     {
       href: appPath('/who'),
@@ -72,12 +69,6 @@
         'Examine activity across time'
     },
     {
-      href: appPath('/compare'),
-      label: 'Compare',
-      description:
-        'Compare legislators and groups'
-    },
-    {
       href: appPath('/about'),
       label: 'About',
       description:
@@ -94,17 +85,6 @@
 
   const metadata = $derived.by(() =>
     extractMetadata(data)
-  );
-
-  const snapshotId = $derived(
-    cleanText(
-      firstValue([
-        metadata.snapshotId,
-        metadata.snapshot_id,
-        metadata.snapshot,
-        metadata.id
-      ])
-    ) ?? fallbackSnapshotId
   );
 
   const coverageEnd = $derived(
@@ -509,12 +489,6 @@
         <span>
           Data through {coverageEnd}
         </span>
-
-        <span aria-hidden="true">·</span>
-
-        <span>
-          Snapshot {snapshotId}
-        </span>
       </div>
     </nav>
 
@@ -621,7 +595,7 @@
   {/key}
 </main>
 
-<AnalystRail {snapshotId} />
+<AnalystRail />
 
 <footer class="site-footer">
   <div class="container footer-inner">
@@ -656,15 +630,6 @@
       <span>
         Data through
         <strong>{coverageEnd}</strong>
-      </span>
-
-      <span class="metadata-separator">
-        ·
-      </span>
-
-      <span>
-        Snapshot
-        <code>{snapshotId}</code>
       </span>
     </div>
   </div>
@@ -1120,21 +1085,6 @@
     font-weight: 600;
   }
 
-  .footer-metadata code {
-    overflow-wrap: anywhere;
-    color: var(
-      --color-mute,
-      #6b6659
-    );
-    font-family: var(
-      --type-mono,
-      'JetBrains Mono',
-      ui-monospace,
-      monospace
-    );
-    font-size: 0.66rem;
-  }
-
   @media (max-width: 1120px) {
     .header-inner {
       gap: 18px;
@@ -1353,10 +1303,6 @@
     .footer-navigation {
       grid-template-columns:
         repeat(2, minmax(0, 1fr));
-    }
-
-    .metadata-separator {
-      display: none;
     }
 
     .footer-metadata {
