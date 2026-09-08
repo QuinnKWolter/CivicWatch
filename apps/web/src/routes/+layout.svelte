@@ -626,6 +626,20 @@
       <a href={appPath('/topic')}>Topics</a>
     </nav>
 
+    <div class="footer-funding" aria-label="Funding acknowledgement">
+      <img
+        src={appPath('/nsf.png')}
+        alt="National Science Foundation"
+        width="38"
+        height="38"
+        loading="lazy"
+      />
+      <p>
+        Supported by the National Science Foundation.
+        <a href={appPath('/about#funding-heading')}>Read More</a>
+      </p>
+    </div>
+
     <div class="footer-metadata">
       <span>
         Data through
@@ -1059,6 +1073,46 @@
     );
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+
+  .footer-funding {
+    display: flex;
+    grid-column: 1 / -1;
+    gap: 12px;
+    align-items: center;
+    max-width: 620px;
+    padding-top: 4px;
+  }
+
+  .footer-funding img {
+    display: block;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    object-fit: contain;
+  }
+
+  .footer-funding p {
+    margin: 0;
+    color: var(--color-mute);
+    font-size: 0.74rem;
+    line-height: 1.18rem;
+  }
+
+  .footer-funding a {
+    color: var(--color-seal);
+    font-weight: 750;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  .footer-funding a:hover {
+    color: var(--color-ink);
+  }
+
+  .footer-funding a:focus-visible {
+    outline: 2px solid var(--color-seal);
+    outline-offset: 3px;
   }
 
   .footer-metadata {

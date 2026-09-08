@@ -858,103 +858,251 @@ app.get('/api/v1/legislators/:lid/network', async (request) => {
   );
 });
 
-app.get('/api/v1/topics', async () => {
-  const rows = await sql`
-    SELECT t.topic, t.topic_label,
-           COALESCE(sum(tpb.post_count), 0)::bigint AS post_count,
-           COALESCE(sum(tpb.total_likes), 0)::bigint AS total_likes,
-           COALESCE(sum(tpb.total_retweets), 0)::bigint AS total_retweets
-    FROM topics t
-    LEFT JOIN topic_party_breakdown tpb ON tpb.topic = t.topic
-    GROUP BY t.topic, t.topic_label
-    ORDER BY CASE WHEN t.topic = '999' THEN 999 ELSE t.topic::int END
-  `;
+app.get('/api/v1/topics', async (request) => {
+  const q = request.query as Query;
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const hasLiveFilters = Boolean(state || party || from || to);
+  const rows = hasLiveFilters
+    ? from || to
+      ? await sql`
+      SELECT t.topic, t.topic_label,
+             count(p.id)::bigint AS post_count,
+             COALESCE(sum(p.like_count), 0)::bigint AS total_likes,
+             COALESCE(sum(p.retweet_count), 0)::bigint AS total_retweets
+      FROM topics t
+      LEFT JOIN posts p ON p.topic = t.topic
+        AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < ${to}::date + 1)
+      LEFT JOIN legislators l ON l.lid = p.lid
+      WHERE (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+      GROUP BY t.topic, t.topic_label
+      ORDER BY CASE WHEN t.topic = '999' THEN 999 ELSE t.topic::int END
+    `
+      : await sql`
+      SELECT t.topic, t.topic_label,
+             COALESCE(sum(alt.post_count), 0)::bigint AS post_count,
+             0::bigint AS total_likes,
+             0::bigint AS total_retweets
+      FROM topics t
+      LEFT JOIN app_legislator_topic alt ON alt.topic = t.topic
+      LEFT JOIN legislators l ON l.lid = alt.lid
+      WHERE (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+      GROUP BY t.topic, t.topic_label
+      ORDER BY CASE WHEN t.topic = '999' THEN 999 ELSE t.topic::int END
+    `
+    : await sql`
+      SELECT t.topic, t.topic_label,
+             COALESCE(sum(tpb.post_count), 0)::bigint AS post_count,
+             COALESCE(sum(tpb.total_likes), 0)::bigint AS total_likes,
+             COALESCE(sum(tpb.total_retweets), 0)::bigint AS total_retweets
+      FROM topics t
+      LEFT JOIN topic_party_breakdown tpb ON tpb.topic = t.topic
+      GROUP BY t.topic, t.topic_label
+      ORDER BY CASE WHEN t.topic = '999' THEN 999 ELSE t.topic::int END
+    `;
   return envelope(rows.map((row) => ({
     topic: s(row.topic),
     topicLabel: s(row.topic_label) === 'Unknown Topic (999)' ? 'Uncategorized' : s(row.topic_label),
     postCount: n(row.post_count),
     totalEngagement: n(row.total_likes) + n(row.total_retweets)
-  })), 'topic_party_breakdown');
+  })), hasLiveFilters ? 'posts + legislators' : 'topic_party_breakdown', { state, party, from, to });
 });
 
 app.get('/api/v1/topics/:topicId', async (request) => {
   const topicId = normalizedTopic((request.params as { topicId: string }).topicId) ?? '999';
-  const [row] = await sql`
-    SELECT t.topic, t.topic_label, COALESCE(sum(tpb.post_count), 0)::bigint AS post_count,
-           COALESCE(sum(tpb.total_likes), 0)::bigint AS total_likes,
-           COALESCE(sum(tpb.total_retweets), 0)::bigint AS total_retweets
-    FROM topics t
-    LEFT JOIN topic_party_breakdown tpb ON tpb.topic = t.topic
-    WHERE t.topic = ${topicId}
-    GROUP BY t.topic, t.topic_label
-  `;
+  const q = request.query as Query;
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const hasLiveFilters = Boolean(state || party || from || to);
+  const [row] = hasLiveFilters
+    ? await sql`
+      SELECT t.topic, t.topic_label,
+             count(p.id)::bigint AS post_count,
+             COALESCE(sum(p.like_count), 0)::bigint AS total_likes,
+             COALESCE(sum(p.retweet_count), 0)::bigint AS total_retweets
+      FROM topics t
+      LEFT JOIN posts p ON p.topic = t.topic
+        AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < ${to}::date + 1)
+      LEFT JOIN legislators l ON l.lid = p.lid
+      WHERE t.topic = ${topicId}
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+      GROUP BY t.topic, t.topic_label
+    `
+    : await sql`
+      SELECT t.topic, t.topic_label, COALESCE(sum(tpb.post_count), 0)::bigint AS post_count,
+             COALESCE(sum(tpb.total_likes), 0)::bigint AS total_likes,
+             COALESCE(sum(tpb.total_retweets), 0)::bigint AS total_retweets
+      FROM topics t
+      LEFT JOIN topic_party_breakdown tpb ON tpb.topic = t.topic
+      WHERE t.topic = ${topicId}
+      GROUP BY t.topic, t.topic_label
+    `;
   return envelope(row ? {
     topic: s(row.topic),
     topicLabel: s(row.topic_label) === 'Unknown Topic (999)' ? 'Uncategorized' : s(row.topic_label),
     postCount: n(row.post_count),
     totalEngagement: n(row.total_likes) + n(row.total_retweets)
-  } : null, 'topic_party_breakdown', { topicId });
+  } : null, hasLiveFilters ? 'posts + legislators' : 'topic_party_breakdown', { ...q, topicId, state, party, from, to });
 });
 
 app.get('/api/v1/topic-ribbon', async (request) => {
   const q = request.query as Query;
-  const rows = await sql`
-    SELECT date::text, topic, topic_label, post_count, total_likes, total_retweets
-    FROM topic_engagement_daily
-    WHERE (${q.from ?? null}::date IS NULL OR date >= ${q.from ?? null}::date)
-      AND (${q.to ?? null}::date IS NULL OR date <= ${q.to ?? null}::date)
-    ORDER BY date, CASE WHEN topic = '999' THEN 999 ELSE topic::int END
-  `;
-  return envelope(rows, 'topic_engagement_daily', q);
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const hasLiveFilters = Boolean(state || party);
+  const rows = hasLiveFilters
+    ? await sql`
+      WITH filtered_legislators AS MATERIALIZED (
+        SELECT lid
+        FROM legislators
+        WHERE (${state}::text IS NULL OR state = ${state})
+          AND (${party}::text IS NULL OR party = ${party})
+      )
+      SELECT p.created_at::date::text AS date, p.topic, t.topic_label,
+             count(*)::bigint AS post_count,
+             COALESCE(sum(p.like_count), 0)::bigint AS total_likes,
+             COALESCE(sum(p.retweet_count), 0)::bigint AS total_retweets
+      FROM posts p
+      JOIN topics t ON t.topic = p.topic
+      JOIN filtered_legislators l ON l.lid = p.lid
+      WHERE (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < ${to}::date + 1)
+      GROUP BY p.created_at::date, p.topic, t.topic_label
+      ORDER BY p.created_at::date, CASE WHEN p.topic = '999' THEN 999 ELSE p.topic::int END
+    `
+    : await sql`
+      SELECT date::text, topic, topic_label, post_count, total_likes, total_retweets
+      FROM topic_engagement_daily
+      WHERE (${from}::date IS NULL OR date >= ${from}::date)
+        AND (${to}::date IS NULL OR date <= ${to}::date)
+      ORDER BY date, CASE WHEN topic = '999' THEN 999 ELSE topic::int END
+    `;
+  return envelope(rows, hasLiveFilters ? 'posts + legislators' : 'topic_engagement_daily', { ...q, state, party, from, to });
 });
 
 app.get('/api/v1/topics/:topicId/ribbon', async (request) => {
   const topicId = normalizedTopic((request.params as { topicId: string }).topicId) ?? '999';
   const q = request.query as Query;
-  const rows = await sql`
-    SELECT date::text, topic, topic_label, post_count, total_likes, total_retweets
-    FROM topic_engagement_daily
-    WHERE topic = ${topicId}
-      AND (${q.from ?? null}::date IS NULL OR date >= ${q.from ?? null}::date)
-      AND (${q.to ?? null}::date IS NULL OR date <= ${q.to ?? null}::date)
-    ORDER BY date
-  `;
-  return envelope(rows, 'topic_engagement_daily', { ...q, topicId });
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const hasLiveFilters = Boolean(state || party);
+  const rows = hasLiveFilters
+    ? await sql`
+      SELECT p.created_at::date::text AS date, p.topic, t.topic_label,
+             count(*)::bigint AS post_count,
+             COALESCE(sum(p.like_count), 0)::bigint AS total_likes,
+             COALESCE(sum(p.retweet_count), 0)::bigint AS total_retweets
+      FROM posts p
+      JOIN topics t ON t.topic = p.topic
+      JOIN legislators l ON l.lid = p.lid
+      WHERE p.topic = ${topicId}
+        AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < ${to}::date + 1)
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+      GROUP BY p.created_at::date, p.topic, t.topic_label
+      ORDER BY p.created_at::date
+    `
+    : await sql`
+      SELECT date::text, topic, topic_label, post_count, total_likes, total_retweets
+      FROM topic_engagement_daily
+      WHERE topic = ${topicId}
+        AND (${from}::date IS NULL OR date >= ${from}::date)
+        AND (${to}::date IS NULL OR date <= ${to}::date)
+      ORDER BY date
+    `;
+  return envelope(rows, hasLiveFilters ? 'posts + legislators' : 'topic_engagement_daily', { ...q, topicId, state, party, from, to });
 });
 
 app.get('/api/v1/topics/:topicId/state-salience', async (request) => {
   const topicId = normalizedTopic((request.params as { topicId: string }).topicId) ?? '999';
-  const rows = await sql`
-    WITH represented_legislators AS (
-      SELECT state, count(DISTINCT lid)::int AS legislator_count,
-             count(DISTINCT lid) FILTER (WHERE party = 'Democratic')::int AS democratic_legislator_count,
-             count(DISTINCT lid) FILTER (WHERE party = 'Republican')::int AS republican_legislator_count
-      FROM app_legislator_summary
-      WHERE state IS NOT NULL
-      GROUP BY state
-    ), party_activity AS (
-      SELECT legislators.state,
-             sum(app_legislator_topic.post_count) FILTER (WHERE legislators.party = 'Democratic')::bigint AS democratic_post_count,
-             sum(app_legislator_topic.post_count) FILTER (WHERE legislators.party = 'Republican')::bigint AS republican_post_count
-      FROM app_legislator_topic
-      JOIN legislators USING (lid)
-      WHERE app_legislator_topic.topic = ${topicId}
-      GROUP BY legislators.state
-    )
-    SELECT breakdown.state, breakdown.topic, breakdown.topic_label,
-           breakdown.post_count, breakdown.total_likes, breakdown.total_retweets,
-           represented_legislators.legislator_count,
-           represented_legislators.democratic_legislator_count,
-           represented_legislators.republican_legislator_count,
-           party_activity.democratic_post_count,
-           party_activity.republican_post_count
-    FROM topic_state_breakdown AS breakdown
-    LEFT JOIN represented_legislators USING (state)
-    LEFT JOIN party_activity USING (state)
-    WHERE breakdown.topic = ${topicId}
-    ORDER BY breakdown.state
-  `;
-  return envelope(rows, 'topic_state_breakdown', { topicId });
+  const q = request.query as Query;
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const hasLiveFilters = Boolean(state || party || from || to);
+  const rows = hasLiveFilters
+    ? await sql`
+      WITH represented_legislators AS (
+        SELECT state, count(DISTINCT lid)::int AS legislator_count,
+               count(DISTINCT lid) FILTER (WHERE party = 'Democratic')::int AS democratic_legislator_count,
+               count(DISTINCT lid) FILTER (WHERE party = 'Republican')::int AS republican_legislator_count
+        FROM legislators
+        WHERE state IS NOT NULL
+          AND (${state}::text IS NULL OR state = ${state})
+          AND (${party}::text IS NULL OR party = ${party})
+        GROUP BY state
+      )
+      SELECT l.state, p.topic, t.topic_label,
+             count(*)::bigint AS post_count,
+             COALESCE(sum(p.like_count), 0)::bigint AS total_likes,
+             COALESCE(sum(p.retweet_count), 0)::bigint AS total_retweets,
+             represented_legislators.legislator_count,
+             represented_legislators.democratic_legislator_count,
+             represented_legislators.republican_legislator_count,
+             count(*) FILTER (WHERE l.party = 'Democratic')::bigint AS democratic_post_count,
+             count(*) FILTER (WHERE l.party = 'Republican')::bigint AS republican_post_count
+      FROM posts p
+      JOIN topics t ON t.topic = p.topic
+      JOIN legislators l ON l.lid = p.lid
+      LEFT JOIN represented_legislators ON represented_legislators.state = l.state
+      WHERE p.topic = ${topicId}
+        AND l.state IS NOT NULL
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+        AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < ${to}::date + 1)
+      GROUP BY l.state, p.topic, t.topic_label,
+               represented_legislators.legislator_count,
+               represented_legislators.democratic_legislator_count,
+               represented_legislators.republican_legislator_count
+      ORDER BY l.state
+    `
+    : await sql`
+      WITH represented_legislators AS (
+        SELECT state, count(DISTINCT lid)::int AS legislator_count,
+               count(DISTINCT lid) FILTER (WHERE party = 'Democratic')::int AS democratic_legislator_count,
+               count(DISTINCT lid) FILTER (WHERE party = 'Republican')::int AS republican_legislator_count
+        FROM app_legislator_summary
+        WHERE state IS NOT NULL
+        GROUP BY state
+      ), party_activity AS (
+        SELECT legislators.state,
+               sum(app_legislator_topic.post_count) FILTER (WHERE legislators.party = 'Democratic')::bigint AS democratic_post_count,
+               sum(app_legislator_topic.post_count) FILTER (WHERE legislators.party = 'Republican')::bigint AS republican_post_count
+        FROM app_legislator_topic
+        JOIN legislators USING (lid)
+        WHERE app_legislator_topic.topic = ${topicId}
+        GROUP BY legislators.state
+      )
+      SELECT breakdown.state, breakdown.topic, breakdown.topic_label,
+             breakdown.post_count, breakdown.total_likes, breakdown.total_retweets,
+             represented_legislators.legislator_count,
+             represented_legislators.democratic_legislator_count,
+             represented_legislators.republican_legislator_count,
+             party_activity.democratic_post_count,
+             party_activity.republican_post_count
+      FROM topic_state_breakdown AS breakdown
+      LEFT JOIN represented_legislators USING (state)
+      LEFT JOIN party_activity USING (state)
+      WHERE breakdown.topic = ${topicId}
+      ORDER BY breakdown.state
+    `;
+  return envelope(rows, hasLiveFilters ? 'posts + legislators' : 'topic_state_breakdown', { ...q, topicId, state, party, from, to });
 });
 
 app.get('/api/v1/topics/:topicId/party-chamber', async (request) => {
@@ -962,15 +1110,21 @@ app.get('/api/v1/topics/:topicId/party-chamber', async (request) => {
   const q = request.query as Query;
   const state = q.state?.toUpperCase() ?? null;
   const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
-  const rows = state || party
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const hasLiveFilters = Boolean(state || party || from || to);
+  const rows = hasLiveFilters
     ? await sql`
-      SELECT l.party, l.chamber, sum(alt.post_count)::bigint AS post_count,
-             0::bigint AS total_likes, 0::bigint AS total_retweets
-      FROM app_legislator_topic alt
-      JOIN legislators l USING (lid)
-      WHERE alt.topic = ${topicId}
+      SELECT l.party, l.chamber, count(*)::bigint AS post_count,
+             COALESCE(sum(p.like_count), 0)::bigint AS total_likes,
+             COALESCE(sum(p.retweet_count), 0)::bigint AS total_retweets
+      FROM posts p
+      JOIN legislators l ON l.lid = p.lid
+      WHERE p.topic = ${topicId}
         AND (${state}::text IS NULL OR l.state = ${state})
         AND (${party}::text IS NULL OR l.party = ${party})
+        AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < ${to}::date + 1)
       GROUP BY l.party, l.chamber
       ORDER BY l.party, l.chamber
     `
@@ -980,7 +1134,7 @@ app.get('/api/v1/topics/:topicId/party-chamber', async (request) => {
       WHERE topic = ${topicId}
       ORDER BY party, chamber
     `;
-  return envelope(rows, state || party ? 'app_legislator_topic + legislators' : 'app_topic_party_chamber', { ...q, topicId, state, party });
+  return envelope(rows, hasLiveFilters ? 'posts + legislators' : 'app_topic_party_chamber', { ...q, topicId, state, party, from, to });
 });
 
 app.get('/api/v1/topics/:topicId/beeswarm', async (request) => {
@@ -1015,15 +1169,48 @@ app.get('/api/v1/topics/:topicId/beeswarm', async (request) => {
 
 app.get('/api/v1/topics/:topicId/adjacent', async (request) => {
   const topicId = normalizedTopic((request.params as { topicId: string }).topicId) ?? '999';
-  const rows = await sql`
-    SELECT topic, topic_label, sum(post_count)::bigint AS post_count
-    FROM topic_party_breakdown
-    WHERE topic <> ${topicId}
-    GROUP BY topic, topic_label
-    ORDER BY sum(post_count) DESC
-    LIMIT 8
-  `;
-  return envelope(rows, 'topic_party_breakdown', { topicId });
+  const q = request.query as Query;
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
+  const from = q.from ?? null;
+  const to = q.to ?? null;
+  const hasLiveFilters = Boolean(state || party || from || to);
+  const rows = hasLiveFilters
+    ? from || to
+      ? await sql`
+      SELECT p.topic, t.topic_label, count(*)::bigint AS post_count
+      FROM posts p
+      JOIN topics t ON t.topic = p.topic
+      JOIN legislators l ON l.lid = p.lid
+      WHERE p.topic <> ${topicId}
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+        AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+        AND (${to}::date IS NULL OR p.created_at < ${to}::date + 1)
+      GROUP BY p.topic, t.topic_label
+      ORDER BY count(*) DESC
+      LIMIT 8
+    `
+      : await sql`
+      SELECT alt.topic, alt.topic_label, sum(alt.post_count)::bigint AS post_count
+      FROM app_legislator_topic alt
+      JOIN legislators l USING (lid)
+      WHERE alt.topic <> ${topicId}
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+      GROUP BY alt.topic, alt.topic_label
+      ORDER BY sum(alt.post_count) DESC
+      LIMIT 8
+    `
+    : await sql`
+      SELECT topic, topic_label, sum(post_count)::bigint AS post_count
+      FROM topic_party_breakdown
+      WHERE topic <> ${topicId}
+      GROUP BY topic, topic_label
+      ORDER BY sum(post_count) DESC
+      LIMIT 8
+    `;
+  return envelope(rows, hasLiveFilters ? 'posts + legislators' : 'topic_party_breakdown', { ...q, topicId, state, party, from, to });
 });
 
 app.get('/api/v1/topics/:topicId/top-posts', async (request) => {

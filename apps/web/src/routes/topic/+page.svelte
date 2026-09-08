@@ -69,7 +69,7 @@
 </style>
 
 <section class="container split band">
-  <TopicRibbon rows={data.ribbon.data} drilldownContext={data.context} />
+  <TopicRibbon rows={data.topics.data} drilldownContext={data.context} />
   <div class="card">
     <PanelHeader title="Daily aggregate sample" caption="First rows from the materialized fast path for the ribbon." source="topic_engagement_daily" count={data.ribbon.data.length} />
     <DataTable rows={data.ribbon.data} columns={[

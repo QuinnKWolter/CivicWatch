@@ -7,8 +7,10 @@
     Globe,
     Linkedin,
     Mail,
+    ShieldCheck,
     Users
   } from 'lucide-svelte';
+  import { appPath } from '$lib/paths';
 
   type LinkItem = {
     label: string;
@@ -286,6 +288,45 @@
         {/each}
       </ul>
     </section>
+
+    <section class="prose-section funding-section" aria-labelledby="funding-heading">
+      <div class="section-heading">
+        <ShieldCheck size={20} strokeWidth={1.8} aria-hidden="true" />
+        <h2 id="funding-heading">Funding</h2>
+      </div>
+
+      <div class="funding-content">
+        <img
+          src={appPath('/nsf.png')}
+          alt="National Science Foundation logo"
+          width="96"
+          height="96"
+          loading="lazy"
+        />
+
+        <p>
+          We are grateful for the support of the
+          <a
+            href="https://www.nsf.gov/awardsearch/show-award?AWD_ID=2318461"
+            target="_blank"
+            rel="noreferrer"
+          >
+            National Science Foundation (NSF #2318461)
+          </a>
+          and
+          <a
+            href="https://brightinitiative.com/partners-stories/civicwatch-helping-researchers-understand-how-public-officials-communicate-online"
+            target="_blank"
+            rel="noreferrer"
+          >
+            the Bright Initiative
+          </a>.
+          Any opinions, findings, and conclusions or recommendations expressed
+          in this material do not necessarily reflect the views of the funding
+          sources.
+        </p>
+      </div>
+    </section>
   </div>
 </section>
 
@@ -483,6 +524,37 @@
     outline-offset: 2px;
   }
 
+  .funding-section {
+    padding-bottom: 0;
+  }
+
+  .funding-content {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+    max-width: 900px;
+    padding: 18px;
+    border: 1px solid var(--color-rule);
+    border-radius: 8px;
+    background:
+      color-mix(
+        in srgb,
+        var(--color-elevated) 74%,
+        transparent
+      );
+  }
+
+  .funding-content img {
+    display: block;
+    width: 82px;
+    height: auto;
+  }
+
+  .funding-content p {
+    margin: 0;
+  }
+
   .sr-only {
     position: absolute;
     width: 1px;
@@ -506,6 +578,16 @@
 
     .acknowledgement-list nav {
       justify-content: flex-start;
+    }
+
+    .funding-content {
+      grid-template-columns: 1fr;
+      gap: 14px;
+      padding: 16px;
+    }
+
+    .funding-content img {
+      width: 76px;
     }
   }
 </style>

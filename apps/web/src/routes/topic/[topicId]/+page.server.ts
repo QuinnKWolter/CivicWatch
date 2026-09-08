@@ -11,14 +11,14 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
     to: context.to
   };
   const [topic, topics, ribbon, salience, beeswarm, topPosts, partyChamber, adjacent] = await Promise.all([
-    api(fetch, `/topics/${params.topicId}`),
-    api(fetch, '/topics'),
+    api(fetch, `/topics/${params.topicId}`, filters),
+    api(fetch, '/topics', filters),
     api(fetch, `/topics/${params.topicId}/ribbon`, filters),
-    api(fetch, `/topics/${params.topicId}/state-salience`),
+    api(fetch, `/topics/${params.topicId}/state-salience`, filters),
     api(fetch, `/topics/${params.topicId}/beeswarm`, filters),
     api(fetch, `/topics/${params.topicId}/top-posts`, { limit: 10, ...filters }),
     api(fetch, `/topics/${params.topicId}/party-chamber`, filters),
-    api(fetch, `/topics/${params.topicId}/adjacent`)
+    api(fetch, `/topics/${params.topicId}/adjacent`, filters)
   ]);
   const currentPath = `${url.pathname}${url.search}`;
   const inheritedFilters = [

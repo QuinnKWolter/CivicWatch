@@ -33,6 +33,7 @@
   let salienceRequestId = 0;
   const apiBase = (env.PUBLIC_API_BASE_URL ?? 'http://127.0.0.1:4000/api/v1').replace(/\/+$/, '');
   $: topic = data.topic.data ?? {};
+  $: hasPageFilters = Boolean(data.context?.state || data.context?.party || data.context?.from || data.context?.to);
   $: states = salienceRows.map((row: any) => ({
     state: row.state,
     postCount: row.postCount ?? row.post_count,
@@ -57,8 +58,14 @@
     const path = nextTopic === 'all'
       ? '/states'
       : `/topics/${encodeURIComponent(nextTopic)}/state-salience`;
+    const params = new URLSearchParams();
+    if (data.context.state) params.set('state', data.context.state);
+    if (data.context.party) params.set('party', data.context.party);
+    if (data.context.from) params.set('from', data.context.from);
+    if (data.context.to) params.set('to', data.context.to);
+    const query = params.toString();
     try {
-      const response = await fetch(`${apiBase}${path}`, {
+      const response = await fetch(`${apiBase}${path}${query ? `?${query}` : ''}`, {
         headers: { accept: 'application/json' },
         cache: 'no-store',
         signal: salienceController.signal
@@ -90,8 +97,8 @@
   </h1>
   <FilterChips filters={data.inheritedFilters} clearHref={appPath(data.clearContextHref)} ariaLabel="Inherited drilldown filters" />
   <div class="grid grid-3">
-    <div class="card"><span class="caption">Posts in party-labeled aggregate</span><strong class="number">{compact(topic.postCount)}</strong></div>
-    <div class="card"><span class="caption">Engagement</span><strong class="number">{compact(topic.totalEngagement)}</strong></div>
+    <div class="card"><span class="caption">{hasPageFilters ? 'Posts in current filter' : 'Posts in party-labeled aggregate'}</span><strong class="number">{compact(topic.postCount)}</strong></div>
+    <div class="card"><span class="caption">{hasPageFilters ? 'Filtered engagement' : 'Engagement'}</span><strong class="number">{compact(topic.totalEngagement)}</strong></div>
     <div class="card"><span class="caption">Ideology dots</span><strong class="number">{compact(data.beeswarm.data.length)}</strong></div>
   </div>
 </section>
