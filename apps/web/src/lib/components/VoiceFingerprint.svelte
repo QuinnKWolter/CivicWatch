@@ -1,5 +1,6 @@
 <script lang="ts">
   import { pct } from '$lib/format';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import { withBase } from '$lib/paths';
 
   type SortMode =
@@ -17,6 +18,7 @@
 
     hrefPrefix?: string | null;
     selectedTopic?: string | number | null;
+    drilldownContext?: DrilldownContext;
 
     limit?: number | null;
     sort?: SortMode;
@@ -59,6 +61,7 @@
     ariaLabel = 'Topic deviations from the party median',
     hrefPrefix = '/topic/',
     selectedTopic = null,
+    drilldownContext = {},
     limit = 14,
     sort = 'absolute',
     maxDeviation = null,
@@ -391,9 +394,12 @@
       return null;
     }
 
-    return withBase(`${safeHrefPrefix}${encodeURIComponent(
-      topic
-    )}`);
+    return withBase(
+      appendDrilldownContext(
+        `${safeHrefPrefix}${encodeURIComponent(topic)}`,
+        drilldownContext
+      )
+    );
   }
 
   function normalizeRow(

@@ -67,7 +67,9 @@
     date: 'Date',
     width: 'Window',
     bucket: 'Time bucket',
-    sort: 'Sort'
+    sort: 'Sort',
+    normalize: 'Origin scale',
+    color: 'Origin color'
   };
 
   let open = $state(false);
@@ -201,7 +203,9 @@
         topic: params.get('topic') ?? '',
         party: params.get('party') ?? '',
         from: params.get('from') ?? '',
-        to: params.get('to') ?? ''
+        to: params.get('to') ?? '',
+        normalize: params.get('normalize') ?? '',
+        color: params.get('color') ?? ''
       });
 
       return {
@@ -217,7 +221,9 @@
           selectControl('topic', 'Topic', params.get('topic') ?? '', topicOptions),
           selectControl('party', 'Party', params.get('party') ?? '', partyOptions()),
           dateControl('from', 'From', params.get('from') ?? ''),
-          dateControl('to', 'To', params.get('to') ?? '')
+          dateControl('to', 'To', params.get('to') ?? ''),
+          selectControl('normalize', 'Origin scale', params.get('normalize') ?? '', normalizationOptions()),
+          selectControl('color', 'Origin color', params.get('color') ?? '', colorOptions())
         ],
         exportOptions: [
           {
@@ -243,7 +249,9 @@
     if (segments[0] === 'place') {
       const filters = filterObject({
         topic: params.get('topic') ?? '',
-        party: params.get('party') ?? ''
+        party: params.get('party') ?? '',
+        normalize: params.get('normalize') ?? '',
+        color: params.get('color') ?? ''
       });
 
       return {
@@ -254,7 +262,9 @@
         activeFilters: queryFilters,
         controls: [
           selectControl('topic', 'Topic', params.get('topic') ?? '', topicOptions),
-          selectControl('party', 'Party', params.get('party') ?? '', partyOptions())
+          selectControl('party', 'Party', params.get('party') ?? '', partyOptions()),
+          selectControl('normalize', 'Origin scale', params.get('normalize') ?? '', normalizationOptions()),
+          selectControl('color', 'Origin color', params.get('color') ?? '', colorOptions())
         ],
         exportOptions: [
           {
@@ -285,7 +295,9 @@
         state: params.get('state') ?? '',
         party: params.get('party') ?? '',
         from: params.get('from') ?? '',
-        to: params.get('to') ?? ''
+        to: params.get('to') ?? '',
+        normalize: params.get('normalize') ?? '',
+        color: params.get('color') ?? ''
       });
 
       return {
@@ -301,7 +313,9 @@
           textControl('state', 'State', params.get('state') ?? '', 'TX', 2),
           selectControl('party', 'Party', params.get('party') ?? '', partyOptions()),
           dateControl('from', 'From', params.get('from') ?? ''),
-          dateControl('to', 'To', params.get('to') ?? '')
+          dateControl('to', 'To', params.get('to') ?? ''),
+          selectControl('normalize', 'Origin scale', params.get('normalize') ?? '', normalizationOptions()),
+          selectControl('color', 'Origin color', params.get('color') ?? '', colorOptions())
         ],
         exportOptions: [
           {
@@ -596,6 +610,21 @@
     ];
   }
 
+  function normalizationOptions() {
+    return [
+      { value: '', label: 'None' },
+      { value: 'population', label: 'State population' },
+      { value: 'legislators', label: 'Represented legislators' }
+    ];
+  }
+
+  function colorOptions() {
+    return [
+      { value: '', label: 'Post volume' },
+      { value: 'contribution', label: 'Party contribution' }
+    ];
+  }
+
   function topicSelectOptions(data: Record<string, unknown>) {
     const rows = envelopeRows(data.topics);
     const options = rows.map((row) => ({
@@ -645,6 +674,14 @@
     if (value === '__unknown') return 'Unknown';
     if (key === 'topic' && value === '999') return 'Uncategorized';
     if (key === 'width') return `${value} days`;
+    if (key === 'normalize') {
+      return value === 'population'
+        ? 'State population'
+        : value === 'legislators'
+          ? 'Represented legislators'
+          : value;
+    }
+    if (key === 'color' && value === 'contribution') return 'Party contribution';
     return decodeURIComponent(value).replaceAll('_', ' ');
   }
 

@@ -35,7 +35,7 @@
 </section>
 
 <section class="container split band">
-  <VoiceFingerprint rows={data.fingerprint.data} />
+  <VoiceFingerprint rows={data.fingerprint.data} drilldownContext={data.context} />
   <aside class="card">
     <PanelHeader title="Public-record fields" caption="Unavailable public-record matches stay visible as dashes." source="legislators" />
     <dl>
@@ -64,7 +64,14 @@
     initialTopPosts={data.topPosts.data}
     initialRecentPosts={data.posts.data}
     initialRecentCursor={data.posts.meta?.nextCursor ?? null}
-    filters={{ lid: profile.lid, topic: data.context.topic }}
+    filters={{
+      lid: profile.lid,
+      topic: data.context.topic,
+      state: data.context.state,
+      party: data.context.party,
+      from: data.context.from,
+      to: data.context.to
+    }}
     pageSize={10}
     sampleSize={6}
   />

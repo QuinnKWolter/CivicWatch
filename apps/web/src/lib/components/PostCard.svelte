@@ -118,13 +118,14 @@
     return href ? appendDrilldownContext(href, drilldownContext) : null;
   });
 
-  const topicHref = $derived(
-    buildInternalHref(
+  const topicHref = $derived.by(() => {
+    const href = buildInternalHref(
       topicBase,
       normalized.topicId,
       '/topic'
-    )
-  );
+    );
+    return href ? appendDrilldownContext(href, drilldownContext) : null;
+  });
 
   const sourceIsExternal = $derived(
     isExternalHref(normalized.sourceHref)

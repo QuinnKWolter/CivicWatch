@@ -12,6 +12,7 @@
     X
   } from 'lucide-svelte';
   import { compact, partyInitial, titleCasePersonName } from '$lib/format';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import { withBase } from '$lib/paths';
 
   type SortKey =
@@ -37,6 +38,7 @@
     pageSize?: number;
     maxTableHeight?: string | null;
     syncUrl?: boolean;
+    drilldownContext?: DrilldownContext;
     afterTable?: Snippet<[any[]]>;
 
     /**
@@ -89,6 +91,7 @@
     pageSize = 40,
     maxTableHeight = null,
     syncUrl = false,
+    drilldownContext = {},
     hasMore = false,
     loadingMore = false,
     loadMore = null,
@@ -665,9 +668,18 @@
       ? profileBase.replace(/\/+$/, '')
       : '/who';
 
-    return withBase(`${base}/${encodeURIComponent(
-      row.lid
-    )}`);
+    const context = {
+      ...drilldownContext,
+      state: stateFilter.length === 2 ? stateFilter.toUpperCase() : drilldownContext.state,
+      party: partyFilter === 'Democratic' || partyFilter === 'Republican' ? partyFilter : drilldownContext.party
+    } satisfies DrilldownContext;
+
+    return withBase(
+      appendDrilldownContext(
+        `${base}/${encodeURIComponent(row.lid)}`,
+        context
+      )
+    );
   }
 
   function partyClass(

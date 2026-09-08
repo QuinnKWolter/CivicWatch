@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import { withBase } from '$lib/paths';
   import TopicIcon from './TopicIcon.svelte';
 
@@ -39,6 +40,7 @@
     showRank?: boolean;
     showSummary?: boolean;
     showTopicIcons?: boolean | null;
+    drilldownContext?: DrilldownContext;
 
     /**
      * Optional custom value formatter.
@@ -70,6 +72,7 @@
     showRank = false,
     showSummary = false,
     showTopicIcons = null,
+    drilldownContext = {},
     formatValue = null
   }: Props = $props();
 
@@ -238,9 +241,12 @@
 
     if (!segment) return null;
 
-    return withBase(`${safeHrefPrefix}${encodeURIComponent(
-      segment
-    )}`);
+    return withBase(
+      appendDrilldownContext(
+        `${safeHrefPrefix}${encodeURIComponent(segment)}`,
+        drilldownContext
+      )
+    );
   }
 
   function normalizeRow(

@@ -32,7 +32,13 @@
 <section class="container split band">
   <div class="card">
     <PanelHeader title="Topic mix" caption="State speech by topic, sorted by volume." source="topic_state_breakdown" count={topics.length} />
-    <TopicBars {topics} />
+    <TopicBars
+      {topics}
+      drilldownContext={{
+        ...data.context,
+        state: data.state
+      }}
+    />
   </div>
   <TimeBars rows={data.trend.data} dateKey="month" valueKey="post_count" label="State trend" drilldownContext={{ state: data.state, topic: data.context.topic, party: data.context.party }} />
 </section>
@@ -45,7 +51,13 @@
       caption="Switch between high-engagement posts, recent posts, and representative samples from this state."
       source="posts + legislators"
       initialTopPosts={data.topPosts.data}
-      filters={{ state: data.state, topic: data.context.topic, party: data.context.party }}
+      filters={{
+        state: data.state,
+        topic: data.context.topic,
+        party: data.context.party,
+        from: data.context.from,
+        to: data.context.to
+      }}
       pageSize={6}
       sampleSize={4}
     />

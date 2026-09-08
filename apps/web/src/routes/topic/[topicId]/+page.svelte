@@ -4,6 +4,7 @@
   import Beeswarm from '$lib/components/Beeswarm.svelte';
   import DataTable from '$lib/components/DataTable.svelte';
   import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  import FilterChips from '$lib/components/FilterChips.svelte';
   import MiniBars from '$lib/components/MiniBars.svelte';
   import PanelHeader from '$lib/components/PanelHeader.svelte';
   import PartyChamberMatrix from '$lib/components/PartyChamberMatrix.svelte';
@@ -18,9 +19,11 @@
   import { appPath } from '$lib/paths';
   import { appendDrilldownContext } from '$lib/drilldown';
   export let data: any;
-  let stateNormalizationMode: 'none' | 'population' | 'legislators' = 'none';
-  let statePartyMode: 'both' | 'democratic' | 'republican' = 'both';
-  let stateColorMode: 'volume' | 'contribution' = 'volume';
+  let stateNormalizationMode: 'none' | 'population' | 'legislators' = data.context?.normalize ?? 'none';
+  let statePartyMode: 'both' | 'democratic' | 'republican' =
+    data.context?.party === 'Democratic' ? 'democratic' : data.context?.party === 'Republican' ? 'republican' : 'both';
+  let stateColorMode: 'volume' | 'contribution' =
+    data.context?.color === 'contribution' ? 'contribution' : 'contribution';
   let salienceTopic = String(data.topic.data?.topic ?? 'all');
   let loadedSalienceTopic = salienceTopic;
   let salienceRows = data.salience.data;
@@ -85,6 +88,7 @@
     <TopicIcon label={topic.topicLabel} size={32} />
     <span>{topic.topicLabel}</span>
   </h1>
+  <FilterChips filters={data.inheritedFilters} clearHref={appPath(data.clearContextHref)} ariaLabel="Inherited drilldown filters" />
   <div class="grid grid-3">
     <div class="card"><span class="caption">Posts in party-labeled aggregate</span><strong class="number">{compact(topic.postCount)}</strong></div>
     <div class="card"><span class="caption">Engagement</span><strong class="number">{compact(topic.totalEngagement)}</strong></div>
@@ -93,7 +97,7 @@
 </section>
 
 <section class="container split band">
-  <TimeBars rows={data.ribbon.data} dateKey="date" valueKey="post_count" label="Topic volume over time" drilldownContext={{ topic: String(topic.topic) }} />
+  <TimeBars rows={data.ribbon.data} dateKey="date" valueKey="post_count" label="Topic volume over time" drilldownContext={{ ...data.context, topic: String(topic.topic) }} />
   <div class="card">
     <PanelHeader title="State salience" caption={`Where ${salienceTopicLabel} appears most often across states, measured by post counts.`} />
     <div class="salience-normalization">
@@ -115,6 +119,7 @@
       colorMode={stateColorMode}
       drilldownContext={{
         topic: salienceTopic === 'all' ? undefined : salienceTopic,
+        state: data.context.state,
         party: statePartyMode === 'democratic' ? 'Democratic' : statePartyMode === 'republican' ? 'Republican' : undefined,
         normalize: stateNormalizationMode === 'none' ? undefined : stateNormalizationMode,
         color: stateColorMode === 'contribution' ? 'contribution' : undefined
@@ -128,19 +133,19 @@
   <PartyChamberMatrix rows={data.partyChamber.data} />
   <div class="card">
     <PanelHeader title="Adjacent topics" caption="Other high-volume topics in the same corpus context." source="topic_party_breakdown" count={data.adjacent.data.length} />
-    <MiniBars rows={data.adjacent.data} labelKey="topic_label" valueKey="post_count" hrefPrefix="/topic/" />
+    <MiniBars rows={data.adjacent.data} labelKey="topic_label" valueKey="post_count" hrefPrefix="/topic/" drilldownContext={{ ...data.context, topic: String(topic.topic) }} />
   </div>
 </section>
 
 <section class="container band">
-  <Beeswarm rows={data.beeswarm.data} drilldownContext={{ topic: String(topic.topic) }} />
+  <Beeswarm rows={data.beeswarm.data} drilldownContext={{ ...data.context, topic: String(topic.topic) }} />
 </section>
 
 <section class="container band">
   <div class="card">
     <PanelHeader title="Most concentrated voices" caption="Legislators with the largest share of their posts on this topic." source="app_legislator_topic" count={concentratedLegislators.length} />
     <DataTable rows={concentratedLegislators} columns={[
-      { key: 'name', label: 'Legislator', href: (row: any) => appPath(appendDrilldownContext(`/who/${row.lid}`, { topic: String(topic.topic) })) },
+      { key: 'name', label: 'Legislator', href: (row: any) => appPath(appendDrilldownContext(`/who/${row.lid}`, { ...data.context, topic: String(topic.topic) })) },
       { key: 'party', label: 'Party' },
       { key: 'mrpIdeology', label: 'Ideology', numeric: true, format: (value: any) => Number(value).toFixed(3) },
       { key: 'share', label: 'Share', numeric: true, format: (value: any) => pct(value, 1) }
@@ -154,7 +159,13 @@
     caption="Browse high-engagement posts, recent posts, and representative samples assigned to this topic."
     source="posts"
     initialTopPosts={data.topPosts.data}
-    filters={{ topic: topic.topic }}
+    filters={{
+      topic: topic.topic,
+      state: data.context.state,
+      party: data.context.party,
+      from: data.context.from,
+      to: data.context.to
+    }}
   />
 </section>
 

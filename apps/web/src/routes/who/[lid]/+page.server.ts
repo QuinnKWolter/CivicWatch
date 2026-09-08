@@ -5,9 +5,9 @@ import { parseDrilldownContext, removeDrilldownFilter } from '$lib/drilldown';
 export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const lid = encodeURIComponent(params.lid);
   const context = parseDrilldownContext(url.searchParams);
-  const filters = { topic: context.topic };
+  const filters = { topic: context.topic, from: context.from, to: context.to };
 
-  const profile = await api<any>(fetch, `/legislators/${lid}`, filters);
+  const profile = await api<any>(fetch, `/legislators/${lid}`, { topic: context.topic });
 
   const [fingerprint, posts, topPosts, network] = await Promise.all([
     api<any>(fetch, `/legislators/${lid}/voice-fingerprint`, filters).catch(() => ({
@@ -60,7 +60,10 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
     : '';
   const inheritedFilters = [
     context.topic ? { label: 'Topic', value: topicLabel, href: removeDrilldownFilter(currentPath, 'topic') } : null,
+    context.state ? { label: 'State', value: context.state, href: removeDrilldownFilter(currentPath, 'state') } : null,
     context.party ? { label: 'Party', value: context.party, href: removeDrilldownFilter(currentPath, 'party') } : null,
+    context.from ? { label: 'From', value: context.from, href: removeDrilldownFilter(currentPath, 'from') } : null,
+    context.to ? { label: 'To', value: context.to, href: removeDrilldownFilter(currentPath, 'to') } : null,
     context.normalize ? { label: 'Origin scale', value: context.normalize === 'population' ? 'State population' : 'Represented legislators', href: removeDrilldownFilter(currentPath, 'normalize') } : null,
     context.color ? { label: 'Origin color', value: 'Party contribution', href: removeDrilldownFilter(currentPath, 'color') } : null
   ].filter(Boolean);

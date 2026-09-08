@@ -189,8 +189,15 @@
   }
 
   .filter-list li {
+    display: block;
     min-width: 0;
     max-width: 100%;
+    list-style: none;
+  }
+
+  .filter-list li::marker {
+    content: '';
+    font-size: 0;
   }
 
   .filter-chip {

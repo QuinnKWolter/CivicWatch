@@ -174,10 +174,12 @@ async function topPostsForTopic(topicId: string, limit = 3) {
 async function topPostsForState(
   state: string,
   limit = 3,
-  filters: { topic?: string | null; party?: string | null } = {}
+  filters: { topic?: string | null; party?: string | null; from?: string | null; to?: string | null } = {}
 ) {
   const topic = filters.topic ?? null;
   const party = filters.party ?? null;
+  const from = filters.from ?? null;
+  const to = filters.to ?? null;
 
   const rows = await sql`
     WITH state_lids AS (
@@ -194,6 +196,8 @@ async function topPostsForState(
         FROM app_posts_canonical p
         WHERE p.lid = sl.lid
           AND (${topic}::text IS NULL OR p.topic = ${topic})
+          AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+          AND (${to}::date IS NULL OR p.created_at <= ${to}::date)
         ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
         LIMIT ${limit}
       ) p ON true
@@ -906,13 +910,16 @@ app.get('/api/v1/topic-ribbon', async (request) => {
 
 app.get('/api/v1/topics/:topicId/ribbon', async (request) => {
   const topicId = normalizedTopic((request.params as { topicId: string }).topicId) ?? '999';
+  const q = request.query as Query;
   const rows = await sql`
     SELECT date::text, topic, topic_label, post_count, total_likes, total_retweets
     FROM topic_engagement_daily
     WHERE topic = ${topicId}
+      AND (${q.from ?? null}::date IS NULL OR date >= ${q.from ?? null}::date)
+      AND (${q.to ?? null}::date IS NULL OR date <= ${q.to ?? null}::date)
     ORDER BY date
   `;
-  return envelope(rows, 'topic_engagement_daily', { topicId });
+  return envelope(rows, 'topic_engagement_daily', { ...q, topicId });
 });
 
 app.get('/api/v1/topics/:topicId/state-salience', async (request) => {
@@ -952,17 +959,35 @@ app.get('/api/v1/topics/:topicId/state-salience', async (request) => {
 
 app.get('/api/v1/topics/:topicId/party-chamber', async (request) => {
   const topicId = normalizedTopic((request.params as { topicId: string }).topicId) ?? '999';
-  const rows = await sql`
-    SELECT party, chamber, post_count, total_likes, total_retweets
-    FROM app_topic_party_chamber
-    WHERE topic = ${topicId}
-    ORDER BY party, chamber
-  `;
-  return envelope(rows, 'app_topic_party_chamber', { topicId });
+  const q = request.query as Query;
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
+  const rows = state || party
+    ? await sql`
+      SELECT l.party, l.chamber, sum(alt.post_count)::bigint AS post_count,
+             0::bigint AS total_likes, 0::bigint AS total_retweets
+      FROM app_legislator_topic alt
+      JOIN legislators l USING (lid)
+      WHERE alt.topic = ${topicId}
+        AND (${state}::text IS NULL OR l.state = ${state})
+        AND (${party}::text IS NULL OR l.party = ${party})
+      GROUP BY l.party, l.chamber
+      ORDER BY l.party, l.chamber
+    `
+    : await sql`
+      SELECT party, chamber, post_count, total_likes, total_retweets
+      FROM app_topic_party_chamber
+      WHERE topic = ${topicId}
+      ORDER BY party, chamber
+    `;
+  return envelope(rows, state || party ? 'app_legislator_topic + legislators' : 'app_topic_party_chamber', { ...q, topicId, state, party });
 });
 
 app.get('/api/v1/topics/:topicId/beeswarm', async (request) => {
   const topicId = normalizedTopic((request.params as { topicId: string }).topicId) ?? '999';
+  const q = request.query as Query;
+  const state = q.state?.toUpperCase() ?? null;
+  const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
   const rows = await sql`
     SELECT l.lid, l.name, l.handle, l.state, l.party, l.chamber, l.mrp_ideology,
            COALESCE(alt.post_count, 0)::bigint AS topic_posts,
@@ -971,6 +996,8 @@ app.get('/api/v1/topics/:topicId/beeswarm', async (request) => {
     JOIN app_legislator_summary als ON als.lid = l.lid
     LEFT JOIN app_legislator_topic alt ON alt.lid = l.lid AND alt.topic = ${topicId}
     WHERE l.mrp_ideology IS NOT NULL
+      AND (${state}::text IS NULL OR l.state = ${state})
+      AND (${party}::text IS NULL OR l.party = ${party})
     ORDER BY l.mrp_ideology
   `;
   return envelope(rows.map((row) => ({
@@ -983,7 +1010,7 @@ app.get('/api/v1/topics/:topicId/beeswarm', async (request) => {
     mrpIdeology: Number(row.mrp_ideology),
     topicPosts: n(row.topic_posts),
     share: n(row.topic_posts) / Math.max(n(row.total_posts), 1)
-  })), 'app_legislator_topic', { topicId }, { includedCount: rows.length });
+  })), 'app_legislator_topic', { ...q, topicId, state, party }, { includedCount: rows.length });
 });
 
 app.get('/api/v1/topics/:topicId/adjacent', async (request) => {
@@ -1005,6 +1032,8 @@ app.get('/api/v1/topics/:topicId/top-posts', async (request) => {
   const limit = clampLimit(q.limit, 10, 25);
   const state = q.state?.toUpperCase() ?? null;
   const party = q.party ?? null;
+  const from = q.from ?? null;
+  const to = q.to ?? null;
   const rows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
     FROM app_posts_canonical p
@@ -1013,6 +1042,8 @@ app.get('/api/v1/topics/:topicId/top-posts', async (request) => {
     WHERE p.topic = ${topicId}
       AND (${state}::text IS NULL OR l.state = ${state})
       AND (${party}::text IS NULL OR l.party = ${party})
+      AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+      AND (${to}::date IS NULL OR p.created_at <= ${to}::date)
     ORDER BY (p.like_count + p.retweet_count) DESC, p.id DESC
     LIMIT ${limit}
   `;
@@ -1123,6 +1154,8 @@ app.get('/api/v1/states/:state/trend', async (request) => {
   const q = request.query as Query;
   const topic = normalizedTopic(q.topic);
   const party = q.party === 'Democratic' || q.party === 'Republican' ? q.party : null;
+  const from = q.from ?? null;
+  const to = q.to ?? null;
   const rows = await sql`
     SELECT date_trunc('month', p.created_at)::date AS month, l.party, count(*)::bigint AS post_count
     FROM posts p
@@ -1130,6 +1163,8 @@ app.get('/api/v1/states/:state/trend', async (request) => {
     WHERE l.state = ${state}
       AND (${topic ?? null}::text IS NULL OR p.topic = ${topic ?? null})
       AND (${party}::text IS NULL OR l.party = ${party})
+      AND (${from}::date IS NULL OR p.created_at >= ${from}::date)
+      AND (${to}::date IS NULL OR p.created_at <= ${to}::date)
     GROUP BY 1, l.party
     ORDER BY 1, l.party
   `;
@@ -1142,7 +1177,7 @@ app.get('/api/v1/states/:state/top-posts', async (request) => {
   const topic = normalizedTopic(q.topic);
   const limit = clampLimit(q.limit, 10, 25);
   return envelope(
-    await topPostsForState(state, limit, { topic, party: q.party ?? null }),
+    await topPostsForState(state, limit, { topic, party: q.party ?? null, from: q.from ?? null, to: q.to ?? null }),
     'posts + legislators',
     { ...q, state, limit }
   );

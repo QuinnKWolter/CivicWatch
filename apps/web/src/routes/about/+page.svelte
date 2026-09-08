@@ -21,16 +21,7 @@
     links: LinkItem[];
   };
 
-  const contactEmail = 'QuinnKWolter@gmail.com';
-
-  const contactLinks: LinkItem[] = [
-    { label: 'Email', href: `mailto:${contactEmail}` },
-    {
-      label: 'LinkedIn',
-      href: 'https://www.linkedin.com/in/quinn-k-wolter-4b68bb8b/'
-    },
-    { label: 'GitHub', href: 'https://github.com/QuinnKWolter' }
-  ];
+  const contactEmail = 'QuinnKWolter@pitt.edu';
 
   const acknowledgements: Acknowledgement[] = [
     {
@@ -84,6 +75,36 @@
       name: 'Ahana Biswas',
       role: 'Research Advisor',
       links: [{ label: 'Site', href: 'https://biswas-ahana.github.io/' }]
+    },
+    {
+      name: 'Yuehong Cassandra Tai',
+      role: 'Original Dataset Author',
+      links: [{ label: 'Site', href: 'https://cassyuehtai.netlify.app/' }]
+    },
+    {
+      name: 'Nitheesha Nakka',
+      role: 'Original Dataset Author',
+      links: []
+    },
+    {
+      name: 'Khushi Navin Patni',
+      role: 'Original Dataset Author',
+      links: []
+    },
+    {
+      name: 'Sarah Rajtmajer',
+      role: 'Original Dataset Author',
+      links: [{ label: 'Site', href: 'https://www.rajtmajerlab.net/' }]
+    },
+    {
+      name: 'Kevin Munger',
+      role: 'Original Dataset Author',
+      links: [{ label: 'Site', href: 'http://www.kevinmunger.com/' }]
+    },
+    {
+      name: 'Bruce A. Desmarais',
+      role: 'Original Dataset Author',
+      links: [{ label: 'Site', href: 'https://brucedesmarais.com/' }]
     }
   ];
 </script>
@@ -106,6 +127,28 @@
         metadata, topic labels, state-level summaries, and interaction-derived
         views so that users can inspect patterns across people, places,
         parties, topics, and time.
+      </p>
+
+      <p>
+        This project extends the dataset documented in Yuehong Cassandra Tai,
+        Nitheesha Nakka, Khushi Navin Patni, Sarah Rajtmajer, Kevin Munger,
+        Yu-Ru Lin, and Bruce A. Desmarais,
+        <a
+          href="https://www.nature.com/articles/s41597-025-05857-1"
+          target="_blank"
+          rel="noreferrer"
+        >
+          "The Digitally Accountable Public Representation Database: Online
+          Communication by U.S. Officials"
+        </a>,
+        Scientific Data, vol. 12, article 1556 (2025).
+      </p>
+
+      <p>
+        We thank the authors, especially Dr. Desmarais, Dr. Tai, Dr.
+        Rajtmajer, and Dr. Lin, for their substantial support in compiling the
+        initial version of this dataset and for providing critical feedback on
+        key features of the present visualization.
       </p>
     </header>
 
@@ -190,29 +233,14 @@
         contact Quinn K Wolter.
       </p>
 
-      <nav class="contact-links" aria-label="Quinn K Wolter contact links">
-        {#each contactLinks as link (link.href)}
-          <a
-            class="icon-link"
-            href={link.href}
-            title={link.label === 'Email' ? contactEmail : link.label}
-            aria-label={link.label === 'Email' ? `Email ${contactEmail}` : link.label}
-            target={link.href.startsWith('mailto:') ? undefined : '_blank'}
-            rel={link.href.startsWith('mailto:') ? undefined : 'noreferrer'}
-          >
-            {#if link.label === 'GitHub'}
-              <Github size={17} strokeWidth={1.9} aria-hidden="true" />
-            {:else if link.label === 'LinkedIn'}
-              <Linkedin size={17} strokeWidth={1.9} aria-hidden="true" />
-            {:else if link.label === 'Email'}
-              <Mail size={17} strokeWidth={1.9} aria-hidden="true" />
-            {:else}
-              <Globe size={17} strokeWidth={1.9} aria-hidden="true" />
-            {/if}
-            <span class="sr-only">{link.label}</span>
-          </a>
-        {/each}
-      </nav>
+      <a
+        class="contact-link"
+        href={`mailto:${contactEmail}`}
+        aria-label={`Email ${contactEmail}`}
+      >
+        <Mail size={18} strokeWidth={2} aria-hidden="true" />
+        <span>{contactEmail}</span>
+      </a>
     </section>
 
     <section class="prose-section" aria-labelledby="acknowledgements-heading">
@@ -288,7 +316,19 @@
 
   .page-header p {
     max-width: 820px;
-    margin: 0;
+    margin: 0 0 14px;
+  }
+
+  .page-header p:last-child {
+    margin-bottom: 0;
+  }
+
+  .page-header a,
+  .prose-section a:not(.icon-link):not(.contact-link) {
+    color: var(--color-seal);
+    font-weight: 750;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
   }
 
   .prose-section {
@@ -318,11 +358,44 @@
     margin-bottom: 0;
   }
 
-  .contact-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  .contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 0 14px;
     margin-top: 2px;
+    color: var(--color-seal);
+    font-weight: 850;
+    line-height: 1;
+    text-decoration: none;
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--color-seal) 16%, var(--color-elevated)),
+        color-mix(in srgb, var(--color-seal) 10%, var(--color-elevated))
+      );
+    border: 1px solid
+      color-mix(in srgb, var(--color-seal) 58%, var(--color-rule));
+    border-radius: 7px;
+    box-shadow:
+      0 10px 28px rgb(0 0 0 / 12%);
+    transition:
+      border-color 140ms ease,
+      box-shadow 140ms ease,
+      transform 140ms ease;
+  }
+
+  .contact-link:hover {
+    border-color: var(--color-seal);
+    box-shadow:
+      0 14px 34px rgb(0 0 0 / 16%);
+    transform: translateY(-1px);
+  }
+
+  .contact-link:focus-visible {
+    outline: 2px solid var(--color-seal);
+    outline-offset: 3px;
   }
 
   .acknowledgement-list {

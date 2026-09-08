@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import { withBase } from '$lib/paths';
   import TopicIcon from './TopicIcon.svelte';
 
@@ -22,6 +23,7 @@
     valueLabel?: string;
     valueLabelSingular?: string;
     emptyMessage?: string;
+    drilldownContext?: DrilldownContext;
   }
 
   interface TopicRow {
@@ -49,7 +51,8 @@
     ariaLabel = 'Topics by post count',
     valueLabel = 'posts',
     valueLabelSingular = 'post',
-    emptyMessage = 'No topic data is available.'
+    emptyMessage = 'No topic data is available.',
+    drilldownContext = {}
   }: Props = $props();
 
   const collator = new Intl.Collator('en-US', {
@@ -197,7 +200,12 @@
       return null;
     }
 
-    return withBase(`${safeHrefPrefix}${encodeURIComponent(topic)}`);
+    return withBase(
+      appendDrilldownContext(
+        `${safeHrefPrefix}${encodeURIComponent(topic)}`,
+        drilldownContext
+      )
+    );
   }
 
   function aggregateTopics(input: unknown[]): TopicRow[] {

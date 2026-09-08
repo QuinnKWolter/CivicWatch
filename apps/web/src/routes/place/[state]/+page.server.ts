@@ -4,10 +4,11 @@ import { parseDrilldownContext, removeDrilldownFilter } from '$lib/drilldown';
 
 export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const context = parseDrilldownContext(url.searchParams);
-  const filters = { topic: context.topic, party: context.party };
+  const filters = { topic: context.topic, party: context.party, from: context.from, to: context.to };
+  const aggregateFilters = { topic: context.topic, party: context.party };
   const [summary, topics, topPosts, chamber, trend] = await Promise.all([
-    api<any>(fetch, `/states/${params.state}`, filters),
-    api<any>(fetch, `/states/${params.state}/topics`, filters),
+    api<any>(fetch, `/states/${params.state}`, aggregateFilters),
+    api<any>(fetch, `/states/${params.state}/topics`, aggregateFilters),
     api<any>(fetch, `/states/${params.state}/top-posts`, { limit: 10, ...filters }),
     api<any>(fetch, '/chamber', { state: params.state.toUpperCase(), party: context.party, topic: context.topic }),
     api<any>(fetch, `/states/${params.state}/trend`, filters)
@@ -19,6 +20,8 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const inheritedFilters = [
     context.topic ? { label: 'Topic', value: topicLabel, href: removeDrilldownFilter(currentPath, 'topic') } : null,
     context.party ? { label: 'Party', value: context.party, href: removeDrilldownFilter(currentPath, 'party') } : null,
+    context.from ? { label: 'From', value: context.from, href: removeDrilldownFilter(currentPath, 'from') } : null,
+    context.to ? { label: 'To', value: context.to, href: removeDrilldownFilter(currentPath, 'to') } : null,
     context.normalize ? { label: 'Origin scale', value: context.normalize === 'population' ? 'State population' : 'Represented legislators', href: removeDrilldownFilter(currentPath, 'normalize') } : null,
     context.color ? { label: 'Origin color', value: 'Party contribution', href: removeDrilldownFilter(currentPath, 'color') } : null
   ].filter(Boolean);

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import { withBase } from '$lib/paths';
 
   type SortMode = 'state' | 'total';
@@ -12,6 +13,7 @@
     ariaLabel?: string;
 
     hrefPrefix?: string | null;
+    drilldownContext?: DrilldownContext;
 
     /**
      * Number of globally leading categorized topics assigned
@@ -108,6 +110,7 @@
     caption = '',
     ariaLabel = 'State topic mix',
     hrefPrefix = '/place/',
+    drilldownContext = {},
     maxTopics = 5,
     sort = 'state',
     showLegend = true,
@@ -734,9 +737,12 @@
       return null;
     }
 
-    return withBase(`${safeHrefPrefix}${encodeURIComponent(
-      state
-    )}`);
+    return withBase(
+      appendDrilldownContext(
+        `${safeHrefPrefix}${encodeURIComponent(state)}`,
+        drilldownContext
+      )
+    );
   }
 
   function stateName(

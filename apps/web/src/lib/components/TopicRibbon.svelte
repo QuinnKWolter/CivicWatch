@@ -1,5 +1,6 @@
 <script lang="ts">
   import { compact } from '$lib/format';
+  import { appendDrilldownContext, type DrilldownContext } from '$lib/drilldown';
   import { withBase } from '$lib/paths';
 
   interface Props {
@@ -22,6 +23,7 @@
     valueLabel?: string;
     valueLabelSingular?: string;
     emptyMessage?: string;
+    drilldownContext?: DrilldownContext;
   }
 
   interface SourceTopic {
@@ -65,7 +67,8 @@
     showTable = true,
     valueLabel = 'posts',
     valueLabelSingular = 'post',
-    emptyMessage = 'No topic activity is available.'
+    emptyMessage = 'No topic activity is available.',
+    drilldownContext = {}
   }: Props = $props();
 
   const UNCATEGORIZED_KEY = '__uncategorized__';
@@ -285,9 +288,12 @@
       return null;
     }
 
-    return withBase(`${safeHrefPrefix}${encodeURIComponent(
-      topic
-    )}`);
+    return withBase(
+      appendDrilldownContext(
+        `${safeHrefPrefix}${encodeURIComponent(topic)}`,
+        drilldownContext
+      )
+    );
   }
 
   function isUncategorized(

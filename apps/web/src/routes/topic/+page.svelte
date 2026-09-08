@@ -6,6 +6,7 @@
   import TopicBars from '$lib/components/TopicBars.svelte';
   import { compact } from '$lib/format';
   import { appPath } from '$lib/paths';
+  import { appendDrilldownContext } from '$lib/drilldown';
   export let data: any;
 </script>
 
@@ -28,13 +29,14 @@
       dense
       showRank={false}
       showShare={false}
+      drilldownContext={data.context}
     />
   </div>
 
   <PanelHeader title="Topic tiles" caption="Sortable-by-volume tiles for all topic categories in the corpus." source="topic_party_breakdown" count={data.topics.data.length} />
   <div class="grid grid-3">
     {#each data.topics.data as topic}
-      <a class="chip" href={appPath(`/topic/${topic.topic}`)}>
+      <a class="chip" href={appPath(appendDrilldownContext(`/topic/${topic.topic}`, data.context))}>
         <strong class="topic-chip-title">
           <TopicIcon label={topic.topicLabel} size={19} />
           <span>{topic.topicLabel}</span>
@@ -67,7 +69,7 @@
 </style>
 
 <section class="container split band">
-  <TopicRibbon rows={data.ribbon.data} />
+  <TopicRibbon rows={data.ribbon.data} drilldownContext={data.context} />
   <div class="card">
     <PanelHeader title="Daily aggregate sample" caption="First rows from the materialized fast path for the ribbon." source="topic_engagement_daily" count={data.ribbon.data.length} />
     <DataTable rows={data.ribbon.data} columns={[

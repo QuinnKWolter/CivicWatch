@@ -13,10 +13,10 @@
   import TopicBars from '$lib/components/TopicBars.svelte';
   export let data: any;
   let stateView: 'map' | 'grid' = 'map';
-  let normalizationMode: 'none' | 'population' | 'legislators' = 'none';
+  let normalizationMode: 'none' | 'population' | 'legislators' = data.context?.normalize ?? 'none';
   let partyMode: 'both' | 'democratic' | 'republican' =
     data.context?.party === 'Democratic' ? 'democratic' : data.context?.party === 'Republican' ? 'republican' : 'both';
-  let colorMode: 'volume' | 'contribution' = 'contribution';
+  let colorMode: 'volume' | 'contribution' = data.context?.color === 'contribution' ? 'contribution' : 'contribution';
   let selectedTopic = data.context?.topic ? String(data.context.topic) : 'all';
   let loadedTopic = selectedTopic;
   let stateRows = data.states.data;
@@ -199,7 +199,7 @@
 <section class="container band">
   <div class="card">
     <PanelHeader title="Fifty-state topic mix" caption="One compact topic-distribution chart per state; Uncategorized remains part of the stack." source="topic_state_breakdown" count={data.matrix.data.length} />
-    <SmallMultiplesGrid rows={data.matrix.data} />
+    <SmallMultiplesGrid rows={data.matrix.data} {drilldownContext} />
   </div>
 </section>
 
@@ -214,6 +214,6 @@
   </div>
   <div class="card state-sample-card">
     <PanelHeader title="First state sample" caption="A quick read on the first aggregate slice." />
-    <TopicBars topics={topRows} />
+    <TopicBars topics={topRows} {drilldownContext} />
   </div>
 </section>

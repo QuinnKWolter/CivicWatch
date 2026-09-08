@@ -12,6 +12,7 @@
   import PostExplorer from '$lib/components/PostExplorer.svelte';
   import TopicIcon from '$lib/components/TopicIcon.svelte';
   import { appPath } from '$lib/paths';
+  import { appendDrilldownContext } from '$lib/drilldown';
   export let data: any;
   $: topics = data.window.data.map((row: any) => ({
     topic: row.topic,
@@ -117,7 +118,7 @@
     <PanelHeader title="Window topic mix" caption="Topic counts inside the selected date window." source="posts" count={data.window.data.length} />
     <div class="topic-array">
       {#each topics as item}
-        <a href={appPath(`/topic/${item.topic}`)} class="topic-row">
+        <a href={appPath(appendDrilldownContext(`/topic/${item.topic}`, windowFilters))} class="topic-row">
           <TopicIcon label={item.topicLabel} size={20} />
           <span class="topic-copy"><strong>{item.topicLabel}</strong><i><b style={`width:${Math.max(2, Number(item.postCount) / maxTopicPosts * 100)}%`}></b></i></span>
           <span class="topic-count">{Number(item.postCount).toLocaleString()}</span>

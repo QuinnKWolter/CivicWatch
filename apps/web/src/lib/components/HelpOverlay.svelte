@@ -434,6 +434,25 @@
             </span>
           </div>
 
+          <div class="source-note">
+            <strong>Dataset foundation</strong>
+
+            <p>
+              CivicWatch extends the dataset from
+              <a
+                href="https://www.nature.com/articles/s41597-025-05857-1"
+                target="_blank"
+                rel="noreferrer"
+              >
+                The Digitally Accountable Public
+                Representation Database
+              </a>,
+              and thanks its authors for support
+              compiling the initial dataset and
+              shaping this visualization.
+            </p>
+          </div>
+
           <div class="acknowledgements">
             <strong>Acknowledgements</strong>
 
@@ -840,6 +859,7 @@
     line-height: 1.25rem;
   }
 
+  .source-note,
   .acknowledgements {
     display: grid;
     gap: 5px;
@@ -849,16 +869,24 @@
       var(--color-rule, #d9d2c1);
   }
 
+  .source-note strong,
   .acknowledgements strong {
     font-size: 0.84rem;
     line-height: 1.2rem;
   }
 
+  .source-note p,
   .acknowledgements p {
     margin: 0;
     color: var(--color-mute, #6b6659);
     font-size: 0.8rem;
     line-height: 1.35rem;
+  }
+
+  .source-note a {
+    color: var(--color-seal, #8a5a1a);
+    font-weight: 650;
+    text-underline-offset: 3px;
   }
 
   .steps {

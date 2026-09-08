@@ -55,7 +55,12 @@
   const statusId = `${componentId}-status`;
   const drilldownContext = $derived.by(() => ({
     topic: typeof filters.topic === 'string' ? filters.topic : undefined,
-    party: filters.party === 'Democratic' || filters.party === 'Republican' ? filters.party : undefined
+    state: typeof filters.state === 'string' ? filters.state : undefined,
+    party: filters.party === 'Democratic' || filters.party === 'Republican' ? filters.party : undefined,
+    from: typeof filters.from === 'string' ? filters.from : undefined,
+    to: typeof filters.to === 'string' ? filters.to : undefined,
+    date: typeof filters.date === 'string' ? filters.date : undefined,
+    width: typeof filters.width === 'string' || typeof filters.width === 'number' ? String(filters.width) : undefined
   } satisfies DrilldownContext));
 
   let mode = $state<'top' | 'recent' | 'sample'>(
