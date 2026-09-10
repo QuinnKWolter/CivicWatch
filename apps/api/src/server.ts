@@ -3,6 +3,8 @@ import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import Fastify from 'fastify';
+import { appendFile, mkdir } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 import { sql, closeDb } from './db/index.js';
 import { events } from './data/events.js';
 import { renderBarPng, type BarDatum } from './png.js';
@@ -48,6 +50,13 @@ function envInt(name: string, fallback: number): number {
   return Number.isFinite(value) && value > 0 ? Math.trunc(value) : fallback;
 }
 
+function envList(name: string): string[] {
+  return (process.env[name] ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
 function firstHeaderValue(value: string | string[] | undefined): string | null {
   const first = Array.isArray(value) ? value[0] : value;
   return first?.split(',')[0]?.trim() || null;
@@ -90,10 +99,19 @@ const app = Fastify({
   logger: {
     level: process.env.LOG_LEVEL ?? 'info'
   },
-  trustProxy: envFlag('CIVICWATCH_TRUST_PROXY', true)
+  trustProxy: envFlag('CIVICWATCH_TRUST_PROXY', true),
+  bodyLimit: envInt('CIVICWATCH_BODY_LIMIT_BYTES', 262_144)
 });
 
-await app.register(cors, { origin: true });
+const allowedCorsOrigins = envList('CIVICWATCH_CORS_ORIGINS');
+const corsEnabled = envFlag(
+  'CIVICWATCH_CORS_ENABLED',
+  process.env.NODE_ENV !== 'production' || allowedCorsOrigins.length > 0
+);
+
+await app.register(cors, {
+  origin: corsEnabled ? (allowedCorsOrigins.length ? allowedCorsOrigins : true) : false
+});
 await app.register(rateLimit, {
   max: envInt('CIVICWATCH_RATE_LIMIT_MAX', 900),
   timeWindow: process.env.CIVICWATCH_RATE_LIMIT_WINDOW ?? '1 minute',
@@ -107,17 +125,24 @@ await app.register(rateLimit, {
     retryAfter: context.after
   })
 });
+app.addHook('onRequest', async (_request, reply) => {
+  reply.header('x-content-type-options', 'nosniff');
+  reply.header('referrer-policy', 'strict-origin-when-cross-origin');
+  reply.header('x-robots-tag', 'noindex');
+});
 app.addContentTypeParser(
   ['application/octet-stream', 'application/x-www-form-urlencoded', 'text/plain'],
   { parseAs: 'string' },
   (_request, payload, done) => done(null, payload)
 );
-await app.register(swagger, {
-  openapi: {
-    info: { title: 'CivicWatch API', version: '0.1.0' }
-  }
-});
-await app.register(swaggerUi, { routePrefix: '/docs' });
+if (envFlag('CIVICWATCH_API_DOCS_ENABLED', process.env.NODE_ENV !== 'production')) {
+  await app.register(swagger, {
+    openapi: {
+      info: { title: 'CivicWatch API', version: '0.1.0' }
+    }
+  });
+  await app.register(swaggerUi, { routePrefix: '/docs' });
+}
 
 app.setErrorHandler((error, request, reply) => {
   request.log.error(error);
@@ -221,6 +246,68 @@ let metaCache:
     }
   | null = null;
 
+type AnalyticsBody = {
+  name?: unknown;
+  payload?: unknown;
+  clientTime?: unknown;
+};
+
+function cleanAnalyticsString(value: unknown, max = 240): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.replace(/\s+/g, ' ').trim();
+  return trimmed ? trimmed.slice(0, max) : null;
+}
+
+function cleanAnalyticsName(value: unknown): string | null {
+  const name = cleanAnalyticsString(value, 80);
+  if (!name || !/^[a-z0-9_.:-]+$/i.test(name)) return null;
+  return name.toLowerCase();
+}
+
+function cleanAnalyticsPayload(value: unknown): Record<string, string | number | boolean | null> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .slice(0, 24)
+      .map(([key, entry]) => {
+        const safeKey = key.replace(/[^a-z0-9_.:-]/gi, '').slice(0, 48);
+        if (!safeKey) return null;
+        if (typeof entry === 'number') return [safeKey, Number.isFinite(entry) ? entry : null] as const;
+        if (typeof entry === 'boolean') return [safeKey, entry] as const;
+        if (typeof entry === 'string') return [safeKey, cleanAnalyticsString(entry)] as const;
+        return [safeKey, null] as const;
+      })
+      .filter((entry): entry is readonly [string, string | number | boolean | null] => Boolean(entry))
+  );
+}
+
+function analyticsFilePath() {
+  return resolve(process.env.CIVICWATCH_ANALYTICS_FILE ?? 'logs/analytics.jsonl');
+}
+
+async function recordAnalyticsEvent(
+  body: AnalyticsBody,
+  request: { headers: Record<string, string | string[] | undefined>; id: string }
+) {
+  const name = cleanAnalyticsName(body.name);
+  if (!name) return false;
+
+  const file = analyticsFilePath();
+  const event = {
+    name,
+    payload: cleanAnalyticsPayload(body.payload),
+    clientTime: cleanAnalyticsString(body.clientTime, 40),
+    serverTime: new Date().toISOString(),
+    requestId: request.id,
+    userAgent: cleanAnalyticsString(firstHeaderValue(request.headers['user-agent']), 180)
+  };
+
+  await mkdir(dirname(file), { recursive: true });
+  await appendFile(file, `${JSON.stringify(event)}\n`, 'utf8');
+  return true;
+}
+
 async function topPostsForLegislator(lid: string, limit = 3) {
   const rows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
@@ -293,8 +380,31 @@ app.get('/api/v1/health', { config: { rateLimit: false } }, async () => {
   return envelope({ ok: row?.ok === 1, postgres: true }, 'health');
 });
 
-app.get('/api/v1/meta', async () => {
+app.post(
+  '/api/v1/analytics',
+  {
+    config: {
+      rateLimit: {
+        max: envInt('CIVICWATCH_ANALYTICS_RATE_LIMIT_MAX', 120),
+        timeWindow: process.env.CIVICWATCH_ANALYTICS_RATE_LIMIT_WINDOW ?? '1 minute'
+      }
+    }
+  },
+  async (request, reply) => {
+    if (!envFlag('CIVICWATCH_ANALYTICS_ENABLED', true)) {
+      return reply.code(204).send();
+    }
+
+    const recorded = await recordAnalyticsEvent(request.body as AnalyticsBody, request);
+    return reply.code(recorded ? 204 : 400).send();
+  }
+);
+
+app.get('/api/v1/meta', async (_request, reply) => {
   const now = Date.now();
+  const cacheSeconds = envInt('CIVICWATCH_META_CACHE_SECONDS', 300);
+  reply.header('cache-control', `public, max-age=${cacheSeconds}, stale-while-revalidate=${cacheSeconds}`);
+
   if (metaCache && metaCache.expiresAt > now) {
     return metaCache.payload;
   }
@@ -334,7 +444,7 @@ app.get('/api/v1/meta', async () => {
   );
 
   metaCache = {
-    expiresAt: now + envInt('CIVICWATCH_META_CACHE_SECONDS', 300) * 1000,
+    expiresAt: now + cacheSeconds * 1000,
     payload
   };
 

@@ -16,6 +16,7 @@
   import GlobalSearch from '$lib/components/GlobalSearch.svelte';
   import HelpOverlay from '$lib/components/HelpOverlay.svelte';
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+  import { trackClientError, trackPageView } from '$lib/analytics';
   import { appPath, withoutBase } from '$lib/paths';
 
   interface Props {
@@ -130,9 +131,35 @@
     `Explore public posts from U.S. state legislators, with data through ${coverageEnd}.`
   );
 
-  afterNavigate(() => {
+  afterNavigate((navigation) => {
     menuOpen = false;
     helpOpen = false;
+
+    if (browser && navigation.to?.url) {
+      trackPageView(navigation.to.url, navigation.to.route.id);
+    }
+  });
+
+  onMount(() => {
+    const onError = (event: ErrorEvent) => {
+      trackClientError('window_error', event.message, page.route.id);
+    };
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      trackClientError(
+        'unhandled_rejection',
+        reason instanceof Error ? reason.message : String(reason ?? 'Unknown rejection'),
+        page.route.id
+      );
+    };
+
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onUnhandledRejection);
+    };
   });
 
   onNavigate((navigation) => {

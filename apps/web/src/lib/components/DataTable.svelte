@@ -20,9 +20,10 @@
 
   let { rows = [], columns, caption = 'Data table', initialSort = '', initialDirection = 'asc', pageSize = 25 }: Props = $props();
   let query = $state('');
-  let sortKey = $state(initialSort || columns[0]?.key || '');
-  let direction = $state<'asc' | 'desc'>(initialDirection);
+  let sortKey = $state('');
+  let direction = $state<'asc' | 'desc'>('asc');
   let page = $state(0);
+  let initialized = $state(false);
   const collator = new Intl.Collator('en-US', { sensitivity: 'base', numeric: true });
   const safePageSize = $derived(Math.max(10, Math.min(100, Math.trunc(pageSize || 25))));
 
@@ -46,6 +47,13 @@
   const first = $derived(sorted.length ? page * safePageSize + 1 : 0);
   const last = $derived(Math.min(sorted.length, (page + 1) * safePageSize));
 
+  $effect(() => {
+    if (!initialized) {
+      sortKey = initialSort || columns[0]?.key || '';
+      direction = initialDirection;
+      initialized = true;
+    }
+  });
   $effect(() => { query; sortKey; direction; page = 0; });
   $effect(() => { if (page >= pageCount) page = pageCount - 1; });
 

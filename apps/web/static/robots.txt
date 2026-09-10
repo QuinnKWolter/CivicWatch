@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /CivicWatch/api/
+Disallow: /CivicWatch/compare
+Disallow: /*?*
+Crawl-delay: 10
+Sitemap: https://picso101.sci.pitt.edu/sitemap.xml

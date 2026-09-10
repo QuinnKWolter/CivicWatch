@@ -308,7 +308,7 @@
       Hover or focus for details; select a state to open its profile.</p>
   </div>
 
-  <div class="map-scroll" tabindex="0" aria-label="Scrollable state tile map">
+  <div class="map-scroll" role="region" aria-label="Scrollable state tile map">
     <div class="map-grid">
       {#each tiles as tile (tile.code)}
         <div class="tile-position" style={tileStyle(tile)}>

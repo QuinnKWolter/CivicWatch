@@ -1,0 +1,9 @@
+/home/qkw3/civicwatch/prototype04/CivicWatch/logs/*.log
+/home/qkw3/civicwatch/prototype04/CivicWatch/logs/*.jsonl {
+  daily
+  rotate 14
+  compress
+  missingok
+  notifempty
+  copytruncate
+}

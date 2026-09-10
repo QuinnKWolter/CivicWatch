@@ -1,0 +1,18 @@
+[Unit]
+Description=CivicWatch HTTPS Proxy
+After=network.target civicwatch-web.service civicwatch-api.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/qkw3/civicwatch
+Environment=NODE_ENV=production
+EnvironmentFile=-/home/qkw3/civicwatch/.env
+ExecStart=/home/qkw3/node-v24.12.0-linux-x64/bin/node server.js
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/qkw3/civicwatch/prototype04/CivicWatch/logs/proxy.log
+StandardError=append:/home/qkw3/civicwatch/prototype04/CivicWatch/logs/proxy-error.log
+
+[Install]
+WantedBy=multi-user.target

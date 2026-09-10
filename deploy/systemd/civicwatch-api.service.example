@@ -1,0 +1,18 @@
+[Unit]
+Description=CivicWatch Fastify API
+After=network.target
+
+[Service]
+Type=simple
+User=qkw3
+WorkingDirectory=/home/qkw3/civicwatch/prototype04/CivicWatch
+Environment=NODE_ENV=production
+EnvironmentFile=/home/qkw3/civicwatch/prototype04/CivicWatch/.env
+ExecStart=/home/qkw3/node-v24.12.0-linux-x64/bin/pnpm --dir apps/api run start
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/qkw3/civicwatch/prototype04/CivicWatch/logs/api.log
+StandardError=append:/home/qkw3/civicwatch/prototype04/CivicWatch/logs/api-error.log
+
+[Install]
+WantedBy=multi-user.target

@@ -8,6 +8,7 @@
     Trash2,
     X
   } from 'lucide-svelte';
+  import { trackEvent } from '$lib/analytics';
   import { titleCasePersonName } from '$lib/format';
   import { appPath } from '$lib/paths';
 
@@ -565,6 +566,14 @@
           } found for ${query}.`
         : `No results found for ${query}.`;
 
+      trackEvent('search_completed', {
+        queryLength: query.length,
+        results: nextCount,
+        legislators: nextResults.legislators.length,
+        states: nextResults.states.length,
+        topics: nextResults.topics.length
+      });
+
       if (rememberQuery) {
         remember(query);
       }
@@ -593,6 +602,10 @@
           : 'Search could not be completed. Check your connection and try again.';
 
       status = error;
+      trackEvent('search_failed', {
+        queryLength: query.length,
+        status: match ? Number(match[1]) : null
+      });
     } finally {
       if (currentRequest === requestSequence) {
         loading = false;

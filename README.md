@@ -47,7 +47,6 @@ at the same reachable API.
 The current local dump metadata captured in `.env` is:
 
 ```txt
-snapshot=cw_2026_07_02_full
 coverage=2020-01-01..2025-01-04
 posts=22175504
 legislators=5927
@@ -76,7 +75,7 @@ runs both app packages.
 
 - Web: `http://127.0.0.1:5173/`
 - API health: `http://127.0.0.1:4000/api/v1/health`
-- API docs: `http://127.0.0.1:4000/docs`
+- API docs, when `CIVICWATCH_API_DOCS_ENABLED=true`: `http://127.0.0.1:4000/docs`
 
 On Bash, local Postgres startup is automatic:
 
@@ -116,6 +115,15 @@ PUBLIC_API_BASE_URL=https://your-api.example.com/api/v1
 PUBLIC_BASE_PATH=
 WEB_HOST=127.0.0.1
 WEB_PORT=3000
+CIVICWATCH_TRUST_PROXY=true
+CIVICWATCH_CORS_ENABLED=false
+CIVICWATCH_CORS_ORIGINS=https://picso101.sci.pitt.edu
+CIVICWATCH_API_DOCS_ENABLED=false
+CIVICWATCH_ANALYTICS_ENABLED=true
+CIVICWATCH_ANALYTICS_FILE=logs/analytics.jsonl
+CIVICWATCH_INTERNAL_TOKEN=replace-with-long-random-secret
+CIVICWATCH_EDGE_RATE_LIMIT_MAX=600
+CIVICWATCH_EDGE_RATE_LIMIT_WINDOW_MS=60000
 ```
 
 This matches the prototype-style backend env shape:
@@ -178,7 +186,7 @@ pnpm run start:prod:linux
 `pnpm run db:prepare` reads `.env`, honors `DB_SSL=require`, and creates the
 `app_*` materialized helper views used by the API. Run it once after restoring
 or pointing at a new database. The command is safe to repeat when the underlying
-snapshot changes; it will rebuild the helper views and indexes.
+database/corpus changes; it will rebuild the helper views and indexes.
 
 `pnpm run db:posts:canonical` is also non-destructive. It preserves raw `posts`
 and builds a slim `app_posts_canonical_map` plus an `app_posts_canonical` view
@@ -266,6 +274,25 @@ subpath deployments because SvelteKit must see `PUBLIC_BASE_PATH=/CivicWatch`
 at build time; otherwise the browser will request assets from `/_app/...`
 instead of `/CivicWatch/_app/...`.
 
+Production traffic defaults are intentionally conservative:
+
+- The API should bind to `127.0.0.1`, with public traffic entering through the
+  Express reverse proxy.
+- Set `CIVICWATCH_INTERNAL_TOKEN` to the same long random value for the API and
+  web processes so SSR requests can bypass public rate-limit buckets without
+  opening that bypass to forwarded public traffic.
+- Keep `CIVICWATCH_CORS_ENABLED=false` in production unless a separate approved
+  origin must call the API directly.
+- First-party analytics are written as JSONL to `CIVICWATCH_ANALYTICS_FILE`.
+  They record page views, client errors, downloads, and search result counts,
+  but not raw search text or post text.
+- `server.civicwatch.example.js` includes root redirects, security headers,
+  immutable asset caching, request logs, `robots.txt`, and edge rate limiting.
+
+See `docs/OPERATIONS_RUNBOOK.md` and `docs/PRODUCTION_TRAFFIC_READINESS.md` for
+release checks, incident triage, analytics notes, and traffic-hardening details.
+Example `systemd` and logrotate templates live under `deploy/`.
+
 `start:prod:linux` passes `--skip-db-start` because production should usually
 point at a managed or separately supervised Postgres instance. If you really do
 want to run the restored local cluster on Linux, call
@@ -314,6 +341,7 @@ passed.
 
 The implementation follows the design and technical documents with a runnable
 local analytical slice: landing, sampler, chamber view, lookup, legislator
-profiles with voice fingerprints, place explorer, topic explorer, moment
-explorer, compare, methods, bounded API endpoints, metadata envelopes, and
-no-data handling.
+profiles with voice fingerprints and interaction networks, place explorer,
+topic explorer, moment explorer, About/methods content, bounded API endpoints,
+metadata envelopes, exports, and no-data handling. The Compare interface remains
+hidden until it receives a fuller product pass.

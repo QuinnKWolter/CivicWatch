@@ -4,6 +4,7 @@ node_modules/
 .svelte-kit/
 build/
 dist/
+apps/web/.build-stale-*/
 .env
 .env.*
 !.env.example
@@ -11,6 +12,9 @@ dist/
 # Local database restore artifacts. Keep SQL scripts under database/scripts tracked.
 /civicwatch_postgres_full_*.dump
 /civicwatch_postgres_full_*.sql
+/tweet-hydration/
+/legislator_missing_data_export/
+/logs/
 
 coverage/
 playwright-report/

@@ -1,0 +1,18 @@
+[Unit]
+Description=CivicWatch SvelteKit Web
+After=network.target civicwatch-api.service
+
+[Service]
+Type=simple
+User=qkw3
+WorkingDirectory=/home/qkw3/civicwatch/prototype04/CivicWatch/apps/web
+Environment=NODE_ENV=production
+EnvironmentFile=/home/qkw3/civicwatch/prototype04/CivicWatch/.env
+ExecStart=/home/qkw3/node-v24.12.0-linux-x64/bin/node build
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/qkw3/civicwatch/prototype04/CivicWatch/logs/web.log
+StandardError=append:/home/qkw3/civicwatch/prototype04/CivicWatch/logs/web-error.log
+
+[Install]
+WantedBy=multi-user.target

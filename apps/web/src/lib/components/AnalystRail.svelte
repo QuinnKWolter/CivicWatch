@@ -12,6 +12,7 @@
     Link2,
     X
   } from 'lucide-svelte';
+  import { trackEvent } from '$lib/analytics';
   import { appPath, withoutBase } from '$lib/paths';
 
   type ActiveFilter = {
@@ -476,6 +477,11 @@
     }
 
     const target = `${form.action}${params.size ? `?${params.toString()}` : ''}`;
+    trackEvent('filters_applied', {
+      page: rail.pageSlug,
+      controls: rail.controls.length,
+      activeFilters: params.size
+    });
     void goto(target);
   }
 
@@ -488,6 +494,10 @@
       await navigator.clipboard.writeText(link);
       copied = true;
       showStatus('Filtered link copied.');
+      trackEvent('copy_link', {
+        page: rail.pageSlug,
+        activeFilters: rail.activeFilters.length
+      });
     } catch {
       const field = document.createElement('textarea');
       field.value = link;
@@ -500,6 +510,11 @@
       field.remove();
       copied = true;
       showStatus('Filtered link copied.');
+      trackEvent('copy_link', {
+        page: rail.pageSlug,
+        activeFilters: rail.activeFilters.length,
+        fallback: true
+      });
     }
   }
 
@@ -510,6 +525,12 @@
 
     try {
       const base = DEFAULT_API_BASE.replace(/\/+$/, '');
+      trackEvent('download_started', {
+        page: rail.pageSlug,
+        dataset: selectedExport.id,
+        format,
+        activeFilters: Object.keys(selectedExport.filters).length
+      });
       const response = await fetch(`${base}/exports/${format}`, {
         method: 'POST',
         headers: {
@@ -536,8 +557,18 @@
       URL.revokeObjectURL(url);
       downloadOpen = false;
       showStatus(`${format.toUpperCase()} download prepared.`);
+      trackEvent('download_completed', {
+        page: rail.pageSlug,
+        dataset: selectedExport.id,
+        format
+      });
     } catch {
       showStatus('Download could not be prepared. Try again in a moment.');
+      trackEvent('download_failed', {
+        page: rail.pageSlug,
+        dataset: selectedExport.id,
+        format
+      });
     } finally {
       downloading = false;
     }
