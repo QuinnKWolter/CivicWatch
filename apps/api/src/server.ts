@@ -27,16 +27,85 @@ type ExportSpec = {
   limit?: number;
 };
 
+type RateLimitRequest = {
+  headers: Record<string, string | string[] | undefined>;
+  ip: string;
+  socket?: {
+    remoteAddress?: string;
+  };
+};
+
+function envFlag(name: string, fallback: boolean): boolean {
+  const value = process.env[name]?.trim().toLowerCase();
+  if (!value) return fallback;
+  if (['1', 'true', 'yes', 'on'].includes(value)) return true;
+  if (['0', 'false', 'no', 'off'].includes(value)) return false;
+  return fallback;
+}
+
+function envInt(name: string, fallback: number): number {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? Math.trunc(value) : fallback;
+}
+
+function firstHeaderValue(value: string | string[] | undefined): string | null {
+  const first = Array.isArray(value) ? value[0] : value;
+  return first?.split(',')[0]?.trim() || null;
+}
+
+function isLoopbackAddress(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.replace(/^::ffff:/, '');
+  return normalized === '127.0.0.1' || normalized === '::1' || normalized === 'localhost';
+}
+
+function forwardedClientAddress(request: RateLimitRequest): string | null {
+  return (
+    firstHeaderValue(request.headers['cf-connecting-ip']) ||
+    firstHeaderValue(request.headers['x-real-ip']) ||
+    firstHeaderValue(request.headers['x-forwarded-for'])
+  );
+}
+
+function hasForwardedClientAddress(request: RateLimitRequest): boolean {
+  return Boolean(forwardedClientAddress(request));
+}
+
+function rateLimitKey(request: RateLimitRequest): string {
+  return forwardedClientAddress(request) ?? request.ip ?? request.socket?.remoteAddress ?? 'unknown';
+}
+
+function shouldBypassRateLimit(request: RateLimitRequest): boolean {
+  if (!envFlag('CIVICWATCH_RATE_LIMIT_BYPASS_INTERNAL', true)) return false;
+  if (hasForwardedClientAddress(request)) return false;
+  if (!isLoopbackAddress(request.ip) && !isLoopbackAddress(request.socket?.remoteAddress)) return false;
+
+  const token = process.env.CIVICWATCH_INTERNAL_TOKEN;
+  if (!token) return true;
+
+  return firstHeaderValue(request.headers['x-civicwatch-internal-token']) === token;
+}
+
 const app = Fastify({
   logger: {
     level: process.env.LOG_LEVEL ?? 'info'
-  }
+  },
+  trustProxy: envFlag('CIVICWATCH_TRUST_PROXY', true)
 });
 
 await app.register(cors, { origin: true });
 await app.register(rateLimit, {
-  max: 300,
-  timeWindow: '1 minute'
+  max: envInt('CIVICWATCH_RATE_LIMIT_MAX', 900),
+  timeWindow: process.env.CIVICWATCH_RATE_LIMIT_WINDOW ?? '1 minute',
+  keyGenerator: rateLimitKey,
+  allowList: shouldBypassRateLimit,
+  errorResponseBuilder: (_request, context) => ({
+    statusCode: 429,
+    code: 'RATE_LIMITED',
+    error: 'Too Many Requests',
+    message: `Rate limit exceeded, retry in ${context.after}`,
+    retryAfter: context.after
+  })
 });
 app.addContentTypeParser(
   ['application/octet-stream', 'application/x-www-form-urlencoded', 'text/plain'],
@@ -145,6 +214,13 @@ async function maxPostId() {
   return n(row?.max_id);
 }
 
+let metaCache:
+  | {
+      expiresAt: number;
+      payload: ReturnType<typeof envelope<Record<string, unknown>>>;
+    }
+  | null = null;
+
 async function topPostsForLegislator(lid: string, limit = 3) {
   const rows = await sql`
     SELECT p.*, t.topic_label, l.name, l.handle, l.state, l.chamber, l.party
@@ -212,12 +288,17 @@ async function topPostsForState(
   return rows.map(postRow);
 }
 
-app.get('/api/v1/health', async () => {
+app.get('/api/v1/health', { config: { rateLimit: false } }, async () => {
   const [row] = await sql`SELECT 1 AS ok`;
   return envelope({ ok: row?.ok === 1, postgres: true }, 'health');
 });
 
 app.get('/api/v1/meta', async () => {
+  const now = Date.now();
+  if (metaCache && metaCache.expiresAt > now) {
+    return metaCache.payload;
+  }
+
   const [counts] = await sql`
     SELECT
       (SELECT reltuples::bigint FROM pg_class WHERE oid = 'public.posts'::regclass) AS posts,
@@ -230,7 +311,7 @@ app.get('/api/v1/meta', async () => {
       (SELECT max(created_at)::text FROM posts) AS last_post_date
   `;
 
-  return envelope(
+  const payload = envelope(
     {
       snapshotId: SNAPSHOT_ID,
       sourceCutoff: SNAPSHOT_CUTOFF,
@@ -251,6 +332,13 @@ app.get('/api/v1/meta', async () => {
     {},
     { coveragePeriod: [s(counts.first_post_date), s(counts.last_post_date)] }
   );
+
+  metaCache = {
+    expiresAt: now + envInt('CIVICWATCH_META_CACHE_SECONDS', 300) * 1000,
+    payload
+  };
+
+  return payload;
 });
 
 app.get('/api/v1/chamber', async (request) => {
