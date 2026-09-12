@@ -12,6 +12,12 @@ apps/web/.build-stale-*/
 # Local database restore artifacts. Keep SQL scripts under database/scripts tracked.
 /civicwatch_postgres_full_*.dump
 /civicwatch_postgres_full_*.sql
+/civicwatch_prod_*.contents.txt
+/civicwatch_prod_*.dump
+/civicwatch_prod_*.manifest.txt
+/civicwatch_prod_*.pg_dump.log
+/civicwatch_prod_*.sha256
+/civicwatch_prod_*_bundle.tar
 /tweet-hydration/
 /legislator_missing_data_export/
 /logs/

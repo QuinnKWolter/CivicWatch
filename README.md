@@ -8,11 +8,12 @@ you may have running on the usual `5432` port.
 ## Requirements
 
 - Node.js and pnpm
-- PostgreSQL command line tools on `PATH` (`pg_ctl`, `psql`, and `pg_isready`)
-- The restored CivicWatch Postgres data directory at `.postgres-data`
+- PostgreSQL command line tools on `PATH` (`pg_ctl`, `psql`, `createdb`,
+  `dropdb`, `pg_restore`, `pg_isready`, and `initdb`)
+- A local Postgres server or the repo-managed `.postgres-data` cluster
 - A local `.env` file; this repo includes one for the current local dump
 
-For a fresh dump restore, follow `POSTGRES_DUMP_README.md` first. The runnable
+For a fresh dump restore, use the `db:restore` command below. The runnable
 developer app expects the prepared database:
 
 ```txt
@@ -26,6 +27,181 @@ lockfile for the root package plus `apps/api` and `apps/web`.
 
 ```powershell
 pnpm install
+```
+
+## Restore A Production Dump
+
+Production dumps are distributed as a tar bundle containing a custom-format
+Postgres archive, manifest, contents list, checksum, and dump log. Unpack it
+from the workspace root.
+
+```powershell
+tar -xf .\civicwatch_prod_YYYYMMDD_bundle.tar
+```
+
+On macOS/Linux:
+
+```bash
+tar -xf ./civicwatch_prod_YYYYMMDD_bundle.tar
+```
+
+Confirm the checksum:
+
+```powershell
+Get-FileHash .\civicwatch_prod_YYYYMMDD.dump -Algorithm SHA256
+```
+
+On macOS:
+
+```bash
+shasum -a 256 ./civicwatch_prod_YYYYMMDD.dump
+```
+
+On Linux:
+
+```bash
+sha256sum ./civicwatch_prod_YYYYMMDD.dump
+```
+
+Then restore into the database named by `.env`:
+
+```powershell
+pnpm run db:restore -- --dump .\civicwatch_prod_YYYYMMDD.dump --yes
+```
+
+On macOS/Linux:
+
+```bash
+pnpm run db:restore -- --dump ./civicwatch_prod_YYYYMMDD.dump --yes
+```
+
+For a completely fresh local database, use:
+
+```powershell
+pnpm run db:restore -- --dump .\civicwatch_prod_YYYYMMDD.dump --yes --recreate
+```
+
+On macOS/Linux:
+
+```bash
+pnpm run db:restore -- --dump ./civicwatch_prod_YYYYMMDD.dump --yes --recreate
+```
+
+The restore command works on Windows, Linux, and macOS as long as the Postgres
+CLI tools are on `PATH`. If `.env` points at the default `localhost:55432`
+database, the command will initialize and start the repo-managed
+`.postgres-data` cluster when needed. It refuses to restore into a non-local
+database unless `--force-remote` is provided.
+
+After restoring, `db:restore` runs:
+
+```txt
+pnpm run db:prepare
+pnpm run db:posts:canonical
+pnpm run db:network:repair-counts
+```
+
+It does not run the expensive full `db:network:prepare` job because the
+distributed production dump already includes `app_post_interactions`,
+`app_network_edges`, and the canonical post tables.
+
+Plan for at least 60 GB of free space for a smooth local restore, and 100 GB or
+more if you also intend to rebuild expensive derived network tables. The
+compressed archive is much smaller than the restored database because Postgres
+must also store indexes, materialized views, WAL, and working files during
+restore.
+
+## Create A Production Dump
+
+Create production DB bundles on the database server, `picso102`, not the web
+server. The commands below use localhost because the process is already running
+on the DB host.
+
+```bash
+ssh qkw3@picso102.sci.pitt.edu
+mkdir -p ~/civicwatch_db_exports
+cd ~/civicwatch_db_exports
+
+DUMP_DATE="$(date +%Y%m%d)"
+DUMP_NAME="civicwatch_prod_${DUMP_DATE}"
+
+read -rsp "DB password for civicwatch: " PGPASSWORD
+echo
+export PGPASSWORD
+export PGGSSENCMODE=disable
+export PGSSLMODE=disable
+
+psql -h 127.0.0.1 -p 5432 -U civicwatch -d civicwatch -c "select 1;"
+
+pg_dump \
+  -h 127.0.0.1 \
+  -p 5432 \
+  -U civicwatch \
+  -d civicwatch \
+  -F c \
+  -Z 9 \
+  --no-owner \
+  --no-acl \
+  --verbose \
+  -f "${DUMP_NAME}.dump" \
+  2>&1 | tee "${DUMP_NAME}.pg_dump.log"
+
+pg_restore -l "${DUMP_NAME}.dump" > "${DUMP_NAME}.contents.txt"
+
+psql \
+  -h 127.0.0.1 \
+  -p 5432 \
+  -U civicwatch \
+  -d civicwatch \
+  -v ON_ERROR_STOP=1 \
+  -c "
+    select 'posts' as table_name, count(*) from posts
+    union all select 'legislators', count(*) from legislators
+    union all select 'topics', count(*) from topics;
+  " > "${DUMP_NAME}.manifest.txt"
+
+sha256sum "${DUMP_NAME}.dump" > "${DUMP_NAME}.sha256"
+
+tar -cf "${DUMP_NAME}_bundle.tar" \
+  "${DUMP_NAME}.dump" \
+  "${DUMP_NAME}.sha256" \
+  "${DUMP_NAME}.contents.txt" \
+  "${DUMP_NAME}.manifest.txt" \
+  "${DUMP_NAME}.pg_dump.log"
+
+du -h "${DUMP_NAME}.dump" "${DUMP_NAME}_bundle.tar"
+unset PGPASSWORD
+```
+
+Sanity-check the bundle before distributing it:
+
+```bash
+cat "${DUMP_NAME}.manifest.txt"
+cat "${DUMP_NAME}.sha256"
+grep -E 'TABLE DATA public (posts|legislators|topics|app_post_interactions|app_network_edges|app_posts_canonical_map)' "${DUMP_NAME}.contents.txt"
+```
+
+Fetch the bundle from a local machine with SFTP/FTP, or with `scp`:
+
+```powershell
+scp qkw3@picso102.sci.pitt.edu:~/civicwatch_db_exports/civicwatch_prod_YYYYMMDD_bundle.tar .
+```
+
+To estimate the restored database size on PICSO102:
+
+```bash
+psql -h 127.0.0.1 -p 5432 -U civicwatch -d civicwatch -c "
+  select pg_size_pretty(pg_database_size(current_database())) as database_size;
+"
+
+psql -h 127.0.0.1 -p 5432 -U civicwatch -d civicwatch -c "
+  select
+    schemaname || '.' || relname as relation,
+    pg_size_pretty(pg_total_relation_size(format('%I.%I', schemaname, relname)::regclass)) as total_size
+  from pg_stat_user_tables
+  order by pg_total_relation_size(format('%I.%I', schemaname, relname)::regclass) desc
+  limit 20;
+"
 ```
 
 ## Configure
@@ -44,11 +220,11 @@ When moving the API itself, update both `API_BASE_URL` and
 `PUBLIC_API_BASE_URL` so server-rendered and browser-side Svelte requests point
 at the same reachable API.
 
-The current local dump metadata captured in `.env` is:
+The 2026-09-11 production bundle metadata is:
 
 ```txt
 coverage=2020-01-01..2025-01-04
-posts=22175504
+posts=22400586
 legislators=5927
 topics=22
 states=50
