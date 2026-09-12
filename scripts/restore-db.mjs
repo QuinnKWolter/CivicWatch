@@ -13,7 +13,8 @@ function usage() {
   console.log(`Usage: node ./scripts/restore-db.mjs --dump <path> --yes [options]
 
 Restores a CivicWatch custom-format Postgres dump into the database named by
-.env / DATABASE_URL. By default, this refuses non-local database targets.
+.env / DATABASE_URL. By default, this refuses non-local database targets and
+ignores production tablespace assignments for cross-platform portability.
 
 Options:
   --dump <path>              Path to a .dump file created by pg_dump -F c.
@@ -37,12 +38,27 @@ function die(message) {
   process.exit(1);
 }
 
+function executableName(command) {
+  if (process.platform === 'win32' && command === 'pnpm') return 'pnpm.cmd';
+  return command;
+}
+
+function formatCommand(command, args) {
+  return [command, ...args]
+    .map((part) => {
+      const value = String(part);
+      if (!/[\s"]/u.test(value)) return value;
+      return `"${value.replace(/"/g, '\\"')}"`;
+    })
+    .join(' ');
+}
+
 function run(command, args, options = {}) {
-  console.log(`> ${command} ${args.join(' ')}`);
-  const result = spawnSync(command, args, {
+  console.log(`> ${formatCommand(command, args)}`);
+  const result = spawnSync(executableName(command), args, {
     cwd: repoRoot,
     env: options.env ?? process.env,
-    shell: process.platform === 'win32',
+    shell: false,
     stdio: options.stdio ?? 'inherit'
   });
 
@@ -55,10 +71,10 @@ function run(command, args, options = {}) {
 }
 
 function runOptional(command, args, options = {}) {
-  return spawnSync(command, args, {
+  return spawnSync(executableName(command), args, {
     cwd: repoRoot,
     env: options.env ?? process.env,
-    shell: process.platform === 'win32',
+    shell: false,
     stdio: options.stdio ?? 'inherit'
   });
 }
@@ -137,6 +153,28 @@ function terminateConnections(target, maintenanceDb) {
          AND pid <> pg_backend_pid();`
     ],
     { env: target.env, stdio: 'ignore' }
+  );
+}
+
+function verifyRestore(target) {
+  run(
+    'psql',
+    [
+      ...target.restoreArgs,
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-c',
+      `
+        select
+          (select count(*) from public.legislators) as legislators,
+          (select count(*) from public.topics) as topics,
+          to_regclass('public.posts') is not null as has_posts,
+          to_regclass('public.app_post_interactions') is not null as has_post_interactions,
+          to_regclass('public.app_network_edges') is not null as has_network_edges,
+          to_regclass('public.app_posts_canonical_map') is not null as has_canonical_map;
+      `
+    ],
+    { env: target.env }
   );
 }
 
@@ -295,11 +333,14 @@ run(
     '--if-exists',
     '--no-owner',
     '--no-privileges',
+    '--no-tablespaces',
     '--verbose',
     dumpPath
   ],
   { env: target.env }
 );
+
+verifyRestore(target);
 
 if (!options.skipPrepare) run('pnpm', ['run', 'db:prepare']);
 if (!options.skipCanonical) run('pnpm', ['run', 'db:posts:canonical']);

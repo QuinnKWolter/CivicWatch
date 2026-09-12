@@ -91,7 +91,9 @@ The restore command works on Windows, Linux, and macOS as long as the Postgres
 CLI tools are on `PATH`. If `.env` points at the default `localhost:55432`
 database, the command will initialize and start the repo-managed
 `.postgres-data` cluster when needed. It refuses to restore into a non-local
-database unless `--force-remote` is provided.
+database unless `--force-remote` is provided. Restore ignores production
+tablespace assignments, so dumps made on PICSO102 can be loaded on ordinary
+developer machines without creating a matching `civicwatch_app` tablespace.
 
 After restoring, `db:restore` runs:
 
@@ -142,6 +144,7 @@ pg_dump \
   -Z 9 \
   --no-owner \
   --no-acl \
+  --no-tablespaces \
   --verbose \
   -f "${DUMP_NAME}.dump" \
   2>&1 | tee "${DUMP_NAME}.pg_dump.log"
