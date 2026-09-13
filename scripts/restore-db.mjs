@@ -79,6 +79,10 @@ function runOptional(command, args, options = {}) {
   });
 }
 
+function runRepoScript(scriptPath, args = [], options = {}) {
+  run(process.execPath, [resolve(repoRoot, scriptPath), ...args], options);
+}
+
 function stripQuery(value) {
   return String(value ?? '').split('?')[0];
 }
@@ -342,8 +346,10 @@ run(
 
 verifyRestore(target);
 
-if (!options.skipPrepare) run('pnpm', ['run', 'db:prepare']);
-if (!options.skipCanonical) run('pnpm', ['run', 'db:posts:canonical']);
-if (!options.skipNetworkRepair) run('pnpm', ['run', 'db:network:repair-counts']);
+if (!options.skipPrepare) runRepoScript('scripts/prepare-db.mjs', [], { env: target.env });
+if (!options.skipCanonical) runRepoScript('scripts/prepare-canonical-posts.mjs', [], { env: target.env });
+if (!options.skipNetworkRepair) {
+  runRepoScript('scripts/repair-network-edge-counts.mjs', [], { env: target.env });
+}
 
 console.log('CivicWatch database restore complete.');
