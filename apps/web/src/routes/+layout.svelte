@@ -70,6 +70,12 @@
         'Examine activity across time'
     },
     {
+      href: appPath('/claims'),
+      label: 'Claims',
+      description:
+        'Trace fact-checked claims to legislators'
+    },
+    {
       href: appPath('/about'),
       label: 'About',
       description:
