@@ -502,6 +502,30 @@ network preprocessing tables. `pnpm run db:hydration:import` imports hydrated
 tweet metadata in dry-run text-update mode unless `--apply-text-updates` is
 passed.
 
+## Claim Network Data
+
+The Claims page (`/claims`) reads `GET /api/v1/claims`, which does not query
+Postgres yet. It serves `apps/api/src/data/claims-demo.json`, the demo bundle
+from the claim network prototype: the fact-checks are real (Google Fact Check
+API), but the legislators and posts are synthetic, and the page says so. To
+refresh the demo, replace that JSON file with a newer export in the same shape.
+
+When claim-matched posts land in the database, change only the route in
+`apps/api/src/server.ts` (and `apps/api/src/data/claims.ts`) to build the same
+payload from SQL. The web app needs no changes:
+
+```txt
+clusters[]     clusterId, topic, label, shortLabel,
+               factChecks[]: id, claim, claimant, claimDate, reviewDate,
+                             publisher, rating, ratingNorm, url
+legislators[]  lid, name, party, state, chamber, synthetic
+posts[]        postId, lid, clusterId, date (YYYY-MM-DD), isRetweet,
+               retweetOf, text, stance (spread | debunk | neutral), synthetic
+```
+
+Set `synthetic: false` for real legislators and posts: the page then drops the
+synthetic notice, and the legislator panel links to their `/who/{lid}` profile.
+
 ## Troubleshooting
 
 - `pg_ctl was not found`: add your PostgreSQL `bin` directory to `PATH`.
@@ -521,6 +545,6 @@ passed.
 The implementation follows the design and technical documents with a runnable
 local analytical slice: landing, sampler, chamber view, lookup, legislator
 profiles with voice fingerprints and interaction networks, place explorer,
-topic explorer, moment explorer, About/methods content, bounded API endpoints,
+topic explorer, moment explorer, claim network, About/methods content, bounded API endpoints,
 metadata envelopes, exports, and no-data handling. The Compare interface remains
 hidden until it receives a fuller product pass.

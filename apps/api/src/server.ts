@@ -6,6 +6,7 @@ import Fastify from 'fastify';
 import { appendFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { sql, closeDb } from './db/index.js';
+import { claimNetwork, claimNotes } from './data/claims.js';
 import { events } from './data/events.js';
 import { renderBarPng, type BarDatum } from './png.js';
 import {
@@ -1569,6 +1570,14 @@ app.get('/api/v1/states/:state/top-posts', async (request) => {
 });
 
 app.get('/api/v1/events', async () => envelope(events, 'events.ts'));
+
+app.get('/api/v1/claims', async (_request, reply) => {
+  reply.header('cache-control', 'public, max-age=300');
+  return envelope(claimNetwork, 'claims-demo.json', {}, {
+    synthetic: claimNetwork.posts.some((post) => post.synthetic),
+    notes: claimNotes
+  });
+});
 
 app.get('/api/v1/moments/overview', async () => {
   const hasCanonicalDaily = await hasCanonicalDailyAggregate();

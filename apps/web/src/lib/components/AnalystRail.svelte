@@ -435,6 +435,30 @@
       };
     }
 
+    if (segments[0] === 'claims') {
+      const network = envelopeData(pageData.claims);
+      const clusters = envelopeRows(network?.clusters);
+      const claim = clusters.find((row) => row.clusterId === params.get('claim'));
+      const legislator = envelopeRows(network?.legislators).find((row) => row.lid === params.get('lid'));
+      const period = cleanString(params.get('period'));
+
+      return {
+        routeLabel: 'Claims',
+        pageSlug: 'claims',
+        recordLabel: 'claims',
+        includedCount: clusters.length || null,
+        activeFilters: [
+          claim ? { key: 'claim', label: 'Claim', value: cleanString(claim.shortLabel ?? claim.label) } : null,
+          legislator ? { key: 'lid', label: 'Legislator', value: cleanString(legislator.name) } : null,
+          period ? { key: 'period', label: 'Period', value: period } : null
+        ].filter((filter): filter is ActiveFilter => filter !== null),
+        controls: [],
+        exportOptions: [],
+        formAction,
+        clearHref: formAction
+      };
+    }
+
     return {
       routeLabel: 'Current view',
       pageSlug: 'current-view',
